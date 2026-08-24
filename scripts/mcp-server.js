@@ -10,18 +10,112 @@ const PORT = process.env.PORT || 3000;
 const DEFAULT_INSTANCE_URL = process.env.SF_INSTANCE_URL || 'https://orgfarm-4036b01401-dev-ed.develop.my.salesforce.com';
 
 // ── Mock Data for Mobile Developer Sandbox / Offline Testing ────────────────
-const MOCK_TECHNICIAN = {
-  id: 'TECH-001',
-  name: 'Vikram Sharma',
-  email: 'vikram.sharma@digifield360.com',
-  skills: ['Generator', 'HVAC', 'Compressor', 'Electrical'],
-  firstTimeFixRate: 92.5,
-  isActive: true,
-  preferredLanguage: 'en',
-  currentLatitude: 18.52043,
-  currentLongitude: 73.856743,
-  jobsCompletedTotal: 148
-};
+const MOCK_TECHNICIANS = [
+  {
+    id: 'TECH-001',
+    name: 'Vikram Sharma',
+    email: 'vikram.sharma@digifield360.com',
+    skills: ['Generator', 'HVAC', 'Compressor', 'Electrical'],
+    firstTimeFixRate: 92.5,
+    isActive: true,
+    preferredLanguage: 'en',
+    currentLatitude: 18.52043,
+    currentLongitude: 73.856743,
+    jobsCompletedTotal: 148
+  },
+  {
+    id: 'TECH-002',
+    name: 'Ananya Roy',
+    email: 'ananya.roy@digifield360.com',
+    skills: ['HVAC', 'Solar Inverter', 'Substation', 'PLCs'],
+    firstTimeFixRate: 96.0,
+    isActive: true,
+    preferredLanguage: 'en',
+    currentLatitude: 19.07609,
+    currentLongitude: 72.877426,
+    jobsCompletedTotal: 210
+  },
+  {
+    id: 'TECH-003',
+    name: 'Rajesh Patel',
+    email: 'rajesh.patel@digifield360.com',
+    skills: ['Turbine', 'Electrical', 'Hydraulics', 'Generator'],
+    firstTimeFixRate: 88.0,
+    isActive: true,
+    preferredLanguage: 'hi',
+    currentLatitude: 12.971598,
+    currentLongitude: 77.594566,
+    jobsCompletedTotal: 95
+  },
+  {
+    id: 'TECH-004',
+    name: 'Sarah Jenkins',
+    email: 'sarah.jenkins@digifield360.com',
+    skills: ['Telematics', 'Robotics', 'HVAC', 'Compressor'],
+    firstTimeFixRate: 98.2,
+    isActive: true,
+    preferredLanguage: 'en',
+    currentLatitude: 28.613939,
+    currentLongitude: 77.209021,
+    jobsCompletedTotal: 312
+  }
+];
+
+const MOCK_TECHNICIAN = MOCK_TECHNICIANS[0];
+
+function resolveTechnicianProfile(inputUser, inputEmail, tokenStr) {
+  let searchStr = (inputUser || inputEmail || '').trim().toLowerCase();
+
+  if (!searchStr && tokenStr) {
+    const tokenMatch = String(tokenStr).match(/mock_jwt_token_([A-Za-z0-9_\-\.]+)/i);
+    if (tokenMatch && tokenMatch[1]) {
+      searchStr = tokenMatch[1].toLowerCase();
+    } else {
+      searchStr = String(tokenStr).toLowerCase();
+    }
+  }
+
+  if (searchStr) {
+    const found = MOCK_TECHNICIANS.find(t =>
+      t.id.toLowerCase() === searchStr ||
+      t.email.toLowerCase() === searchStr ||
+      t.name.toLowerCase().includes(searchStr) ||
+      searchStr.includes(t.id.toLowerCase()) ||
+      searchStr.includes(t.name.split(' ')[0].toLowerCase())
+    );
+    if (found) return found;
+
+    // Generate dynamic profile on-the-fly for unknown email/username
+    let displayName = searchStr.includes('@') ? searchStr.split('@')[0] : searchStr;
+    displayName = displayName.replace(/[_\.\-]/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+    const userEmail = inputEmail || (searchStr.includes('@') ? searchStr : `${searchStr.replace(/\s+/g, '.')}@digifield360.com`);
+    const cleanId = 'TECH-' + (Math.abs(hashString(searchStr)) % 900 + 100);
+
+    return {
+      id: cleanId,
+      name: displayName || 'Field Technician',
+      email: userEmail,
+      skills: ['General Field Operations', 'Diagnostics', 'Maintenance'],
+      firstTimeFixRate: 95.0,
+      isActive: true,
+      preferredLanguage: 'en',
+      currentLatitude: 18.52043,
+      currentLongitude: 73.856743,
+      jobsCompletedTotal: 50
+    };
+  }
+
+  return MOCK_TECHNICIANS[0];
+}
+
+function hashString(str) {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = ((hash << 5) - hash) + str.charCodeAt(i);
+    hash |= 0;
+  }
+  return hash;
+}
 
 const MOCK_WORK_ORDERS = [
   {
@@ -120,7 +214,7 @@ const MOCK_ACCOUNTS = [
   { Id: '0010000010', Name: 'Wipro Sarjapur Innovation Hub', Industry: 'Technology', Type: 'Customer - Direct', BillingCity: 'Bengaluru', Phone: '+91 80 2844 0011', AnnualRevenue: 280000000 }
 ];
 
-const MOCK_TECHNICIANS = [
+const MOCK_TECHNICIANS_SOBJECT = [
   { Id: 'TECH-001', Name: 'Vikram Sharma', Email__c: 'vikram.sharma@digifield360.com', Phone__c: '+91 98230 11223', Skills__c: 'Generator;HVAC;Compressor;Electrical', City__c: 'Pune', Status__c: 'Active', First_Time_Fix_Rate__c: 92.5 },
   { Id: 'TECH-002', Name: 'Amit Verma', Email__c: 'amit.verma@digifield360.com', Phone__c: '+91 98230 44556', Skills__c: 'HVAC;Chiller;Refrigeration', City__c: 'Mumbai', Status__c: 'Active', First_Time_Fix_Rate__c: 88.0 },
   { Id: 'TECH-003', Name: 'Pooja Patil', Email__c: 'pooja.patil@digifield360.com', Phone__c: '+91 98230 77889', Skills__c: 'Electrical;Solar;Battery Storage', City__c: 'Bengaluru', Status__c: 'Active', First_Time_Fix_Rate__c: 95.2 },
@@ -260,7 +354,7 @@ function generateConversationalSummary(targetObject, records, prompt) {
 function executeMockQuery(parsed, prompt) {
   let dataset = [];
   if (parsed.targetObject === 'Account') dataset = [...MOCK_ACCOUNTS];
-  else if (parsed.targetObject === 'Technician__c') dataset = [...MOCK_TECHNICIANS];
+  else if (parsed.targetObject === 'Technician__c') dataset = [...MOCK_TECHNICIANS_SOBJECT];
   else if (parsed.targetObject === 'Maintenance_Alert__c') dataset = [...MOCK_MAINTENANCE_ALERTS];
   else if (parsed.targetObject === 'Job_History__c') dataset = [...MOCK_JOB_HISTORY];
   else if (parsed.targetObject === 'Contact') dataset = [...MOCK_CONTACTS];
@@ -450,26 +544,59 @@ const server = http.createServer(async (req, res) => {
     // ═════════════════════════════════════════════════════════════════════════
     if (req.method === 'POST' && pathname === '/api/auth/login') {
       const body = await parseRequestBody(req);
-      const { username, password, oauthCode, accessToken } = body;
+      const { username, email, password, oauthCode, accessToken } = body;
+      const targetUser = username || email || 'Vikram Sharma';
+      const activeTech = resolveTechnicianProfile(targetUser, email, token);
 
       if (isMockMode) {
         return sendJSON(res, 200, {
           success: true,
-          token: 'mock_jwt_token_technician_vikram_sharma',
+          token: `mock_jwt_token_${activeTech.id.toLowerCase()}`,
           tokenType: 'Bearer',
           expiresIn: 7200,
           instanceUrl: DEFAULT_INSTANCE_URL,
-          technician: MOCK_TECHNICIAN
+          technician: activeTech
         });
       }
 
-      // Live Salesforce OAuth code exchange or token verification
-      return sendJSON(res, 200, {
-        success: true,
-        token: accessToken || token || 'sf_live_token_granted',
-        instanceUrl: instanceUrl,
-        technician: MOCK_TECHNICIAN
-      });
+      // Live Salesforce OAuth / user identity verification
+      try {
+        let liveTechProfile = activeTech;
+        if (token || accessToken) {
+          const userRes = await fetch(`${instanceUrl}/services/data/v67.0/chatter/users/me`, {
+            headers: { 'Authorization': `Bearer ${accessToken || token}` }
+          });
+          if (userRes.ok) {
+            const sfUser = await userRes.json();
+            liveTechProfile = {
+              id: sfUser.id || activeTech.id,
+              name: sfUser.displayName || sfUser.name || activeTech.name,
+              email: sfUser.email || activeTech.email,
+              skills: activeTech.skills,
+              firstTimeFixRate: activeTech.firstTimeFixRate,
+              isActive: true,
+              preferredLanguage: 'en',
+              currentLatitude: activeTech.currentLatitude,
+              currentLongitude: activeTech.currentLongitude,
+              jobsCompletedTotal: activeTech.jobsCompletedTotal
+            };
+          }
+        }
+
+        return sendJSON(res, 200, {
+          success: true,
+          token: accessToken || token || `sf_token_${activeTech.id}`,
+          instanceUrl: instanceUrl,
+          technician: liveTechProfile
+        });
+      } catch (err) {
+        return sendJSON(res, 200, {
+          success: true,
+          token: accessToken || token || `sf_token_${activeTech.id}`,
+          instanceUrl: instanceUrl,
+          technician: activeTech
+        });
+      }
     }
 
     if (req.method === 'POST' && pathname === '/api/auth/refresh') {
@@ -483,9 +610,12 @@ const server = http.createServer(async (req, res) => {
     }
 
     if (req.method === 'GET' && pathname === '/api/technician/profile') {
+      const targetUser = query.username || query.email || query.technicianId;
+      const activeTech = resolveTechnicianProfile(targetUser, query.email, token);
+
       return sendJSON(res, 200, {
         success: true,
-        technician: MOCK_TECHNICIAN
+        technician: activeTech
       });
     }
 
@@ -493,13 +623,14 @@ const server = http.createServer(async (req, res) => {
     // 3. MORNING PRE-LOAD & BATCH SYNC APIS
     // ═════════════════════════════════════════════════════════════════════════
     if (req.method === 'GET' && pathname === '/api/sync/morning-payload') {
-      const technicianId = query.technicianId || 'TECH-001';
+      const technicianId = query.technicianId || query.username || token;
+      const activeTech = resolveTechnicianProfile(technicianId, query.email, token);
 
       if (isMockMode) {
         return sendJSON(res, 200, {
           success: true,
           syncTimestamp: new Date().toISOString(),
-          technician: MOCK_TECHNICIAN,
+          technician: activeTech,
           workOrders: MOCK_WORK_ORDERS,
           equipmentHistory: MOCK_JOB_HISTORY,
           knowledgeArticles: MOCK_KNOWLEDGE,
@@ -523,7 +654,7 @@ const server = http.createServer(async (req, res) => {
         return sendJSON(res, 200, {
           success: true,
           syncTimestamp: new Date().toISOString(),
-          technician: MOCK_TECHNICIAN,
+          technician: activeTech,
           workOrders: sfData.records || MOCK_WORK_ORDERS,
           equipmentHistory: MOCK_JOB_HISTORY,
           knowledgeArticles: MOCK_KNOWLEDGE

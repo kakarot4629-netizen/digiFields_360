@@ -66,8 +66,25 @@
               "host": ["{{baseUrl}}"],
               "path": ["api", "auth", "login"]
             },
-            "description": "Authenticate technician and obtain Bearer token."
-          }
+            "description": "Authenticate technician and obtain Bearer token. Enter any username/email (e.g. vikram.sharma@digifield360.com, ananya.roy@digifield360.com, or your custom email)."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.success && jsonData.token) {",
+                  "    pm.collectionVariables.set('authToken', jsonData.token);",
+                  "}",
+                  "if (jsonData.technician && jsonData.technician.id) {",
+                  "    pm.collectionVariables.set('technicianId', jsonData.technician.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
         },
         {
           "name": "2.2 POST Refresh Token",
