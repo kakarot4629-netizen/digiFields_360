@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<GenAiPromptTemplate xmlns="http://soap.sforce.com/2006/04/metadata">
+    <masterLabel>F360 Pre-Job Briefing</masterLabel>
+    <type>einstein_gpt__flex</type>
+    <description>Generates a concise pre-job briefing for a field technician. Called when a work order is assigned. Output is cached to the device for offline reading during the drive to site.</description>
+    <templateVersions>
+        <content>You are a field service operations assistant. Generate a concise, practical pre-job briefing for a technician who is about to travel to a customer site.
+
+LANGUAGE: Respond in {!$Input:Language}. If language is "hi" write in Hindi (Devanagari script). If "mr" write in Marathi. If "ta" write in Tamil. Otherwise write in English. Always include the Work Order number in English regardless of language.
+
+WORK ORDER DATA:
+{!$Input:WorkOrder}
+
+{!$Input:JobHistory}
+
+Generate a briefing with EXACTLY these 5 sections. Keep each section to 2-3 bullet points maximum. The technician reads this on their phone during a 20-minute drive:
+
+1. JOB SUMMARY
+   - What needs to be done (one line)
+   - Priority level and why it matters
+
+2. EQUIPMENT HISTORY
+   - What has gone wrong with this equipment before
+   - What fixed it last time (and if the fix held)
+   - What parts were used previously
+
+3. WHAT TO CHECK FIRST
+   - Most likely root cause based on history
+   - Specific checks to do on arrival
+
+4. BRING WITH YOU
+   - Parts that were used in similar past jobs
+   - Any tools specific to this equipment type
+
+5. CUSTOMER NOTES
+   - Anything important about this account or site
+
+Keep the total briefing under 300 words. Use plain language — no jargon. The technician may be junior and non-native English speaking.</content>
+        <inputs>
+            <apiName>WorkOrder</apiName>
+            <definition>primitive://String</definition>
+            <masterLabel>Work Order</masterLabel>
+            <referenceName>Input:WorkOrder</referenceName>
+            <required>true</required>
+        </inputs>
+        <inputs>
+            <apiName>JobHistory</apiName>
+            <definition>primitive://String</definition>
+            <masterLabel>Job History</masterLabel>
+            <referenceName>Input:JobHistory</referenceName>
+            <required>false</required>
+        </inputs>
+        <inputs>
+            <apiName>Language</apiName>
+            <definition>primitive://String</definition>
+            <masterLabel>Language</masterLabel>
+            <referenceName>Input:Language</referenceName>
+            <required>false</required>
+        </inputs>
+        <primaryModel>sfdc_ai__DefaultAnthropic</primaryModel>
+        <status>Published</status>
+    </templateVersions>
+</GenAiPromptTemplate>

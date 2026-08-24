@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>First_Time_Fix__c</fullName>
+    <label>First Time Fix</label>
+    <type>Checkbox</type>
+    <defaultValue>true</defaultValue>
+</CustomField>

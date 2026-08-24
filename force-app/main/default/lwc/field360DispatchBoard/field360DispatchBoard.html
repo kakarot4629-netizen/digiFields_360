@@ -1,0 +1,154 @@
+<!-- field360DispatchBoard.html — Dispatcher & Manager View -->
+<!-- Shows all open work orders, AI technician recommendations, one-click assignment -->
+<template>
+    <div class="f360-board">
+
+        <!-- Header row -->
+        <div class="f360-board-header">
+            <h1 class="f360-board-title">
+                <lightning-icon icon-name="standard:field_service" size="small"></lightning-icon>
+                Field360 Dispatch Board
+            </h1>
+            <div class="f360-board-stats">
+                <span class="f360-stat">
+                    <strong>{unassignedCount}</strong> Unassigned
+                </span>
+                <span class="f360-stat">
+                    <strong>{assignedCount}</strong> Assigned & Active
+                </span>
+                <span class="f360-stat">
+                    <strong>{completedTodayCount}</strong> Done Today
+                </span>
+            </div>
+            <lightning-button-icon icon-name="utility:refresh"
+                onclick={refreshBoard} variant="border-filled" size="small"
+                tooltip="Refresh board">
+            </lightning-button-icon>
+        </div>
+
+        <!-- Loading -->
+        <template if:true={isLoading}>
+            <div class="f360-board-loading">
+                <lightning-spinner alternative-text="Loading dispatch board..." size="medium"></lightning-spinner>
+            </div>
+        </template>
+
+        <template if:false={isLoading}>
+
+            <!-- ── Unassigned work orders — primary action zone ── -->
+            <template if:true={hasUnassigned}>
+                <div class="f360-section">
+                    <h2 class="f360-section-title">
+                        <lightning-icon icon-name="utility:priority" size="x-small"></lightning-icon>
+                        Needs Assignment ({unassignedCount})
+                    </h2>
+                    <template for:each={unassignedWorkOrders} for:item="wo">
+                        <div key={wo.Id} class="f360-wo-card f360-wo-unassigned">
+                            <div class="f360-wo-card-header">
+                                <span class="f360-wo-num">{wo.Name}</span>
+                                <!-- priorityClass pre-computed on the enriched data object -->
+                                <span class={wo.priorityClass}>{wo.Priority__c}</span>
+                            </div>
+                            <p class="f360-wo-subject">{wo.Subject__c}</p>
+                            <template if:true={wo.accountName}>
+                                <p class="f360-wo-account">{wo.accountName}</p>
+                            </template>
+                            <p class="f360-wo-site">{wo.Site_Address__c}</p>
+                            <p class="f360-wo-equip">{wo.Equipment_Type__c}</p>
+
+                            <!-- AI assignment recommendation -->
+                            <template if:true={wo.hasAIRec}>
+                                <div class="f360-ai-rec">
+                                    <lightning-icon icon-name="utility:einstein" size="x-small" class="f360-ai-icon"></lightning-icon>
+                                    <span class="f360-ai-rec-text">{wo.AI_Assignment_Reason__c}</span>
+                                </div>
+                            </template>
+                            <template if:false={wo.hasAIRec}>
+                                <lightning-button label="Get AI Recommendation" variant="brand-outline"
+                                    data-wo-id={wo.Id} onclick={getAIRecommendation}
+                                    size="small">
+                                </lightning-button>
+                            </template>
+
+                            <!-- Technician picker + assign button -->
+                            <div class="f360-assign-row">
+                                <lightning-combobox label="Assign to"
+                                    placeholder="Select technician..."
+                                    options={technicianOptions}
+                                    value={wo.selectedTechnicianId}
+                                    data-wo-id={wo.Id}
+                                    onchange={handleTechnicianSelect}
+                                    class="f360-tech-picker">
+                                </lightning-combobox>
+                                <lightning-button label="Assign"
+                                    variant="success"
+                                    data-wo-id={wo.Id}
+                                    onclick={assignTechnician}
+                                    disabled={wo.isAssignDisabled}>
+                                </lightning-button>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </template>
+
+            <!-- ── Assigned & Active work orders ── -->
+            <template if:true={hasAssigned}>
+                <div class="f360-section">
+                    <h2 class="f360-section-title">
+                        <lightning-icon icon-name="utility:assignment" size="x-small"></lightning-icon>
+                        Assigned & Active Jobs ({assignedCount})
+                    </h2>
+                    <div class="f360-wo-grid">
+                        <template for:each={assignedWorkOrders} for:item="wo">
+                            <div key={wo.Id} class="f360-wo-card f360-wo-inprogress">
+                                <div class="f360-wo-card-header">
+                                    <span class="f360-wo-num">{wo.Name}</span>
+                                    <span class={wo.statusBadgeClass}>{wo.Status__c}</span>
+                                </div>
+                                <p class="f360-wo-subject">{wo.Subject__c}</p>
+                                <template if:true={wo.accountName}>
+                                    <p class="f360-wo-account">{wo.accountName}</p>
+                                </template>
+                                <template if:true={wo.assignedTechName}>
+                                    <p class="f360-wo-tech">
+                                        <lightning-icon icon-name="standard:user" size="x-small"></lightning-icon>
+                                        {wo.assignedTechName}
+                                    </p>
+                                </template>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+            </template>
+
+            <!-- ── Predictive Maintenance Alerts ── -->
+            <template if:true={hasAlerts}>
+                <div class="f360-section">
+                    <h2 class="f360-section-title">
+                        <lightning-icon icon-name="utility:einstein" size="x-small" class="f360-ai-icon"></lightning-icon>
+                        Predictive Maintenance Alerts ({alertCount})
+                    </h2>
+                    <template for:each={maintenanceAlerts} for:item="alert">
+                        <div key={alert.Id} class="f360-alert-card">
+                            <div class="f360-alert-header">
+                                <span class="f360-alert-equip">{alert.Equipment_Type__c} — {alert.Equipment_ID__c}</span>
+                                <!-- riskClass pre-computed on the enriched alert object -->
+                                <span class={alert.riskClass}>Risk: {alert.Risk_Score__c}/100</span>
+                            </div>
+                            <template if:true={alert.accountName}>
+                                <p class="f360-alert-account">{alert.accountName}</p>
+                            </template>
+                            <p class="f360-alert-explanation">{alert.AI_Explanation__c}</p>
+                            <lightning-button label="Create Preventive Work Order"
+                                variant="brand" data-alert-id={alert.Id}
+                                onclick={createPreventiveWO} size="small">
+                            </lightning-button>
+                        </div>
+                    </template>
+                </div>
+            </template>
+
+        </template>
+    </div>
+</template>

@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+    <apiVersion>66.0</apiVersion>
+    <actionCalls>
+        <name>Run_Predictive_Analysis</name>
+        <label>Run Predictive Maintenance Analysis</label>
+        <locationX>176</locationX><locationY>134</locationY>
+        <actionName>F360_PredictiveMaintenanceAction</actionName>
+        <actionType>apex</actionType>
+        <connector><targetReference>Check_Alerts_Created</targetReference></connector>
+        <inputParameters>
+            <name>lookBackDays</name>
+            <value><numberValue>90</numberValue></value>
+        </inputParameters>
+        <inputParameters>
+            <name>riskThreshold</name>
+            <value><numberValue>65</numberValue></value>
+        </inputParameters>
+        <outputParameters>
+            <assignToReference>alertsCreated</assignToReference>
+            <name>alertsCreated</name>
+        </outputParameters>
+        <outputParameters>
+            <assignToReference>equipmentAnalysed</assignToReference>
+            <name>equipmentAnalysed</name>
+        </outputParameters>
+        <outputParameters>
+            <assignToReference>highRiskSummary</assignToReference>
+            <name>highRiskSummary</name>
+        </outputParameters>
+        <outputParameters>
+            <assignToReference>analysisSuccess</assignToReference>
+            <name>success</name>
+        </outputParameters>
+    </actionCalls>
+    <decisions>
+        <name>Check_Alerts_Created</name>
+        <label>Any alerts created?</label>
+        <locationX>176</locationX><locationY>254</locationY>
+        <defaultConnectorLabel>No Alerts</defaultConnectorLabel>
+        <rules>
+            <name>Has_Alerts</name>
+            <conditionLogic>and</conditionLogic>
+            <conditions>
+                <leftValueReference>alertsCreated</leftValueReference>
+                <operator>GreaterThan</operator>
+                <rightValue><numberValue>0</numberValue></rightValue>
+            </conditions>
+            <label>Has Alerts</label>
+        </rules>
+    </decisions>
+    <description>Runs nightly. Calls the Predictive Maintenance AI action to analyse equipment job history, compute risk scores, and create Maintenance_Alert__c records for high-risk equipment.</description>
+    <label>Field360 — Nightly Predictive Maintenance Analysis</label>
+    <processType>AutoLaunchedFlow</processType>
+    <start>
+        <locationX>176</locationX><locationY>50</locationY>
+        <connector>
+            <targetReference>Run_Predictive_Analysis</targetReference>
+        </connector>
+    </start>
+    <status>Active</status>
+    <variables>
+        <name>alertsCreated</name>
+        <dataType>Number</dataType>
+        <scale>0</scale>
+        <isCollection>false</isCollection>
+        <isInput>false</isInput>
+        <isOutput>false</isOutput>
+    </variables>
+    <variables>
+        <name>analysisSuccess</name>
+        <dataType>Boolean</dataType>
+        <isCollection>false</isCollection>
+        <isInput>false</isInput>
+        <isOutput>false</isOutput>
+    </variables>
+    <variables>
+        <name>equipmentAnalysed</name>
+        <dataType>Number</dataType>
+        <scale>0</scale>
+        <isCollection>false</isCollection>
+        <isInput>false</isInput>
+        <isOutput>false</isOutput>
+    </variables>
+    <variables>
+        <name>highRiskSummary</name>
+        <dataType>String</dataType>
+        <isCollection>false</isCollection>
+        <isInput>false</isInput>
+        <isOutput>false</isOutput>
+    </variables>
+</Flow>

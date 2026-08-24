@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Package xmlns="http://soap.sforce.com/2006/04/metadata">
+
+    <!-- Custom Objects (must be deployed before Apex) -->
+    <types>
+        <members>Work_Order__c</members>
+        <members>Technician__c</members>
+        <members>Job_History__c</members>
+        <members>Maintenance_Alert__c</members>
+        <members>Equipment__c</members>
+        <members>Parts_Inventory__c</members>
+        <members>Job_Schedule__c</members>
+        <members>Maintenance_Recommendation__c</members>
+        <members>User</members>
+        <name>CustomObject</name>
+    </types>
+
+    <!-- Apex Classes -->
+    <types>
+        <members>F360_PreJobBriefingAction</members>
+        <members>F360_ServiceReportAction</members>
+        <members>F360_TroubleshootingAction</members>
+        <members>F360_SmartAssignmentAction</members>
+        <members>F360_PredictiveMaintenanceAction</members>
+        <members>F360_BookingAgentAction</members>
+        <members>F360_DispatchBoardController</members>
+        <members>F360_AI_Tests</members>
+        <name>ApexClass</name>
+    </types>
+
+    <!-- Apex Triggers (placeholder — none currently) -->
+    <types>
+        <members>*</members>
+        <name>ApexTrigger</name>
+    </types>
+
+    <!-- GenAI Prompt Templates -->
+    <types>
+        <members>F360_PreJobBriefing</members>
+        <members>F360_ServiceReport</members>
+        <members>F360_Troubleshooting</members>
+        <members>F360_MaintenanceAlert</members>
+        <name>GenAiPromptTemplate</name>
+    </types>
+
+    <!-- Lightning Web Components -->
+    <types>
+        <members>field360WorkOrderDetail</members>
+        <members>field360DispatchBoard</members>
+        <name>LightningComponentBundle</name>
+    </types>
+
+    <!-- Flows -->
+    <types>
+        <members>F360_WO_Assigned_Generate_Briefing</members>
+        <members>F360_WO_Completed_Generate_Report</members>
+        <members>F360_Nightly_Predictive_Maintenance</members>
+        <name>Flow</name>
+    </types>
+
+    <!-- Permission Sets -->
+    <types>
+        <members>digiField360_Core</members>
+        <members>digiField360_AI_Actions</members>
+        <members>digiField360_Dispatch</members>
+        <members>digiField360_Knowledge</members>
+        <name>PermissionSet</name>
+    </types>
+
+    <!-- Custom Applications -->
+    <types>
+        <members>digifiled_360</members>
+        <name>CustomApplication</name>
+    </types>
+
+    <!-- Profiles -->
+    <types>
+        <members>Admin</members>
+        <name>Profile</name>
+    </types>
+
+    <!-- Custom Tabs -->
+    <types>
+        <members>Dispatch_Board</members>
+        <members>Work_Order__c</members>
+        <members>Technician__c</members>
+        <members>Job_Schedule__c</members>
+        <members>Equipment__c</members>
+        <members>Parts_Inventory__c</members>
+        <members>Job_History__c</members>
+        <members>Maintenance_Alert__c</members>
+        <members>Maintenance_Recommendation__c</members>
+        <name>CustomTab</name>
+    </types>
+
+    <!-- FlexiPages -->
+    <types>
+        <members>Dispatch_Board</members>
+        <members>Work_Order_Record_Page</members>
+        <name>FlexiPage</name>
+    </types>
+
+    <!-- Layouts -->
+    <types>
+        <members>Work_Order__c-Work Order Layout</members>
+        <members>Technician__c-Technician Layout</members>
+        <members>Job_History__c-Job History Layout</members>
+        <members>Maintenance_Alert__c-Maintenance Alert Layout</members>
+        <members>Equipment__c-Equipment Layout</members>
+        <members>Parts_Inventory__c-Parts Inventory Layout</members>
+        <members>Job_Schedule__c-Job Schedule Layout</members>
+        <members>Maintenance_Recommendation__c-Maintenance Recommendation Layout</members>
+        <name>Layout</name>
+    </types>
+
+    <version>67.0</version>
+</Package>

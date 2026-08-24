@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ListView xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>All</fullName>
+    <columns>NAME</columns>
+    <columns>Equipment__c</columns>
+    <columns>Account__c</columns>
+    <columns>Maintenance_Type__c</columns>
+    <columns>Priority__c</columns>
+    <columns>Status__c</columns>
+    <columns>Risk_Score__c</columns>
+    <columns>Recommended_Action__c</columns>
+    <columns>Assigned_Technician__c</columns>
+    <filterScope>Everything</filterScope>
+    <label>All Recommendations</label>
+</ListView>

@@ -1,0 +1,219 @@
+<template>
+    <!-- Field360 Work Order Detail — Technician mobile view -->
+    <!-- Shows AI briefing, job details, troubleshooting input, completion form -->
+
+    <div class="f360-container">
+
+        <!-- Connectivity banner -->
+        <template if:false={isOnline}>
+            <div class="f360-offline-banner">
+                <lightning-icon icon-name="utility:offline" size="x-small"></lightning-icon>
+                <span>Offline — changes will sync when you reconnect</span>
+                <template if:true={queueCount}>
+                    <span class="f360-queue-badge">{queueCount} pending</span>
+                </template>
+            </div>
+        </template>
+
+        <!-- Loading state -->
+        <template if:true={isLoading}>
+            <div class="f360-loading">
+                <lightning-spinner alternative-text="Loading work order..." size="medium"></lightning-spinner>
+                <p>Loading work order...</p>
+            </div>
+        </template>
+
+        <template if:false={isLoading}>
+
+            <!-- Header -->
+            <div class="f360-header">
+                <div class="f360-header-left">
+                    <span class="f360-wo-number">{workOrder.Name}</span>
+                    <span class={priorityBadgeClass}>{workOrder.Priority__c}</span>
+                </div>
+                <span class={statusBadgeClass}>{workOrder.Status__c}</span>
+            </div>
+
+            <h1 class="f360-subject">{workOrder.Subject__c}</h1>
+            <template if:true={accountName}>
+                <p class="f360-account">{accountName}</p>
+            </template>
+            <p class="f360-site">{workOrder.Site_Address__c}</p>
+            <p class="f360-scheduled">Scheduled: {formattedScheduledDate}</p>
+
+            <!-- AI Pre-Job Briefing -->
+            <template if:true={workOrder.AI_Pre_Job_Briefing__c}>
+                <div class="f360-card f360-ai-card">
+                    <div class="f360-card-header">
+                        <lightning-icon icon-name="utility:einstein" size="small" class="f360-ai-icon"></lightning-icon>
+                        <span class="f360-card-title">AI Pre-Job Briefing</span>
+                        <template if:false={briefingExpanded}>
+                            <lightning-button-icon icon-name="utility:chevrondown"
+                                onclick={toggleBriefing} variant="bare" size="small">
+                            </lightning-button-icon>
+                        </template>
+                        <template if:true={briefingExpanded}>
+                            <lightning-button-icon icon-name="utility:chevronup"
+                                onclick={toggleBriefing} variant="bare" size="small">
+                            </lightning-button-icon>
+                        </template>
+                    </div>
+                    <template if:true={briefingExpanded}>
+                        <div class="f360-briefing-text">{workOrder.AI_Pre_Job_Briefing__c}</div>
+                    </template>
+                    <template if:false={briefingExpanded}>
+                        <p class="f360-briefing-preview">{briefingPreview}</p>
+                    </template>
+                </div>
+            </template>
+
+            <!-- Generate briefing if not yet generated -->
+            <template if:false={workOrder.AI_Pre_Job_Briefing__c}>
+                <div class="f360-card f360-ai-card f360-ai-empty">
+                    <lightning-icon icon-name="utility:einstein" size="small" class="f360-ai-icon"></lightning-icon>
+                    <span>AI briefing not yet generated</span>
+                    <lightning-button label="Generate Briefing" variant="brand-outline"
+                        onclick={generateBriefing} disabled={isGeneratingBriefing}>
+                    </lightning-button>
+                    <template if:true={isGeneratingBriefing}>
+                        <lightning-spinner size="small"></lightning-spinner>
+                    </template>
+                </div>
+            </template>
+
+            <!-- Job description -->
+            <div class="f360-card">
+                <h3 class="f360-card-title">Job Description</h3>
+                <p class="f360-description">{workOrder.Description__c}</p>
+                <template if:true={workOrder.Equipment_Type__c}>
+                    <p class="f360-equipment">
+                        Equipment: <strong>{workOrder.Equipment_Type__c}</strong>
+                        <template if:true={workOrder.Equipment_ID__c}>
+                            — ID: {workOrder.Equipment_ID__c}
+                        </template>
+                    </p>
+                </template>
+            </div>
+
+            <!-- Active job section — only when In Progress -->
+            <template if:true={isInProgress}>
+
+                <!-- Log time -->
+                <div class="f360-card">
+                    <h3 class="f360-card-title">Log Time</h3>
+                    <div class="f360-time-row">
+                        <lightning-input type="number" label="Hours worked" step="0.25"
+                            min="0" max="24" value={hoursWorked}
+                            onchange={handleHoursChange} class="f360-hours-input">
+                        </lightning-input>
+                        <lightning-button label={logTimeButtonLabel} variant="neutral"
+                            onclick={logTime} disabled={isLoggingTime}>
+                        </lightning-button>
+                    </div>
+                    <template if:true={timeLogged}>
+                        <p class="f360-time-logged">
+                            <lightning-icon icon-name="utility:check" size="x-small"></lightning-icon>
+                            {timeLoggedMessage}
+                        </p>
+                    </template>
+                </div>
+
+                <!-- Troubleshooting assistant -->
+                <div class="f360-card">
+                    <div class="f360-card-header">
+                        <lightning-icon icon-name="utility:einstein" size="small" class="f360-ai-icon"></lightning-icon>
+                        <h3 class="f360-card-title">Troubleshooting Assistant</h3>
+                    </div>
+                    <lightning-textarea label="Describe the problem" placeholder="e.g. compressor not starting after oil change"
+                        value={troubleshootQuery}
+                        onchange={handleTroubleshootChange}
+                        rows="3">
+                    </lightning-textarea>
+                    <lightning-button label="Get Guidance" variant="brand"
+                        onclick={getTroubleshootingGuidance}
+                        disabled={isTroubleshooting}
+                        class="f360-mt-sm">
+                    </lightning-button>
+                    <template if:true={isTroubleshooting}>
+                        <div class="f360-loading-inline">
+                            <lightning-spinner size="small"></lightning-spinner>
+                            <span>Searching knowledge base...</span>
+                        </div>
+                    </template>
+                    <template if:true={troubleshootResult}>
+                        <div class="f360-diagnosis-box">
+                            <template if:true={troubleshootResult.escalateToSenior}>
+                                <div class="f360-escalation-warning">
+                                    <lightning-icon icon-name="utility:warning" size="small"></lightning-icon>
+                                    <strong>Senior technician recommended for this fault</strong>
+                                </div>
+                            </template>
+                            <div class="f360-diagnosis-text">{troubleshootResult.diagnosisText}</div>
+                        </div>
+                    </template>
+                </div>
+
+                <!-- Technician notes -->
+                <div class="f360-card">
+                    <h3 class="f360-card-title">Technician Notes</h3>
+                    <lightning-textarea label="What did you find and fix?"
+                        placeholder="Describe the fault found, work done, and outcome..."
+                        value={technicianNotes}
+                        onchange={handleNotesChange}
+                        rows="6">
+                    </lightning-textarea>
+                </div>
+
+                <!-- Parts used -->
+                <div class="f360-card">
+                    <h3 class="f360-card-title">Parts Used</h3>
+                    <lightning-textarea label="Parts and materials"
+                        placeholder="e.g. Capacitor 45MFD, Compressor oil 5L, Air filter 20x25"
+                        value={partsUsed}
+                        onchange={handlePartsChange}
+                        rows="3">
+                    </lightning-textarea>
+                </div>
+
+                <!-- Complete job -->
+                <div class="f360-complete-section">
+                    <lightning-button label={completeButtonLabel}
+                        variant="success"
+                        onclick={handleCompleteJob}
+                        disabled={isCompleting}
+                        class="f360-complete-btn">
+                    </lightning-button>
+                    <template if:true={isCompleting}>
+                        <lightning-spinner size="small"></lightning-spinner>
+                    </template>
+                    <template if:false={isOnline}>
+                        <p class="f360-offline-note">
+                            This completion will be queued and synced to Salesforce when you reconnect.
+                        </p>
+                    </template>
+                </div>
+            </template>
+
+            <!-- Completed state — show AI service report -->
+            <template if:true={isCompleted}>
+                <div class="f360-card f360-complete-card">
+                    <lightning-icon icon-name="utility:success" size="small" class="f360-success-icon"></lightning-icon>
+                    <h3 class="f360-card-title">Job Completed</h3>
+                    <template if:true={workOrder.AI_Service_Report__c}>
+                        <p class="f360-report-ready">Service report generated and saved.</p>
+                        <lightning-button label="View Report" variant="neutral"
+                            onclick={viewServiceReport}>
+                        </lightning-button>
+                    </template>
+                    <template if:false={workOrder.AI_Service_Report__c}>
+                        <lightning-button label="Generate Service Report" variant="brand"
+                            onclick={generateServiceReport}
+                            disabled={isGeneratingReport}>
+                        </lightning-button>
+                    </template>
+                </div>
+            </template>
+
+        </template>
+    </div>
+</template>

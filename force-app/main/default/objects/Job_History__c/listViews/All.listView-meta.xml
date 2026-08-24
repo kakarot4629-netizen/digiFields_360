@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ListView xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>All</fullName>
+    <columns>NAME</columns>
+    <columns>Work_Order__c</columns>
+    <columns>Equipment_ID__c</columns>
+    <columns>Equipment_Type__c</columns>
+    <columns>Technician__c</columns>
+    <columns>Account__c</columns>
+    <columns>Job_Date__c</columns>
+    <columns>First_Time_Fix__c</columns>
+    <columns>Duration_Minutes__c</columns>
+    <filterScope>Everything</filterScope>
+    <label>All Job History</label>
+</ListView>

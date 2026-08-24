@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+    <apiVersion>66.0</apiVersion>
+    <actionCalls>
+        <name>Generate_Service_Report</name>
+        <label>Generate AI Service Report</label>
+        <locationX>176</locationX><locationY>134</locationY>
+        <actionName>F360_ServiceReportAction</actionName>
+        <actionType>apex</actionType>
+        <inputParameters>
+            <name>workOrderId</name>
+            <value><elementReference>$Record.Id</elementReference></value>
+        </inputParameters>
+        <inputParameters>
+            <name>sendToCustomer</name>
+            <value><booleanValue>false</booleanValue></value>
+        </inputParameters>
+        <outputParameters>
+            <assignToReference>reportText</assignToReference>
+            <name>reportText</name>
+        </outputParameters>
+    </actionCalls>
+    <description>When a Field360 Work Order status changes to Completed, triggers the AI service report generation.</description>
+    <interviewLabel>Field360 — Work Order Completed: Generate Service Report {!$Flow.CurrentDateTime}</interviewLabel>
+    <label>Field360 — Work Order Completed: Generate Service Report</label>
+    <processType>AutoLaunchedFlow</processType>
+    <start>
+        <locationX>176</locationX><locationY>50</locationY>
+        <object>Work_Order__c</object>
+        <recordTriggerType>Update</recordTriggerType>
+        <triggerType>RecordAfterSave</triggerType>
+        <connector>
+            <targetReference>Generate_Service_Report</targetReference>
+        </connector>
+    </start>
+    <status>Active</status>
+    <variables>
+        <name>reportText</name>
+        <dataType>String</dataType>
+        <isCollection>false</isCollection>
+        <isInput>false</isInput>
+        <isOutput>false</isOutput>
+    </variables>
+</Flow>

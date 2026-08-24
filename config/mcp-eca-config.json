@@ -1,0 +1,36 @@
+{
+  "appName": "digiField360 Mobile App",
+  "apiName": "digiField360_Mobile",
+  "contactEmail": "admin@digifield360.com",
+  "oauthSettings": {
+    "enableOAuth": true,
+    "callbackUrl": "field360://callback",
+    "scopes": [
+      "api",
+      "refresh_token",
+      "offline_access"
+    ],
+    "requirePkce": true,
+    "permittedUsers": "AdminApprovedUsersOnly",
+    "ipRelaxation": "RelaxIP"
+  },
+  "mcpServerConfig": {
+    "mcpVersion": "v1",
+    "endpointPath": "/services/mcp/v1",
+    "supportedTools": [
+      "sobject_query",
+      "sobject_search",
+      "sobject_update",
+      "sobject_create",
+      "sobject_describe"
+    ],
+    "targetObjects": [
+      "Work_Order__c",
+      "Technician__c",
+      "Job_History__c",
+      "Maintenance_Alert__c",
+      "Knowledge__kav",
+      "ContentVersion"
+    ]
+  }
+}

@@ -1,0 +1,686 @@
+{
+  "info": {
+    "_postman_id": "8f3b2d10-4c91-41e2-b918-digifield360mobile",
+    "name": "digiField360 - Mobile Application & MCP APIs",
+    "description": "Comprehensive Postman Collection for testing the digiField360 Mobile Application Backend REST APIs and MCP JSON-RPC Gateway.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "authToken",
+      "value": "mock_jwt_token_technician_vikram_sharma",
+      "type": "string"
+    },
+    {
+      "key": "workOrderId",
+      "value": "WO-001001",
+      "type": "string"
+    },
+    {
+      "key": "technicianId",
+      "value": "TECH-001",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Health & Discovery",
+      "item": [
+        {
+          "name": "1.1 GET Health & API Discovery",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["health"]
+            },
+            "description": "Check if API server is running and discover all available endpoints."
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Authentication & Profile",
+      "item": [
+        {
+          "name": "2.1 POST Technician Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "x-mock-mode", "value": "true" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"vikram.sharma@digifield360.com\",\n  \"password\": \"Password123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "login"]
+            },
+            "description": "Authenticate technician and obtain Bearer token."
+          }
+        },
+        {
+          "name": "2.2 POST Refresh Token",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "x-mock-mode", "value": "true" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"sample_refresh_token_uuid_88392\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/refresh",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "refresh"]
+            },
+            "description": "Silent token refresh for mobile background session."
+          }
+        },
+        {
+          "name": "2.3 GET Technician Profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" },
+              { "key": "x-mock-mode", "value": "true" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/technician/profile",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "technician", "profile"]
+            },
+            "description": "Fetch logged-in technician profile, skills, and fix rates."
+          }
+        },
+        {
+          "name": "2.4 GET Top 10 Customer Accounts",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" },
+              { "key": "x-mock-mode", "value": "true" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/accounts?limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "accounts"],
+              "query": [
+                { "key": "limit", "value": "10" }
+              ]
+            },
+            "description": "Fetch top 10 enterprise customer accounts dynamically by annual revenue and size."
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Shift Sync & Work Orders",
+      "item": [
+        {
+          "name": "3.1 GET Morning Pre-Load Sync (Shift Start)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" },
+              { "key": "x-mock-mode", "value": "true" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/sync/morning-payload?technicianId={{technicianId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "sync", "morning-payload"],
+              "query": [
+                { "key": "technicianId", "value": "{{technicianId}}" }
+              ]
+            },
+            "description": "High performance pre-load batch downloading all today's jobs, equipment history, and troubleshooting guides into mobile local storage."
+          }
+        },
+        {
+          "name": "3.2 GET List Work Orders",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" },
+              { "key": "x-mock-mode", "value": "true" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/work-orders?status=Assigned",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "work-orders"],
+              "query": [
+                { "key": "status", "value": "Assigned" }
+              ]
+            },
+            "description": "Get assigned work orders with optional status filter."
+          }
+        },
+        {
+          "name": "3.3 GET Work Order Details",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" },
+              { "key": "x-mock-mode", "value": "true" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/work-orders/{{workOrderId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "work-orders", "{{workOrderId}}"]
+            },
+            "description": "Get full details of a work order including equipment job history."
+          }
+        },
+        {
+          "name": "3.4 PATCH Update Work Order Status",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{authToken}}" },
+              { "key": "x-mock-mode", "value": "true" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"In Progress\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/work-orders/{{workOrderId}}/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "work-orders", "{{workOrderId}}", "status"]
+            },
+            "description": "Change work order status (e.g. In Progress, En Route, On Site)."
+          }
+        },
+        {
+          "name": "3.5 POST Log Time Worked",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{authToken}}" },
+              { "key": "x-mock-mode", "value": "true" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"hoursWorked\": 1.5,\n  \"notes\": \"Diagnostic inspection and sensor replacement\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/work-orders/{{workOrderId}}/time-log",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "work-orders", "{{workOrderId}}", "time-log"]
+            },
+            "description": "Log hours and minutes worked on a job."
+          }
+        },
+        {
+          "name": "3.6 POST Complete Job & Generate Report",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{authToken}}" },
+              { "key": "x-mock-mode", "value": "true" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"technicianNotes\": \"Replaced faulty thermal sensor TS-40 and flushed coolant line. Ran 30 min load test at 90% capacity. Temperature remained stable at 81C.\",\n  \"partsUsed\": \"Thermal Sensor TS-40 (1x), Coolant Flush Kit 5L\",\n  \"timeLoggedMinutes\": 90,\n  \"photosBase64\": [\n    \"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEASABIAAD...\"\n  ],\n  \"sendToCustomer\": false\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/work-orders/{{workOrderId}}/complete",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "work-orders", "{{workOrderId}}", "complete"]
+            },
+            "description": "Mark work order as Completed with notes, parts used, base64 photos, and trigger AI service report generation."
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. AI Mobile Services & Dynamic Query",
+      "item": [
+        {
+          "name": "4.1 POST AI Query - Top 10 Accounts in Pune",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{authToken}}" },
+              { "key": "x-mock-mode", "value": "true" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"prompt\": \"Show me top 10 accounts with revenue in Pune\",\n  \"maxRecords\": 10\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/ai/query",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "ai", "query"]
+            },
+            "description": "Dynamic Query: Automatically resolves target SObject = Account, selects revenue & city fields, applies WHERE BillingCity = 'Pune' ORDER BY AnnualRevenue DESC, and returns records + AI summary."
+          }
+        },
+        {
+          "name": "4.2 POST AI Query - Biotechnology Companies",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{authToken}}" },
+              { "key": "x-mock-mode", "value": "true" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"prompt\": \"List all biotechnology companies\",\n  \"maxRecords\": 10\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/ai/query",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "ai", "query"]
+            },
+            "description": "Dynamic Query: Automatically resolves target SObject = Account, applies WHERE Industry = 'Biotechnology', and returns records + AI summary."
+          }
+        },
+        {
+          "name": "4.3 POST AI Query - HVAC Technicians in Mumbai",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{authToken}}" },
+              { "key": "x-mock-mode", "value": "true" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"prompt\": \"Find technicians skilled in HVAC in Mumbai\",\n  \"maxRecords\": 5\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/ai/query",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "ai", "query"]
+            },
+            "description": "Dynamic Query: Automatically resolves target SObject = Technician__c, filters Skills__c LIKE '%HVAC%' AND City__c = 'Mumbai', and returns records + AI summary."
+          }
+        },
+        {
+          "name": "4.4 POST AI Query - High Priority Work Orders",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{authToken}}" },
+              { "key": "x-mock-mode", "value": "true" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"prompt\": \"Show high priority work orders\",\n  \"maxRecords\": 5\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/ai/query",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "ai", "query"]
+            },
+            "description": "Dynamic Query: Automatically resolves target SObject = Work_Order__c, filters Priority__c IN ('Critical', 'High'), and returns records + AI summary."
+          }
+        },
+        {
+          "name": "4.5 POST AI Query - Critical Open Alerts on Generators",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{authToken}}" },
+              { "key": "x-mock-mode", "value": "true" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"prompt\": \"Show all critical open alerts on generators\",\n  \"maxRecords\": 5\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/ai/query",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "ai", "query"]
+            },
+            "description": "Dynamic Query: Automatically resolves target SObject = Maintenance_Alert__c, filters Severity__c = 'Critical' AND Status__c = 'Open', and returns records + AI summary."
+          }
+        },
+        {
+          "name": "4.6 POST Direct Dynamic SOQL Query",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{authToken}}" },
+              { "key": "x-mock-mode", "value": "true" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"soql\": \"SELECT Id, Name, Subject__c, Priority__c FROM Work_Order__c WHERE Priority__c = 'Critical' LIMIT 5\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/query/soql",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "query", "soql"]
+            },
+            "description": "Directly execute any raw SOQL query against Salesforce or mock schema."
+          }
+        },
+        {
+          "name": "4.7 POST AI Troubleshoot Guidance",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{authToken}}" },
+              { "key": "x-mock-mode", "value": "true" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"problemDescription\": \"generator high temperature alarm E-402 tripping breaker under load\",\n  \"equipmentType\": \"Generator\",\n  \"languageCode\": \"en\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/ai/troubleshoot",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "ai", "troubleshoot"]
+            },
+            "description": "Knowledge search & AI diagnostic checklist generation."
+          }
+        },
+        {
+          "name": "4.8 POST AI Pre-Job Briefing",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{authToken}}" },
+              { "key": "x-mock-mode", "value": "true" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"workOrderId\": \"{{workOrderId}}\",\n  \"languageCode\": \"en\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/ai/pre-job-briefing",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "ai", "pre-job-briefing"]
+            },
+            "description": "Generate or retrieve AI pre-job briefing for the technician."
+          }
+        },
+        {
+          "name": "4.9 POST AI Service Report Generation",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{authToken}}" },
+              { "key": "x-mock-mode", "value": "true" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"workOrderId\": \"{{workOrderId}}\",\n  \"technicianNotes\": \"Replaced thermal fuse and tested motor output.\",\n  \"partsUsed\": \"Thermal Fuse 15A\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/ai/service-report",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "ai", "service-report"]
+            },
+            "description": "Generate AI service report from job notes."
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Offline Sync & Telemetry",
+      "item": [
+        {
+          "name": "5.1 POST Replay Offline Queue (Batch Sync)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{authToken}}" },
+              { "key": "x-mock-mode", "value": "true" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"technicianId\": \"{{technicianId}}\",\n  \"mutations\": [\n    {\n      \"queueId\": \"UUID-OFFLINE-001\",\n      \"action\": \"status_update\",\n      \"sobjectName\": \"Work_Order__c\",\n      \"recordId\": \"WO-001001\",\n      \"fields\": { \"Status__c\": \"In Progress\" },\n      \"queuedAt\": \"2026-08-21T08:30:00Z\"\n    },\n    {\n      \"queueId\": \"UUID-OFFLINE-002\",\n      \"action\": \"time_log\",\n      \"sobjectName\": \"Work_Order__c\",\n      \"recordId\": \"WO-001001\",\n      \"fields\": { \"Time_Logged_Minutes__c\": 90 },\n      \"queuedAt\": \"2026-08-21T09:30:00Z\"\n    },\n    {\n      \"queueId\": \"UUID-OFFLINE-003\",\n      \"action\": \"complete\",\n      \"sobjectName\": \"Work_Order__c\",\n      \"recordId\": \"WO-001001\",\n      \"fields\": {\n        \"Status__c\": \"Completed\",\n        \"Technician_Notes__c\": \"Replaced sensor offline\",\n        \"Completed_Date__c\": \"2026-08-21T10:00:00Z\"\n      },\n      \"queuedAt\": \"2026-08-21T10:00:00Z\"\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/sync/offline-queue",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "sync", "offline-queue"]
+            },
+            "description": "Replay an array of mutations queued on device while offline."
+          }
+        },
+        {
+          "name": "5.2 POST Update GPS Location",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{authToken}}" },
+              { "key": "x-mock-mode", "value": "true" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"technicianId\": \"{{technicianId}}\",\n  \"latitude\": 18.52043,\n  \"longitude\": 73.856743,\n  \"timestamp\": \"2026-08-21T10:30:00.000Z\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/technician/location",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "technician", "location"]
+            },
+            "description": "Update technician GPS coordinates for smart dispatch tracking."
+          }
+        },
+        {
+          "name": "5.3 GET Describe SObject Schema",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" },
+              { "key": "x-mock-mode", "value": "true" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/schema/Work_Order__c",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "schema", "Work_Order__c"]
+            },
+            "description": "Fetch schema metadata for offline mobile form validation."
+          }
+        }
+      ]
+    },
+    {
+      "name": "6. MCP JSON-RPC 2.0 Gateway",
+      "item": [
+        {
+          "name": "6.1 GET MCP Server Status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/mcp",
+              "host": ["{{baseUrl}}"],
+              "path": ["mcp"]
+            },
+            "description": "Check MCP server status and endpoint."
+          }
+        },
+        {
+          "name": "6.2 POST MCP tools/list",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": 1,\n  \"method\": \"tools/list\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/mcp",
+              "host": ["{{baseUrl}}"],
+              "path": ["mcp"]
+            },
+            "description": "List all 5 MCP tools supported by the server."
+          }
+        },
+        {
+          "name": "6.3 POST MCP tools/call - sobject_query",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "x-mock-mode", "value": "true" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": 2,\n  \"method\": \"tools/call\",\n  \"params\": {\n    \"name\": \"sobject_query\",\n    \"arguments\": {\n      \"soql\": \"SELECT Id, Subject__c, Status__c, Priority__c FROM Work_Order__c LIMIT 5\"\n    }\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/mcp",
+              "host": ["{{baseUrl}}"],
+              "path": ["mcp"]
+            },
+            "description": "Execute a SOQL query via MCP tool."
+          }
+        },
+        {
+          "name": "6.4 POST MCP tools/call - sobject_search",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "x-mock-mode", "value": "true" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": 3,\n  \"method\": \"tools/call\",\n  \"params\": {\n    \"name\": \"sobject_search\",\n    \"arguments\": {\n      \"searchTerm\": \"generator overheating diagnostics\",\n      \"sobjectName\": \"Knowledge__kav\"\n    }\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/mcp",
+              "host": ["{{baseUrl}}"],
+              "path": ["mcp"]
+            },
+            "description": "Search Knowledge base via MCP tool."
+          }
+        },
+        {
+          "name": "6.5 POST MCP tools/call - sobject_update",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "x-mock-mode", "value": "true" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": 4,\n  \"method\": \"tools/call\",\n  \"params\": {\n    \"name\": \"sobject_update\",\n    \"arguments\": {\n      \"sobjectName\": \"Work_Order__c\",\n      \"recordId\": \"WO-001001\",\n      \"fields\": {\n        \"Status__c\": \"Completed\",\n        \"Technician_Notes__c\": \"Repaired motor bearings\"\n      }\n    }\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/mcp",
+              "host": ["{{baseUrl}}"],
+              "path": ["mcp"]
+            },
+            "description": "Update record fields via MCP tool."
+          }
+        },
+        {
+          "name": "6.6 POST MCP tools/call - sobject_create",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "x-mock-mode", "value": "true" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": 5,\n  \"method\": \"tools/call\",\n  \"params\": {\n    \"name\": \"sobject_create\",\n    \"arguments\": {\n      \"sobjectName\": \"Job_History__c\",\n      \"fields\": {\n        \"Work_Order__c\": \"WO-001001\",\n        \"Equipment_ID__c\": \"EQ-GEN-9920\",\n        \"Resolution_Notes__c\": \"Replaced bearings\"\n      }\n    }\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/mcp",
+              "host": ["{{baseUrl}}"],
+              "path": ["mcp"]
+            },
+            "description": "Create a new record via MCP tool."
+          }
+        },
+        {
+          "name": "6.7 POST MCP tools/call - sobject_describe",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "x-mock-mode", "value": "true" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": 6,\n  \"method\": \"tools/call\",\n  \"params\": {\n    \"name\": \"sobject_describe\",\n    \"arguments\": {\n      \"sobjectName\": \"Work_Order__c\"\n    }\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/mcp",
+              "host": ["{{baseUrl}}"],
+              "path": ["mcp"]
+            },
+            "description": "Describe SObject schema via MCP tool."
+          }
+        },
+        {
+          "name": "6.8 POST MCP tools/call - get_account_summary",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "x-mock-mode", "value": "true" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": 7,\n  \"method\": \"tools/call\",\n  \"params\": {\n    \"name\": \"get_account_summary\",\n    \"arguments\": {\n      \"limit\": 10\n    }\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/mcp",
+              "host": ["{{baseUrl}}"],
+              "path": ["mcp"]
+            },
+            "description": "Query top 10 Accounts via MCP tool."
+          }
+        },
+        {
+          "name": "6.9 POST MCP tools/call - execute_natural_language_query",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "x-mock-mode", "value": "true" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": 8,\n  \"method\": \"tools/call\",\n  \"params\": {\n    \"name\": \"execute_natural_language_query\",\n    \"arguments\": {\n      \"prompt\": \"Show me all critical open work orders\",\n      \"maxRecords\": 5\n    }\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/mcp",
+              "host": ["{{baseUrl}}"],
+              "path": ["mcp"]
+            },
+            "description": "Execute any natural language prompt via MCP tool dynamically."
+          }
+        }
+      ]
+    }
+  ]
+}

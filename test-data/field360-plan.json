@@ -1,0 +1,160 @@
+[
+  {
+    "sobjectType": "Account",
+    "externalId": "Name",
+    "records": [
+      {
+        "attributes": {
+          "type": "Account",
+          "referenceId": "AccountRef1"
+        },
+        "Name": "Tata Motors — Pune"
+      },
+      {
+        "attributes": {
+          "type": "Account",
+          "referenceId": "AccountRef2"
+        },
+        "Name": "Mahindra Electric — Nashik"
+      }
+    ]
+  },
+  {
+    "sobjectType": "Work_Order__c",
+    "externalId": "Offline_Queue_ID__c",
+    "records": [
+      {
+        "attributes": {
+          "type": "Work_Order__c",
+          "referenceId": "WORef1"
+        },
+        "Subject__c": "HVAC Annual Service — Block B",
+        "Status__c": "New",
+        "Priority__c": "High",
+        "Equipment_ID__c": "HVAC-001",
+        "Equipment_Type__c": "HVAC",
+        "Site_Address__c": "Pimpri-Chinchwad MIDC, Pune - 411018",
+        "Description__c": "Annual preventive service for 3 HVAC units on floor 2. Customer reported reduced cooling in Unit 2.",
+        "Account__r": {
+          "Name": "Tata Motors — Pune"
+        },
+        "Offline_Queue_ID__c": "TEST-WO-001"
+      },
+      {
+        "attributes": {
+          "type": "Work_Order__c",
+          "referenceId": "WORef2"
+        },
+        "Subject__c": "Generator Inspection — DG Set 1",
+        "Status__c": "New",
+        "Priority__c": "Medium",
+        "Equipment_ID__c": "GEN-002",
+        "Equipment_Type__c": "Generator",
+        "Site_Address__c": "Bhosari MIDC, Pune - 411026",
+        "Description__c": "Quarterly inspection of 500 KVA DG set. Last service 90 days ago.",
+        "Account__r": {
+          "Name": "Mahindra Electric — Nashik"
+        },
+        "Offline_Queue_ID__c": "TEST-WO-002"
+      },
+      {
+        "attributes": {
+          "type": "Work_Order__c",
+          "referenceId": "WORef3"
+        },
+        "Subject__c": "Compressor Breakdown — Cold Storage",
+        "Status__c": "New",
+        "Priority__c": "Critical",
+        "Equipment_ID__c": "COMP-003",
+        "Equipment_Type__c": "Compressor",
+        "Site_Address__c": "Hadapsar Industrial Estate, Pune - 411013",
+        "Description__c": "Cold storage compressor not starting. Products at risk. Immediate attention required.",
+        "Account__r": {
+          "Name": "Tata Motors — Pune"
+        },
+        "Offline_Queue_ID__c": "TEST-WO-003"
+      }
+    ]
+  },
+  {
+    "sobjectType": "Job_History__c",
+    "externalId": "Equipment_ID__c",
+    "records": [
+      {
+        "attributes": {
+          "type": "Job_History__c",
+          "referenceId": "JHRef1"
+        },
+        "Equipment_ID__c": "HVAC-001",
+        "Equipment_Type__c": "HVAC",
+        "Fault_Description__c": "Refrigerant leak in Unit 2 — reduced cooling",
+        "Resolution__c": "Located and sealed refrigerant leak. Topped up R-32 refrigerant 500g. Replaced Schrader valve.",
+        "Parts_Used__c": "R-32 refrigerant 500g, Schrader valve 1/4 inch",
+        "Job_Date__c": "2026-05-15",
+        "First_Time_Fix__c": true,
+        "Duration_Minutes__c": 120,
+        "Root_Cause__c": "Wear and Tear"
+      },
+      {
+        "attributes": {
+          "type": "Job_History__c",
+          "referenceId": "JHRef2"
+        },
+        "Equipment_ID__c": "HVAC-001",
+        "Equipment_Type__c": "HVAC",
+        "Fault_Description__c": "Compressor motor noise — vibration in Unit 1",
+        "Resolution__c": "Replaced worn compressor motor bearings. Balanced fan assembly.",
+        "Parts_Used__c": "Motor bearing 6205-2RS, Fan balancing kit",
+        "Job_Date__c": "2026-04-10",
+        "First_Time_Fix__c": true,
+        "Duration_Minutes__c": 180,
+        "Root_Cause__c": "Wear and Tear"
+      },
+      {
+        "attributes": {
+          "type": "Job_History__c",
+          "referenceId": "JHRef3"
+        },
+        "Equipment_ID__c": "HVAC-001",
+        "Equipment_Type__c": "HVAC",
+        "Fault_Description__c": "Air filter clogging — reduced airflow",
+        "Resolution__c": "Replaced all 3 air filters. Cleaned evaporator coils. Flushed drain lines.",
+        "Parts_Used__c": "Air filter 20x25x1 (3 units), Coil cleaning solution 500ml",
+        "Job_Date__c": "2026-03-05",
+        "First_Time_Fix__c": true,
+        "Duration_Minutes__c": 90,
+        "Root_Cause__c": "Improper Maintenance"
+      },
+      {
+        "attributes": {
+          "type": "Job_History__c",
+          "referenceId": "JHRef4"
+        },
+        "Equipment_ID__c": "GEN-002",
+        "Equipment_Type__c": "Generator",
+        "Fault_Description__c": "Battery not charging — generator startup delay",
+        "Resolution__c": "Replaced 12V AGM battery. Checked alternator output — within spec.",
+        "Parts_Used__c": "12V 100Ah AGM battery",
+        "Job_Date__c": "2026-06-01",
+        "First_Time_Fix__c": true,
+        "Duration_Minutes__c": 75,
+        "Root_Cause__c": "Wear and Tear"
+      },
+      {
+        "attributes": {
+          "type": "Job_History__c",
+          "referenceId": "JHRef5"
+        },
+        "Equipment_ID__c": "HVAC-001",
+        "Equipment_Type__c": "HVAC",
+        "Fault_Description__c": "Thermostat malfunction — unit not cycling off",
+        "Resolution__c": "Replaced digital thermostat unit. Reconfigured temperature set-points.",
+        "Parts_Used__c": "Digital thermostat Honeywell T6 Pro",
+        "Job_Date__c": "2026-02-20",
+        "First_Time_Fix__c": false,
+        "Duration_Minutes__c": 150,
+        "Root_Cause__c": "Manufacturing Defect"
+      }
+    ]
+  }
+]
