@@ -19,10 +19,9 @@ Welcome! This package contains everything you need to build and integrate the **
 ## 🚀 Quick Start Guide
 
 ### 1. Backend Server Base URL
-The backend API server runs on port `3000`:
-- **iOS Simulator & Web**: `http://localhost:3000`
-- **Android Emulator**: `http://10.0.2.2:3000`
-- **Physical Device (Same WiFi)**: `http://<SERVER_IP_ADDRESS>:3000`
+- **24/7 Live Cloud API Server (Primary)**: `https://digifields-360.onrender.com`
+- **Local Dev (iOS Simulator & Web)**: `http://localhost:3000`
+- **Local Dev (Android Emulator)**: `http://10.0.2.2:3000`
 
 ### 2. Testing with Postman
 1. Open **Postman**.
