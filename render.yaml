@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: digifield360-api
+    env: node
+    plan: free
+    buildCommand: npm install
+    startCommand: node scripts/mcp-server.js
+    envVars:
+      - key: PORT
+        value: 10000
