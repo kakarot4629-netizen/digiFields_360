@@ -11,6 +11,7 @@ Welcome! This package contains everything you need to build and integrate the **
 | 📁 **`digiField360_Mobile_APIs.postman_collection.json`** | Ready-to-import Postman Collection with all 20+ endpoints organized with sample payloads. |
 | 📖 **`MOBILE_DEVELOPER_API_DOCS.md`** | Comprehensive API reference documentation with request/response schemas and HTTP status codes. |
 | 📱 **`MOBILE_APP_SERVER_SPEC.md`** | Full functional specifications, screen architecture, offline queue strategy, and data flows. |
+| 🌐 **`MCP_SERVER_HOSTING_AND_ARCHITECTURE_SPEC.md`** | Full architectural answer to AWS requirement, server execution details, and 3 hosting options. |
 | 🛠️ **`OfflineMCPGateway.js`** | Ready-to-use JavaScript/TypeScript client gateway helper for offline caching, queueing, and sync. |
 
 ---
