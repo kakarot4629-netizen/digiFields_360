@@ -163,7 +163,21 @@
               ]
             },
             "description": "High performance pre-load batch downloading all today's jobs, equipment history, and troubleshooting guides into mobile local storage."
-          }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.success && jsonData.workOrders && jsonData.workOrders.length > 0) {",
+                  "    pm.collectionVariables.set('workOrderId', jsonData.workOrders[0].Id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
         },
         {
           "name": "3.2 GET List Work Orders",
@@ -182,7 +196,21 @@
               ]
             },
             "description": "Get assigned work orders with optional status filter."
-          }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.success && jsonData.data && jsonData.data.length > 0) {",
+                  "    pm.collectionVariables.set('workOrderId', jsonData.data[0].Id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
         },
         {
           "name": "3.3 GET Work Order Details",

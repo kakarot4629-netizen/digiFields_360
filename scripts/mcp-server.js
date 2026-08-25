@@ -117,44 +117,78 @@ function hashString(str) {
   return hash;
 }
 
-const MOCK_WORK_ORDERS = [
-  {
-    Id: 'WO-001001',
-    Name: 'WO-001001',
-    Subject__c: 'Emergency Generator Overheating',
-    Description__c: 'Primary backup generator overheating within 15 minutes of load test. Alarm code E-402.',
-    Status__c: 'Assigned',
-    Priority__c: 'Critical',
-    Equipment_Type__c: 'Generator',
-    Equipment_ID__c: 'EQ-GEN-9920',
-    Site_Address__c: 'TechPark Sector 4, Hinjawadi Phase 2, Pune',
-    Scheduled_Date__c: new Date(Date.now() + 3600000).toISOString(),
-    AccountName: 'Serum BioTech Campus',
-    AI_Pre_Job_Briefing__c: 'ALERT: Generator EQ-GEN-9920 overheated 3 weeks ago due to low coolant pressure. Required parts: Coolant Flush Kit, Temp Sensor TS-40. Recommended safety: High Voltage Lockout.',
-    AI_Service_Report__c: null,
-    Technician_Notes__c: '',
-    Parts_Used__c: '',
-    Time_Logged_Minutes__c: 0
-  },
-  {
-    Id: 'WO-001002',
-    Name: 'WO-001002',
-    Subject__c: 'HVAC Chiller Unit Routine Servicing',
-    Description__c: 'Scheduled quarterly preventive inspection, filter replacement, and refrigerant pressure test.',
-    Status__c: 'In Progress',
-    Priority__c: 'Medium',
-    Equipment_Type__c: 'HVAC',
-    Equipment_ID__c: 'EQ-HVAC-1044',
-    Site_Address__c: 'DLF CyberCity Tower B, Pune',
-    Scheduled_Date__c: new Date(Date.now() + 7200000).toISOString(),
-    AccountName: 'DLF Commercial Properties',
-    AI_Pre_Job_Briefing__c: 'Chiller operates at 85% capacity. Last service replaced air filters and lubricated blower bearings. Verify Freon R-410A pressure.',
-    AI_Service_Report__c: null,
-    Technician_Notes__c: 'Inspected coils and replaced pre-filters.',
-    Parts_Used__c: 'Air Filter 24x24 (4x)',
-    Time_Logged_Minutes__c: 45
-  }
-];
+function getWorkOrdersForTechnician(tech) {
+  const techId = tech ? (tech.id || 'TECH-001') : 'TECH-001';
+  const techName = tech ? (tech.name || 'Field Technician') : 'Field Technician';
+  const primarySkill = (tech && tech.skills && tech.skills[0]) ? tech.skills[0] : 'Generator';
+  const secondarySkill = (tech && tech.skills && tech.skills[1]) ? tech.skills[1] : 'HVAC';
+  const city = (tech && tech.city) ? tech.city : (techId === 'TECH-002' ? 'Mumbai' : (techId === 'TECH-003' ? 'Bengaluru' : 'Pune'));
+
+  const numMatch = techId.match(/\d+/);
+  const numPart = numMatch ? numMatch[0].padStart(3, '0') : '001';
+
+  return [
+    {
+      Id: `WO-${numPart}001`,
+      Name: `WO-${numPart}001`,
+      Subject__c: `Emergency ${primarySkill} Diagnostics & Thermal Repair`,
+      Description__c: `Critical issue on primary ${primarySkill.toLowerCase()} asset. Thermal overload alarm code E-402 triggered during load test.`,
+      Status__c: 'Assigned',
+      Priority__c: 'Critical',
+      Equipment_Type__c: primarySkill,
+      Equipment_ID__c: `EQ-${primarySkill.substring(0, 3).toUpperCase()}-${numPart}1`,
+      Site_Address__c: `${techName} Priority Zone, TechPark Sector 4, ${city}`,
+      Scheduled_Date__c: new Date(Date.now() + 3600000).toISOString(),
+      AccountName: `${city} Industrial Tech Campus`,
+      AI_Pre_Job_Briefing__c: `ALERT for ${techName}: Asset EQ-${primarySkill.substring(0, 3).toUpperCase()}-${numPart}1 overheated 3 weeks ago due to low coolant pressure. Required parts: ${primarySkill} Service Kit, Temp Sensor TS-40. Recommended safety: High Voltage Lockout.`,
+      AI_Service_Report__c: null,
+      Technician_Notes__c: '',
+      Parts_Used__c: '',
+      Time_Logged_Minutes__c: 0,
+      Assigned_Technician__c: techName
+    },
+    {
+      Id: `WO-${numPart}002`,
+      Name: `WO-${numPart}002`,
+      Subject__c: `Preventive ${secondarySkill} Servicing & Pressure Test`,
+      Description__c: `Scheduled quarterly preventive inspection, filter check, and vibration monitoring for ${secondarySkill.toLowerCase()} system.`,
+      Status__c: 'In Progress',
+      Priority__c: 'Medium',
+      Equipment_Type__c: secondarySkill,
+      Equipment_ID__c: `EQ-${secondarySkill.substring(0, 3).toUpperCase()}-${numPart}2`,
+      Site_Address__c: `DLF CyberCity Tower B, Financial District, ${city}`,
+      Scheduled_Date__c: new Date(Date.now() + 7200000).toISOString(),
+      AccountName: `${city} Commercial Properties`,
+      AI_Pre_Job_Briefing__c: `${secondarySkill} operates at 88% capacity. Last service replaced air filters and lubricated blower bearings. Verify pressure levels.`,
+      AI_Service_Report__c: null,
+      Technician_Notes__c: 'Inspected coils and replaced pre-filters.',
+      Parts_Used__c: 'Air Filter 24x24 (4x)',
+      Time_Logged_Minutes__c: 45,
+      Assigned_Technician__c: techName
+    },
+    {
+      Id: `WO-${numPart}003`,
+      Name: `WO-${numPart}003`,
+      Subject__c: `Routine Safety Audit & Sensor Calibration`,
+      Description__c: `Annual compliance safety inspection, sensor calibration, and telemetry signal check for ${primarySkill.toLowerCase()} installation.`,
+      Status__c: 'Assigned',
+      Priority__c: 'Low',
+      Equipment_Type__c: primarySkill,
+      Equipment_ID__c: `EQ-${primarySkill.substring(0, 3).toUpperCase()}-${numPart}3`,
+      Site_Address__c: `Express Logistics Hub, North Gate, ${city}`,
+      Scheduled_Date__c: new Date(Date.now() + 14400000).toISOString(),
+      AccountName: `${city} Enterprise Logistics`,
+      AI_Pre_Job_Briefing__c: `Routine annual audit. All historical vibration and thermal metrics are normal.`,
+      AI_Service_Report__c: null,
+      Technician_Notes__c: '',
+      Parts_Used__c: '',
+      Time_Logged_Minutes__c: 0,
+      Assigned_Technician__c: techName
+    }
+  ];
+}
+
+const MOCK_WORK_ORDERS = getWorkOrdersForTechnician(MOCK_TECHNICIAN);
 
 const MOCK_JOB_HISTORY = [
   {
@@ -625,13 +659,14 @@ const server = http.createServer(async (req, res) => {
     if (req.method === 'GET' && pathname === '/api/sync/morning-payload') {
       const technicianId = query.technicianId || query.username || token;
       const activeTech = resolveTechnicianProfile(technicianId, query.email, token);
+      const dynamicOrders = getWorkOrdersForTechnician(activeTech);
 
       if (isMockMode) {
         return sendJSON(res, 200, {
           success: true,
           syncTimestamp: new Date().toISOString(),
           technician: activeTech,
-          workOrders: MOCK_WORK_ORDERS,
+          workOrders: dynamicOrders,
           equipmentHistory: MOCK_JOB_HISTORY,
           knowledgeArticles: MOCK_KNOWLEDGE,
           schemas: {
@@ -655,7 +690,7 @@ const server = http.createServer(async (req, res) => {
           success: true,
           syncTimestamp: new Date().toISOString(),
           technician: activeTech,
-          workOrders: sfData.records || MOCK_WORK_ORDERS,
+          workOrders: sfData.records || dynamicOrders,
           equipmentHistory: MOCK_JOB_HISTORY,
           knowledgeArticles: MOCK_KNOWLEDGE
         });
@@ -702,13 +737,15 @@ const server = http.createServer(async (req, res) => {
     // 4. WORK ORDER LIFECYCLE APIS
     // ═════════════════════════════════════════════════════════════════════════
     if (req.method === 'GET' && pathname === '/api/work-orders') {
+      const activeTech = resolveTechnicianProfile(query.technicianId || query.username, query.email, token);
       const statusFilter = query.status;
-      let results = MOCK_WORK_ORDERS;
+      let results = getWorkOrdersForTechnician(activeTech);
       if (statusFilter) {
         results = results.filter(wo => wo.Status__c.toLowerCase() === statusFilter.toLowerCase());
       }
       return sendJSON(res, 200, {
         success: true,
+        technician: activeTech,
         count: results.length,
         workOrders: results
       });
@@ -717,9 +754,12 @@ const server = http.createServer(async (req, res) => {
     // GET /api/work-orders/:id
     if (req.method === 'GET' && pathname.startsWith('/api/work-orders/')) {
       const woId = pathname.replace('/api/work-orders/', '');
-      const found = MOCK_WORK_ORDERS.find(wo => wo.Id === woId || wo.Name === woId) || MOCK_WORK_ORDERS[0];
+      const activeTech = resolveTechnicianProfile(query.technicianId || query.username, query.email, token);
+      const orders = getWorkOrdersForTechnician(activeTech);
+      const found = orders.find(wo => wo.Id === woId || wo.Name === woId) || orders[0];
       return sendJSON(res, 200, {
         success: true,
+        technician: activeTech,
         workOrder: {
           ...found,
           recentHistory: MOCK_JOB_HISTORY.filter(jh => jh.Equipment_ID__c === found.Equipment_ID__c)
@@ -766,25 +806,30 @@ const server = http.createServer(async (req, res) => {
     if (req.method === 'POST' && pathname.includes('/api/work-orders/') && pathname.endsWith('/complete')) {
       const woId = pathname.replace('/api/work-orders/', '').replace('/complete', '');
       const body = await parseRequestBody(req);
-      const { technicianNotes, partsUsed, timeLoggedMinutes, photosBase64, sendToCustomer } = body;
+      const { technicianNotes, partsUsed, timeLoggedMinutes, photosBase64, sendToCustomer, username, technicianId } = body;
+      const activeTech = resolveTechnicianProfile(technicianId || username, null, token);
+      const orders = getWorkOrdersForTechnician(activeTech);
+      const currentWo = orders.find(w => w.Id === woId || w.Name === woId) || orders[0];
 
       const generatedReport = `========================================
 FIELD360 SERVICE COMPLETION REPORT
 ========================================
-Work Order: ${woId}
-Equipment: Generator EQ-GEN-9920
-Technician: ${MOCK_TECHNICIAN.name} (${MOCK_TECHNICIAN.id})
+Work Order: ${currentWo.Name} (${currentWo.Subject__c})
+Equipment: ${currentWo.Equipment_Type__c} (${currentWo.Equipment_ID__c})
+Customer Account: ${currentWo.AccountName}
+Site Address: ${currentWo.Site_Address__c}
+Technician: ${activeTech.name} (${activeTech.id}) - ${activeTech.email}
 Date Completed: ${new Date().toLocaleDateString('en-IN')}
 
 WORK PERFORMED:
-${technicianNotes || 'Replaced thermal sensor and completed full load testing. Voltage and temperature within standard tolerances.'}
+${technicianNotes || 'Completed primary diagnostics, recalibrated thermal & pressure sensors, and verified load stability.'}
 
 PARTS REPLACED:
-${partsUsed || 'Thermal Sensor TS-40 (1x), Coolant 5L'}
+${partsUsed || 'Thermal Sensor TS-40 (1x), Heavy Duty Filter (1x)'}
 
 TIME LOGGED: ${timeLoggedMinutes || 90} minutes
 PHOTOS ATTACHED: ${photosBase64?.length || 0} image(s)
-STATUS: Verified Operable. Passed Quality Checks.
+STATUS: Verified Operable. Passed All Quality & Safety Checks.
 ========================================`;
 
       return sendJSON(res, 200, {
@@ -792,6 +837,7 @@ STATUS: Verified Operable. Passed Quality Checks.
         workOrderId: woId,
         status: 'Completed',
         completedAt: new Date().toISOString(),
+        technician: activeTech,
         serviceReport: generatedReport,
         photosUploadedCount: photosBase64?.length || 0,
         contentVersionCreated: true,
@@ -891,39 +937,70 @@ STATUS: Verified Operable. Passed Quality Checks.
     // POST /api/ai/pre-job-briefing
     if (req.method === 'POST' && pathname === '/api/ai/pre-job-briefing') {
       const body = await parseRequestBody(req);
-      const { workOrderId, languageCode } = body;
+      const { workOrderId, equipmentType, equipmentId, siteAddress, languageCode, username } = body;
+      const activeTech = resolveTechnicianProfile(username, null, token);
+      const orders = getWorkOrdersForTechnician(activeTech);
+      const targetWo = orders.find(w => w.Id === workOrderId || w.Name === workOrderId) || orders[0];
+
+      const eqType = equipmentType || targetWo.Equipment_Type__c || 'Industrial Unit';
+      const eqId = equipmentId || targetWo.Equipment_ID__c || 'EQ-SYS-9900';
+      const site = siteAddress || targetWo.Site_Address__c || 'Primary Tech Zone';
+
+      const briefingText = `EQUIPMENT AI BRIEFING for ${activeTech.name}:
+• Work Order ${workOrderId || targetWo.Name}: ${targetWo.Subject__c}
+• Asset ${eqId} (${eqType}) installed at ${site}.
+• Asset History: Prior service recorded thermal variance and filter buildup.
+• Required Action: Bring ${eqType} Service Kit, calibrated multimeter, and replacement sensors.
+• Safety Notice: High Voltage Lockout & PPE protocols mandatory prior to panel removal.`;
 
       return sendJSON(res, 200, {
         success: true,
-        workOrderId: workOrderId || 'WO-001001',
+        workOrderId: workOrderId || targetWo.Name,
+        technician: activeTech,
+        equipmentType: eqType,
+        equipmentId: eqId,
+        siteAddress: site,
         language: languageCode || 'en',
-        briefing: 'EQUIPMENT BRIEFING (AI Generated): Equipment EQ-GEN-9920 has an overheating history. Previous technician noted low coolant flow. Bring Coolant Flush Kit and multimeter. Follow high-pressure coolant safety protocols.'
+        briefing: briefingText
       });
     }
 
     // POST /api/ai/troubleshoot
     if (req.method === 'POST' && pathname === '/api/ai/troubleshoot') {
       const body = await parseRequestBody(req);
-      const { problemDescription, equipmentType, languageCode } = body;
+      const { problemDescription, equipmentType, equipmentId, languageCode, username } = body;
+      const activeTech = resolveTechnicianProfile(username, null, token);
 
       if (!problemDescription) {
         return sendJSON(res, 400, { success: false, error: 'problemDescription is required' });
       }
 
-      const isSeniorNeeded = /smoke|fire|burst|crack|high\s*voltage|explosion|dangerous/i.test(problemDescription);
+      const p = problemDescription.toLowerCase();
+      const isSeniorNeeded = /smoke|fire|burst|crack|high\s*voltage|explosion|dangerous|alarm/i.test(p);
+      const eqType = equipmentType || 'Equipment';
+
+      let steps = [
+        `Step 1: Isolate main power to ${eqType} (${equipmentId || 'Asset'}) and verify electrical isolation with multimeter.`,
+        `Step 2: Inspect primary ${p.includes('heat') || p.includes('hot') ? 'cooling fan / radiator fins' : (p.includes('leak') ? 'gasket seals & fluid lines' : 'drive motor & bearing clearance')}.`,
+        `Step 3: Test sensor resistance and check telemetry log for code anomalies related to: "${problemDescription}".`,
+        `Step 4: Replace faulty components, clear error codes, and execute a 15-minute load test.`
+      ];
+
+      let parts = p.includes('heat') || p.includes('hot')
+        ? ['Coolant Flush Kit', 'Temp Sensor TS-40']
+        : (p.includes('leak') ? ['Gasket Seal Kit', 'O-Ring Set'] : ['Blower Bearing', 'Drive Belt B-42']);
 
       return sendJSON(res, 200, {
         success: true,
         query: problemDescription,
-        equipmentType: equipmentType || 'General',
+        technician: activeTech,
+        equipmentType: eqType,
+        equipmentId: equipmentId || 'EQ-GEN-9920',
         language: languageCode || 'en',
         escalateToSenior: isSeniorNeeded,
-        escalationReason: isSeniorNeeded ? 'Safety hazard / critical component failure detected.' : null,
-        diagnosisSteps: [
-          'Step 1: Perform visual inspection of primary drive belt and radiator fin clearance.',
-          'Step 2: Measure thermal sensor resistance using multimeter.',
-          'Step 3: Inspect coolant fluid level and check for airlocks in water pump inlet.'
-        ],
+        escalationReason: isSeniorNeeded ? 'Critical safety hazard / high-risk anomaly detected in problem description.' : null,
+        diagnosisSteps: steps,
+        recommendedParts: parts,
         knowledgeArticles: MOCK_KNOWLEDGE
       });
     }
