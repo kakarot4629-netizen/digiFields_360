@@ -501,7 +501,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"technicianId\": \"{{technicianId}}\",\n  \"mutations\": [\n    {\n      \"queueId\": \"UUID-OFFLINE-001\",\n      \"action\": \"status_update\",\n      \"sobjectName\": \"Work_Order__c\",\n      \"recordId\": \"WO-001001\",\n      \"fields\": { \"Status__c\": \"In Progress\" },\n      \"queuedAt\": \"2026-08-21T08:30:00Z\"\n    },\n    {\n      \"queueId\": \"UUID-OFFLINE-002\",\n      \"action\": \"time_log\",\n      \"sobjectName\": \"Work_Order__c\",\n      \"recordId\": \"WO-001001\",\n      \"fields\": { \"Time_Logged_Minutes__c\": 90 },\n      \"queuedAt\": \"2026-08-21T09:30:00Z\"\n    },\n    {\n      \"queueId\": \"UUID-OFFLINE-003\",\n      \"action\": \"complete\",\n      \"sobjectName\": \"Work_Order__c\",\n      \"recordId\": \"WO-001001\",\n      \"fields\": {\n        \"Status__c\": \"Completed\",\n        \"Technician_Notes__c\": \"Replaced sensor offline\",\n        \"Completed_Date__c\": \"2026-08-21T10:00:00Z\"\n      },\n      \"queuedAt\": \"2026-08-21T10:00:00Z\"\n    }\n  ]\n}"
+              "raw": "{\n  \"technicianId\": \"{{technicianId}}\",\n  \"mutations\": [\n    {\n      \"queueId\": \"UUID-OFFLINE-001\",\n      \"action\": \"status_update\",\n      \"sobjectName\": \"Work_Order__c\",\n      \"recordId\": \"{{workOrderId}}\",\n      \"fields\": { \"Status__c\": \"In Progress\" },\n      \"queuedAt\": \"2026-08-21T08:30:00Z\"\n    },\n    {\n      \"queueId\": \"UUID-OFFLINE-002\",\n      \"action\": \"time_log\",\n      \"sobjectName\": \"Work_Order__c\",\n      \"recordId\": \"{{workOrderId}}\",\n      \"fields\": { \"Time_Logged_Minutes__c\": 90 },\n      \"queuedAt\": \"2026-08-21T09:30:00Z\"\n    },\n    {\n      \"queueId\": \"UUID-OFFLINE-003\",\n      \"action\": \"complete\",\n      \"sobjectName\": \"Work_Order__c\",\n      \"recordId\": \"{{workOrderId}}\",\n      \"fields\": {\n        \"Status__c\": \"Completed\",\n        \"Technician_Notes__c\": \"Replaced sensor offline\",\n        \"Completed_Date__c\": \"2026-08-21T10:00:00Z\"\n      },\n      \"queuedAt\": \"2026-08-21T10:00:00Z\"\n    }\n  ]\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/sync/offline-queue",
@@ -635,7 +635,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": 4,\n  \"method\": \"tools/call\",\n  \"params\": {\n    \"name\": \"sobject_update\",\n    \"arguments\": {\n      \"sobjectName\": \"Work_Order__c\",\n      \"recordId\": \"WO-001001\",\n      \"fields\": {\n        \"Status__c\": \"Completed\",\n        \"Technician_Notes__c\": \"Repaired motor bearings\"\n      }\n    }\n  }\n}"
+              "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": 4,\n  \"method\": \"tools/call\",\n  \"params\": {\n    \"name\": \"sobject_update\",\n    \"arguments\": {\n      \"sobjectName\": \"Work_Order__c\",\n      \"recordId\": \"{{workOrderId}}\",\n      \"fields\": {\n        \"Status__c\": \"Completed\",\n        \"Technician_Notes__c\": \"Repaired motor bearings\"\n      }\n    }\n  }\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/mcp",
@@ -655,7 +655,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": 5,\n  \"method\": \"tools/call\",\n  \"params\": {\n    \"name\": \"sobject_create\",\n    \"arguments\": {\n      \"sobjectName\": \"Job_History__c\",\n      \"fields\": {\n        \"Work_Order__c\": \"WO-001001\",\n        \"Equipment_ID__c\": \"EQ-GEN-9920\",\n        \"Resolution_Notes__c\": \"Replaced bearings\"\n      }\n    }\n  }\n}"
+              "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": 5,\n  \"method\": \"tools/call\",\n  \"params\": {\n    \"name\": \"sobject_create\",\n    \"arguments\": {\n      \"sobjectName\": \"Job_History__c\",\n      \"fields\": {\n        \"Work_Order__c\": \"{{workOrderId}}\",\n        \"Equipment_ID__c\": \"EQ-GEN-9920\",\n        \"Resolution_Notes__c\": \"Replaced bearings\"\n      }\n    }\n  }\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/mcp",
