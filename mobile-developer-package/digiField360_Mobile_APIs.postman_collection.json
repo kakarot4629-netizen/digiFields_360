@@ -1,8 +1,8 @@
 {
   "info": {
-    "_postman_id": "8f3b2d10-4c91-41e2-b918-9e4a3b2c1d0f",
-    "name": "digiField360 - Mobile Application & MCP APIs",
-    "description": "Comprehensive Postman Collection for testing the digiField360 Mobile Application Backend REST APIs and MCP JSON-RPC Gateway.",
+    "_postman_id": "c9a1e4d0-5b23-4e89-a1c2-9e8d7c6b5a4f",
+    "name": "digiField360 - LIVE Salesforce Org APIs",
+    "description": "100% Real Live Salesforce Org Mobile Backend REST APIs & MCP JSON-RPC Gateway.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
