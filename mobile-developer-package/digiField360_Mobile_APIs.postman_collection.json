@@ -8,7 +8,7 @@
   "variable": [
     {
       "key": "baseUrl",
-      "value": "https://digifields-360.onrender.com",
+      "value": "http://localhost:3000",
       "type": "string"
     },
     {
