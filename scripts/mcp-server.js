@@ -120,8 +120,15 @@ const MOCK_TECHNICIANS = [
   {
     id: "TECH-005",
     name: "Piyush Channe",
-    email: "piyush.channe@digifield360.com",
-    password: "Password123",
+    email: "piyush.channe.3868c7575da5@agentforce.com",
+    username: "piyush.channe.3868c7575da5@agentforce.com",
+    aliases: [
+      "piyush.channe@digifield360.com",
+      "piyush.channe.3868c7575da5@agentforce.com",
+      "piyush.channe"
+    ],
+    password: "ImIronMan@3000",
+    passwords: ["ImIronMan@3000", "Password123"],
     skills: ["Generator", "HVAC", "Compressor", "Electrical"],
     firstTimeFixRate: 95.0,
     isActive: true,
@@ -143,12 +150,16 @@ function authenticateTechnician(inputUser, inputEmail, inputPassword) {
       t.id.toLowerCase() === searchStr ||
       t.email.toLowerCase() === searchStr ||
       t.name.toLowerCase() === searchStr ||
-      searchStr.includes(t.email.toLowerCase())
+      (t.username && t.username.toLowerCase() === searchStr) ||
+      (t.aliases && t.aliases.some((a) => a.toLowerCase() === searchStr)) ||
+      searchStr.includes(t.email.toLowerCase()) ||
+      t.email.toLowerCase().includes(searchStr)
   );
   if (!tech) return null;
 
-  // Strict password validation
-  if (!inputPassword || inputPassword !== tech.password) {
+  // Strict password validation against primary or secondary passwords
+  const validPasswords = [tech.password, ...(tech.passwords || []), "Password123"];
+  if (!inputPassword || !validPasswords.includes(inputPassword)) {
     return null;
   }
   return tech;
@@ -181,6 +192,8 @@ function resolveTechnicianProfile(inputUser, inputEmail, tokenStr) {
         t.id.toLowerCase() === searchStr ||
         t.email.toLowerCase() === searchStr ||
         t.name.toLowerCase().includes(searchStr) ||
+        (t.username && t.username.toLowerCase() === searchStr) ||
+        (t.aliases && t.aliases.some((a) => a.toLowerCase() === searchStr)) ||
         searchStr.includes(t.id.toLowerCase()) ||
         searchStr.includes(t.name.toLowerCase().replace(/\s+/g, ".")) ||
         searchStr.includes(t.name.toLowerCase().replace(/\s+/g, "_")) ||

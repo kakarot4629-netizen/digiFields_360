@@ -38,14 +38,15 @@ x-mock-mode: true  (Optional: returns rich mock data for offline UI testing)
 - **Method & Path**: `POST /api/auth/login`
 - **Description**: Authenticate technician credentials or exchange OAuth PKCE authorization code.
 
-#### Available Mock Accounts for Testing (Password: `Password123`):
-| Email / Username | Technician Name | Skills |
-| :--- | :--- | :--- |
-| `vikram.sharma@digifield360.com` | Vikram Sharma | Generator, HVAC, Compressor, Electrical |
-| `piyush.channe@digifield360.com` | Piyush Channe | Generator, HVAC, Compressor, Electrical |
-| `ananya.roy@digifield360.com` | Ananya Roy | HVAC, Solar Inverter, Substation, PLCs |
-| `rajesh.patel@digifield360.com` | Rajesh Patel | Turbine, Electrical, Hydraulics, Generator |
-| `sarah.jenkins@digifield360.com` | Sarah Jenkins | Telematics, Robotics, HVAC, Compressor |
+#### Available Mock Accounts for Testing:
+| Email / Username | Technician Name | Password | Skills |
+| :--- | :--- | :--- | :--- |
+| `piyush.channe.3868c7575da5@agentforce.com` | Piyush Channe | `ImIronMan@3000` / `Password123` | Generator, HVAC, Compressor, Electrical |
+| `piyush.channe@digifield360.com` | Piyush Channe | `Password123` | Generator, HVAC, Compressor, Electrical |
+| `vikram.sharma@digifield360.com` | Vikram Sharma | `Password123` | Generator, HVAC, Compressor, Electrical |
+| `ananya.roy@digifield360.com` | Ananya Roy | `Password123` | HVAC, Solar Inverter, Substation, PLCs |
+| `rajesh.patel@digifield360.com` | Rajesh Patel | `Password123` | Turbine, Electrical, Hydraulics, Generator |
+| `sarah.jenkins@digifield360.com` | Sarah Jenkins | `Password123` | Telematics, Robotics, HVAC, Compressor |
 
 - **Request Body (JSON)**:
   ```json

@@ -47,8 +47,8 @@ async function runApiTests() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        username: "piyush.channe@digifield360.com",
-        password: "Password123"
+        username: "piyush.channe.3868c7575da5@agentforce.com",
+        password: "ImIronMan@3000"
       })
     });
     const data = await res.json();
