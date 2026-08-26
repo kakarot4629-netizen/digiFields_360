@@ -13,7 +13,7 @@
     },
     {
       "key": "authToken",
-      "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJURUNILTAwMSIsIm5hbWUiOiJWaWtyYW0gU2hhcm1hIiwiZW1haWwiOiJ2aWtyYW0uc2hhcm1hQGRpZ2lmaWVsZDM2MC5jb20iLCJpc3MiOiJkaWdpRmllbGQzNjBfQmFja2VuZF9HYXRld2F5IiwiaWF0IjoxNzU2MTk1MjAwLCJleHAiOjE3NTYyMDI0MDB9.s7zD_09x-8W9X",
+      "value": "",
       "type": "string"
     },
     {
