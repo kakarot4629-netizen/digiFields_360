@@ -240,7 +240,7 @@
             "header": [
               {
                 "key": "Authorization",
-                "value": "Bearer invalid_unregistered_token_999"
+                "value": "Bearer invalid_test_token"
               }
             ],
             "url": {
