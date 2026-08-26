@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8" ?>
 <Package xmlns="http://soap.sforce.com/2006/04/metadata">
 
     <!-- Custom Objects (must be deployed before Apex) -->
@@ -109,7 +109,8 @@
         <members>Equipment__c-Equipment Layout</members>
         <members>Parts_Inventory__c-Parts Inventory Layout</members>
         <members>Job_Schedule__c-Job Schedule Layout</members>
-        <members>Maintenance_Recommendation__c-Maintenance Recommendation Layout</members>
+        <members
+    >Maintenance_Recommendation__c-Maintenance Recommendation Layout</members>
         <name>Layout</name>
     </types>
 

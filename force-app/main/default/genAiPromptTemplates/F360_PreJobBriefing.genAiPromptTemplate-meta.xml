@@ -1,10 +1,12 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8" ?>
 <GenAiPromptTemplate xmlns="http://soap.sforce.com/2006/04/metadata">
     <masterLabel>F360 Pre-Job Briefing</masterLabel>
     <type>einstein_gpt__flex</type>
-    <description>Generates a concise pre-job briefing for a field technician. Called when a work order is assigned. Output is cached to the device for offline reading during the drive to site.</description>
+    <description
+  >Generates a concise pre-job briefing for a field technician. Called when a work order is assigned. Output is cached to the device for offline reading during the drive to site.</description>
     <templateVersions>
-        <content>You are a field service operations assistant. Generate a concise, practical pre-job briefing for a technician who is about to travel to a customer site.
+        <content
+    >You are a field service operations assistant. Generate a concise, practical pre-job briefing for a technician who is about to travel to a customer site.
 
 LANGUAGE: Respond in {!$Input:Language}. If language is "hi" write in Hindi (Devanagari script). If "mr" write in Marathi. If "ta" write in Tamil. Otherwise write in English. Always include the Work Order number in English regardless of language.
 

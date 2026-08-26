@@ -1,7 +1,8 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8" ?>
 <PermissionSet xmlns="http://soap.sforce.com/2006/04/metadata">
     <label>digiField360 Dispatch</label>
-    <description>Additional permissions for dispatchers and service managers. Grants full CRUD on all F360 objects, access to Dispatch Board, and Smart Assignment.</description>
+    <description
+  >Additional permissions for dispatchers and service managers. Grants full CRUD on all F360 objects, access to Dispatch Board, and Smart Assignment.</description>
     <hasActivationRequired>false</hasActivationRequired>
 
     <!-- Full CRUD on Work Orders -->

@@ -5,11 +5,7 @@
   "oauthSettings": {
     "enableOAuth": true,
     "callbackUrl": "field360://callback",
-    "scopes": [
-      "api",
-      "refresh_token",
-      "offline_access"
-    ],
+    "scopes": ["api", "refresh_token", "offline_access"],
     "requirePkce": true,
     "permittedUsers": "AdminApprovedUsersOnly",
     "ipRelaxation": "RelaxIP"

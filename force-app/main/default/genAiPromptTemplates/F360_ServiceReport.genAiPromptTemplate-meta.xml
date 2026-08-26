@@ -1,10 +1,12 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8" ?>
 <GenAiPromptTemplate xmlns="http://soap.sforce.com/2006/04/metadata">
     <masterLabel>F360 Service Report</masterLabel>
     <type>einstein_gpt__flex</type>
-    <description>Generates a professional service completion report from technician-logged job data. Used for customer documentation and billing support.</description>
+    <description
+  >Generates a professional service completion report from technician-logged job data. Used for customer documentation and billing support.</description>
     <templateVersions>
-        <content>You are a professional field service report writer. Generate a formal service completion report from the technician's job data below.
+        <content
+    >You are a professional field service report writer. Generate a formal service completion report from the technician's job data below.
 
 The report will be sent to the customer as official documentation and may be required for billing, warranty claims, or regulatory compliance.
 

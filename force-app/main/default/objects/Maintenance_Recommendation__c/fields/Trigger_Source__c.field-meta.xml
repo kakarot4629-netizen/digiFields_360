@@ -1,7 +1,11 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8" ?>
 <CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
     <fullName>Trigger_Source__c</fullName>
     <label>Trigger Source</label>
     <type>Picklist</type>
-    <valueSet><valueSetDefinition><sorted>false</sorted><value><fullName>AI Prediction</fullName></value><value><fullName>Manual</fullName></value><value><fullName>Scheduled</fullName></value><value><fullName>Customer Request</fullName></value></valueSetDefinition></valueSet>
+    <valueSet><valueSetDefinition><sorted>false</sorted><value><fullName
+        >AI Prediction</fullName></value><value><fullName
+        >Manual</fullName></value><value><fullName
+        >Scheduled</fullName></value><value><fullName
+        >Customer Request</fullName></value></valueSetDefinition></valueSet>
 </CustomField>

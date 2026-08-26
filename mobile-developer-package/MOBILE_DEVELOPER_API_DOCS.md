@@ -6,13 +6,14 @@ Welcome to the **digiField360 Mobile Application Backend API Documentation**. Th
 
 ## 1. Environment & Base URL Configuration
 
-| Environment | Base URL | Notes |
-| --- | --- | --- |
-| **Local Development** | `http://localhost:3000` (or `http://10.0.2.2:3000` for Android Emulator) | Zero-dependency Node server |
-| **Sandbox / Staging** | `https://[your-sandbox-gateway].com` | Connected to Salesforce Org |
-| **Salesforce Hosted MCP** | `https://[your-org].my.salesforce.com/services/mcp/v1` | Direct Salesforce cloud endpoint |
+| Environment               | Base URL                                                                 | Notes                            |
+| ------------------------- | ------------------------------------------------------------------------ | -------------------------------- |
+| **Local Development**     | `http://localhost:3000` (or `http://10.0.2.2:3000` for Android Emulator) | Zero-dependency Node server      |
+| **Sandbox / Staging**     | `https://[your-sandbox-gateway].com`                                     | Connected to Salesforce Org      |
+| **Salesforce Hosted MCP** | `https://[your-org].my.salesforce.com/services/mcp/v1`                   | Direct Salesforce cloud endpoint |
 
 ### Mobile `.env` Setup
+
 ```env
 API_BASE_URL=http://10.0.2.2:3000
 SF_MCP_SERVER_URL=http://10.0.2.2:3000/mcp
@@ -20,6 +21,7 @@ SF_OAUTH_CLIENT_ID=digiField360_Mobile
 ```
 
 ### Common Headers
+
 ```http
 Content-Type: application/json
 Authorization: Bearer <ACCESS_TOKEN>
@@ -32,15 +34,27 @@ x-mock-mode: true  (Optional: returns rich mock data for offline UI testing)
 ## 2. Authentication & Profile APIs
 
 ### 2.1 Login / Token Exchange
+
 - **Method & Path**: `POST /api/auth/login`
 - **Description**: Authenticate technician credentials or exchange OAuth PKCE authorization code.
-- **Request Body**:
+
+#### Available Mock Accounts for Testing (Password: `Password123`):
+| Email / Username | Technician Name | Skills |
+| :--- | :--- | :--- |
+| `vikram.sharma@digifield360.com` | Vikram Sharma | Generator, HVAC, Compressor, Electrical |
+| `piyush.channe@digifield360.com` | Piyush Channe | Generator, HVAC, Compressor, Electrical |
+| `ananya.roy@digifield360.com` | Ananya Roy | HVAC, Solar Inverter, Substation, PLCs |
+| `rajesh.patel@digifield360.com` | Rajesh Patel | Turbine, Electrical, Hydraulics, Generator |
+| `sarah.jenkins@digifield360.com` | Sarah Jenkins | Telematics, Robotics, HVAC, Compressor |
+
+- **Request Body (JSON)**:
   ```json
   {
     "username": "vikram.sharma@digifield360.com",
-    "password": "SecretPassword123"
+    "password": "Password123"
   }
   ```
+
 - **Success Response (200 OK)**:
   ```json
   {
@@ -55,21 +69,34 @@ x-mock-mode: true  (Optional: returns rich mock data for offline UI testing)
       "email": "vikram.sharma@digifield360.com",
       "skills": ["Generator", "HVAC", "Compressor", "Electrical"],
       "firstTimeFixRate": 92.5,
+      "isActive": true,
       "preferredLanguage": "en"
     }
   }
   ```
 
+- **Error Response (401 Unauthorized - Wrong Password or Invalid User)**:
+  ```json
+  {
+    "success": false,
+    "error": "Invalid username or password",
+    "code": "INVALID_CREDENTIALS"
+  }
+  ```
+
 ### 2.2 Refresh Token
+
 - **Method & Path**: `POST /api/auth/refresh`
 - **Request Body**: `{ "refreshToken": "d8f93j20fj3..." }`
 - **Response (200 OK)**: `{ "success": true, "accessToken": "new_token...", "expiresIn": 7200 }`
 
 ### 2.3 Get Technician Profile
+
 - **Method & Path**: `GET /api/technician/profile`
 - **Response (200 OK)**: Returns full technician profile, skill list, and fix rates.
 
 ### 2.4 Get Top Customer Accounts (e.g. Top 10 Accounts)
+
 - **Method & Path**: `GET /api/accounts`
 - **Query Params**: `?limit=10&industry=Technology` (Optional)
 - **Description**: Fetch top customer accounts dynamically by size/revenue with optional industry filter.
@@ -93,6 +120,7 @@ x-mock-mode: true  (Optional: returns rich mock data for offline UI testing)
   ```
 
 ### 2.5 Get Full Authenticated User Details & Work Orders
+
 - **Method & Path**: `GET /api/user/details`
 - **Headers**: `Authorization: Bearer <ACCESS_TOKEN>`
 - **Description**: Automatically decodes user identity directly from the Bearer JWT Auth Token and returns full aggregated profile details, assigned work orders, equipment history, and top customer accounts in a single payload.
@@ -116,6 +144,7 @@ x-mock-mode: true  (Optional: returns rich mock data for offline UI testing)
   ```
 
 ### 2.6 Strict Authentication Error Handling (User Not Found)
+
 - **Status Code**: `404 Not Found` (or `401 Unauthorized`)
 - **Condition**: Sent when an invalid, missing, or unrecognized JWT Auth Token is supplied. The server strictly rejects unidentified requests without fallback to mock defaults.
 - **Error Response**:
@@ -132,6 +161,7 @@ x-mock-mode: true  (Optional: returns rich mock data for offline UI testing)
 ## 3. Shift Sync & Work Order Lifecycle APIs
 
 ### 3.1 Morning Pre-Load Sync (Shift Start)
+
 - **Method & Path**: `GET /api/sync/morning-payload`
 - **Query Params**: `?technicianId=TECH-001`
 - **Description**: Call this when the technician begins their shift or connects to WiFi. It downloads today's assigned jobs, equipment history, AI briefings, and knowledge articles to the mobile local SQLite store for offline use.
@@ -183,15 +213,18 @@ x-mock-mode: true  (Optional: returns rich mock data for offline UI testing)
   ```
 
 ### 3.2 List Work Orders
+
 - **Method & Path**: `GET /api/work-orders`
 - **Query Params**: `?status=Assigned` (Optional filter: `Assigned`, `In Progress`, `Completed`)
 - **Response (200 OK)**: `{ "success": true, "count": 2, "workOrders": [...] }`
 
 ### 3.3 Get Work Order Details
+
 - **Method & Path**: `GET /api/work-orders/:id`
 - **Response (200 OK)**: Returns detailed work order object with recent equipment job history.
 
 ### 3.4 Update Work Order Status
+
 - **Method & Path**: `PATCH /api/work-orders/:id/status`
 - **Request Body**: `{ "status": "In Progress" }` (or `"On Site"`, `"Completed"`)
 - **Response (200 OK)**:
@@ -205,6 +238,7 @@ x-mock-mode: true  (Optional: returns rich mock data for offline UI testing)
   ```
 
 ### 3.5 Log Time Worked
+
 - **Method & Path**: `POST /api/work-orders/:id/time-log`
 - **Request Body**:
   ```json
@@ -216,6 +250,7 @@ x-mock-mode: true  (Optional: returns rich mock data for offline UI testing)
 - **Response (200 OK)**: `{ "success": true, "timeLoggedMinutes": 90 }`
 
 ### 3.6 Complete Work Order (With Notes, Parts, Customer Signature & Base64 Photos)
+
 - **Method & Path**: `POST /api/work-orders/:id/complete`
 - **Headers**: `Authorization: Bearer <ACCESS_TOKEN>`
 - **Request Body**:
@@ -257,6 +292,7 @@ x-mock-mode: true  (Optional: returns rich mock data for offline UI testing)
   ```
 
 ### 3.7 Upload Digital Signature & Photo Attachment to Salesforce
+
 - **Method & Path**: `POST /api/attachments/upload`
 - **Headers**: `Authorization: Bearer <ACCESS_TOKEN>`
 - **Description**: Dedicated endpoint for uploading customer digital signatures or site photos directly into Salesforce `ContentVersion` & `ContentDocumentLink` attached to a Work Order.
@@ -291,6 +327,7 @@ x-mock-mode: true  (Optional: returns rich mock data for offline UI testing)
 ## 4. AI Services & Dynamic Query APIs
 
 ### 4.1 Dynamic Natural Language Query (NL2SOQL - Zero Hardcoding)
+
 - **Method & Path**: `POST /api/ai/query`
 - **Description**: The mobile application sends any natural language user question or voice transcript. The backend dynamically resolves the target Salesforce Object (`Account`, `Work_Order__c`, `Technician__c`, `Maintenance_Alert__c`, `Job_History__c`, `Contact`), constructs the SOQL query, executes it, and returns both structured data (for tables/cards) and an AI conversational summary (for chat bubbles).
 - **Request Body**:
@@ -336,6 +373,7 @@ x-mock-mode: true  (Optional: returns rich mock data for offline UI testing)
   ```
 
 ### 4.2 Direct Dynamic SOQL Query Execution
+
 - **Method & Path**: `POST /api/query/soql`
 - **Description**: Allows the mobile app to execute any valid raw SOQL query dynamically.
 - **Request Body**:
@@ -347,6 +385,7 @@ x-mock-mode: true  (Optional: returns rich mock data for offline UI testing)
 - **Response (200 OK)**: `{ "success": true, "totalSize": 2, "done": true, "records": [...] }`
 
 ### 4.3 On-Site AI Troubleshooting Assistant
+
 - **Method & Path**: `POST /api/ai/troubleshoot`
 - **Description**: Searches knowledge articles and provides structured diagnostics with senior escalation flags.
 - **Request Body**:
@@ -373,6 +412,7 @@ x-mock-mode: true  (Optional: returns rich mock data for offline UI testing)
   ```
 
 ### 4.2 Generate Pre-Job Briefing
+
 - **Method & Path**: `POST /api/ai/pre-job-briefing`
 - **Request Body**: `{ "workOrderId": "WO-001001", "languageCode": "hi" }`
 - **Response (200 OK)**: `{ "success": true, "briefing": "..." }`
@@ -382,6 +422,7 @@ x-mock-mode: true  (Optional: returns rich mock data for offline UI testing)
 ## 5. Offline Queue Replay & GPS Telemetry
 
 ### 5.1 Replay Offline Mutations (Batch Sync)
+
 - **Method & Path**: `POST /api/sync/offline-queue`
 - **Description**: Replay an array of actions queued locally on mobile device while in low/no connectivity areas.
 - **Request Body**:
@@ -427,6 +468,7 @@ x-mock-mode: true  (Optional: returns rich mock data for offline UI testing)
   ```
 
 ### 5.2 Technician GPS Location Update
+
 - **Method & Path**: `POST /api/technician/location`
 - **Request Body**:
   ```json
@@ -446,6 +488,7 @@ x-mock-mode: true  (Optional: returns rich mock data for offline UI testing)
 For clients communicating over standard MCP protocol, send JSON-RPC 2.0 requests to `POST /mcp`:
 
 ### Available MCP Tools:
+
 1. `sobject_query`: `{ "soql": "SELECT Id, Subject__c FROM Work_Order__c" }`
 2. `sobject_search`: `{ "searchTerm": "overheating" }`
 3. `sobject_update`: `{ "sobjectName": "Work_Order__c", "recordId": "WO-001001", "fields": { "Status__c": "Completed" } }`

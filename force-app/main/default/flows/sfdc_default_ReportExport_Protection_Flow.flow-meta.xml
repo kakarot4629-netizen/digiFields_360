@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8" ?>
 <Flow xmlns="http://soap.sforce.com/2006/04/metadata">
     <areMetricsLoggedToDataCloud>false</areMetricsLoggedToDataCloud>
     <assignments>
@@ -35,26 +35,30 @@
         <defaultConnector>
             <targetReference>EvaluationOutcomeAssignmentFalse</targetReference>
         </defaultConnector>
-        <defaultConnectorLabel>EvaluationOutcomeAssignmentFalse</defaultConnectorLabel>
+        <defaultConnectorLabel
+    >EvaluationOutcomeAssignmentFalse</defaultConnectorLabel>
         <rules>
             <name>MatchAll</name>
             <conditionLogic>(1 OR 2) AND 3</conditionLogic>
             <conditions>
-                <leftValueReference>myVariable_myEvent.Operation</leftValueReference>
+                <leftValueReference
+        >myVariable_myEvent.Operation</leftValueReference>
                 <operator>EqualTo</operator>
                 <rightValue>
                     <stringValue>ReportExported</stringValue>
                 </rightValue>
             </conditions>
             <conditions>
-                <leftValueReference>myVariable_myEvent.Operation</leftValueReference>
+                <leftValueReference
+        >myVariable_myEvent.Operation</leftValueReference>
                 <operator>EqualTo</operator>
                 <rightValue>
                     <stringValue>ReportExportedUsingExcelConnector</stringValue>
                 </rightValue>
             </conditions>
             <conditions>
-                <leftValueReference>myVariable_myEvent.RowsProcessed</leftValueReference>
+                <leftValueReference
+        >myVariable_myEvent.RowsProcessed</leftValueReference>
                 <operator>GreaterThan</operator>
                 <rightValue>
                     <numberValue>10000.0</numberValue>
@@ -66,7 +70,8 @@
             <label>MatchAll</label>
         </rules>
     </decisions>
-    <description>The default Condition Builder flow for the default ReportEvent Transaction Security Policy.</description>
+    <description
+  >The default Condition Builder flow for the default ReportEvent Transaction Security Policy.</description>
     <label>The default Report Export Policy Flow.</label>
     <processType>TransactionSecurityFlow</processType>
     <startElementReference>ConditionBuilder</startElementReference>

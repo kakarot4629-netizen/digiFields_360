@@ -289,3 +289,63 @@ export default class Field360DispatchBoard extends LightningElement {
         this.dispatchEvent(new ShowToastEvent({ title, message, variant }));
     }
 }
+        "warning",
+        "Select Technician",
+        "Please select a technician from the dropdown before clicking Assign."
+      );
+      return;
+    }
+    this.isAssigning = true;
+    try {
+      await updateRecord({
+        fields: {
+          Id: woId,
+          Assigned_Technician__c: techId,
+          Status__c: "Assigned"
+        }
+      });
+      this.showToast(
+        "success",
+        "Technician Assigned",
+        "Work order has been assigned. Status updated to Assigned."
+      );
+      delete this._selectedTechnicians[woId];
+      await refreshApex(this._wiredWorkOrders);
+    } catch (e) {
+      this.showToast(
+        "error",
+        "Assignment Failed",
+        e.body?.message || "Could not assign work order."
+      );
+    } finally {
+      this.isAssigning = false;
+    }
+  }
+
+  async createPreventiveWO(event) {
+    const alertId = event.target.dataset.alertId;
+    try {
+      const wo = await createPreventiveWorkOrder({ alertId });
+      this.showToast(
+        "success",
+        "Work Order Created",
+        `Preventive maintenance WO ${wo.Name} created. Priority: ${wo.Priority__c}.`
+      );
+      await Promise.all([
+        refreshApex(this._wiredWorkOrders),
+        refreshApex(this._wiredAlerts),
+        refreshApex(this._wiredRecommendations)
+      ]);
+    } catch (e) {
+      this.showToast(
+        "error",
+        "Error",
+        e.body?.message || "Could not create work order."
+      );
+    }
+  }
+
+  showToast(variant, title, message) {
+    this.dispatchEvent(new ShowToastEvent({ title, message, variant }));
+  }
+}

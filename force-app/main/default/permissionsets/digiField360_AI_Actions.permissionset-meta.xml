@@ -1,7 +1,8 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8" ?>
 <PermissionSet xmlns="http://soap.sforce.com/2006/04/metadata">
     <label>digiField360 AI Actions</label>
-    <description>Grants Agentforce AI integration user execute access to all F360 Apex actions and full CRUD on F360 objects. Assign to the Agentforce agent integration user only.</description>
+    <description
+  >Grants Agentforce AI integration user execute access to all F360 Apex actions and full CRUD on F360 objects. Assign to the Agentforce agent integration user only.</description>
     <hasActivationRequired>false</hasActivationRequired>
 
     <!-- Full CRUD on Work Orders -->

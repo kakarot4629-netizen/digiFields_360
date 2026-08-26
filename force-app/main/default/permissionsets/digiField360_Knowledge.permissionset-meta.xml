@@ -1,7 +1,8 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8" ?>
 <PermissionSet xmlns="http://soap.sforce.com/2006/04/metadata">
     <label>digiField360 Knowledge</label>
-    <description>Grants read access to Salesforce Knowledge articles. Required for the Troubleshooting Assistant (Feature 3) to search Knowledge__kav records via SOSL.</description>
+    <description
+  >Grants read access to Salesforce Knowledge articles. Required for the Troubleshooting Assistant (Feature 3) to search Knowledge__kav records via SOSL.</description>
     <hasActivationRequired>false</hasActivationRequired>
 
     <!-- Troubleshooting Apex class -->

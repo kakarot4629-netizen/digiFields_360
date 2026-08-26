@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8" ?>
 <Flow xmlns="http://soap.sforce.com/2006/04/metadata">
     <apiVersion>66.0</apiVersion>
     <actionCalls>
@@ -7,7 +7,8 @@
         <locationX>176</locationX><locationY>134</locationY>
         <actionName>F360_PredictiveMaintenanceAction</actionName>
         <actionType>apex</actionType>
-        <connector><targetReference>Check_Alerts_Created</targetReference></connector>
+        <connector><targetReference
+      >Check_Alerts_Created</targetReference></connector>
         <inputParameters>
             <name>lookBackDays</name>
             <value><numberValue>90</numberValue></value>
@@ -49,7 +50,8 @@
             <label>Has Alerts</label>
         </rules>
     </decisions>
-    <description>Runs nightly. Calls the Predictive Maintenance AI action to analyse equipment job history, compute risk scores, and create Maintenance_Alert__c records for high-risk equipment.</description>
+    <description
+  >Runs nightly. Calls the Predictive Maintenance AI action to analyse equipment job history, compute risk scores, and create Maintenance_Alert__c records for high-risk equipment.</description>
     <label>Field360 — Nightly Predictive Maintenance Analysis</label>
     <processType>AutoLaunchedFlow</processType>
     <start>

@@ -1,9 +1,10 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8" ?>
 <LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata">
     <apiVersion>62.0</apiVersion>
     <isExposed>true</isExposed>
     <masterLabel>digiField360 AI Natural Language Query Hub</masterLabel>
-    <description>Interactive AI Natural Language Search &amp; Testing Component with Dynamic Datatable and SOQL Inspector.</description>
+    <description
+  >Interactive AI Natural Language Search &amp; Testing Component with Dynamic Datatable and SOQL Inspector.</description>
     <targets>
         <target>lightning__AppPage</target>
         <target>lightning__HomePage</target>

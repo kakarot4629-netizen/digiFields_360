@@ -1,0 +1,1405 @@
+
+
+
+DIGIFIELD360 AI
+Developer Configuration & Requirements Specification
+Salesforce Lightning Platform  |  Agentforce  |  API v66.0
+Document Version
+Platform
+API Version
+Status
+Date
+v1.0
+Salesforce Lightning Platform
+66.0 (Summer 26)
+Ready for Development
+16/07/2026
+
+
+1.  Solution Overview
+digiField360 AI is a field service management solution built natively on Salesforce Lightning Platform with no Salesforce Field Service (FSL) licences required. It uses custom objects, Apex invocable actions, Agentforce AI agents, GenAi Prompt Templates, Lightning Web Components, and a React Native offline mobile app connected via Salesforce Hosted MCP Servers.
+
+1.1  What This Document Covers
+Environment prerequisites and Salesforce org feature flags
+All custom objects, fields, and field-level descriptions
+Standard User object custom fields (must be created manually before Apex deploy)
+All Apex classes -- purpose, inputs, outputs, side effects, and dependencies
+Agentforce agent -- topics, actions, prompt templates, and guardrails
+Both Lightning Web Components -- technician and dispatcher views
+All three Flows -- triggers, steps, and side effects
+Step-by-step deployment sequence with SF CLI commands
+Manual configuration steps that cannot be scripted
+Test class structure and coverage targets
+Security model -- profiles, permission sets, object-level access
+React Native mobile app integration points
+Post-deployment verification checklist with common error fixes
+
+1.2  Architecture Summary
+Layer
+Technology
+Licence Required
+CRM Platform
+Salesforce Enterprise Edition
+Enterprise Edition (mandatory)
+Custom Data Model
+4 custom objects with F360__ prefix
+Included with platform
+AI Agent
+Agentforce (Salesforce-native)
+Agentforce add-on (Foundations free tier covers initial volumes)
+AI Inference
+Einstein LLM via ConnectApi.EinsteinLLM
+Included with Agentforce
+Knowledge Base
+Salesforce Knowledge (RAG for troubleshooting)
+Included with Enterprise Edition
+Mobile App
+React Native + OfflineMCPGateway.js
+Open source / MIT licence
+MCP Connection
+Salesforce Hosted MCP Server
+Included with Enterprise Edition (GA Summer 26)
+Technician Licence
+Salesforce Platform User
+USD 25/user/month -- NO FSL licence required
+Manager Licence
+Sales Cloud or Service Cloud
+USD 165/user/month minimum (1 required in org)
+
+CRITICAL: digiField360 does NOT use FSL standard objects (WorkOrder, ServiceAppointment, ServiceResource). All data lives in custom F360__ objects. This eliminates the USD 175/user/month FSL Technician licence requirement entirely.
+
+2.  Environment Prerequisites
+2.1  Salesforce Org -- Enable These Features First (Manual Clicks)
+All items below must be enabled before deploying any code. None can be enabled via Metadata API.
+
+#
+Feature
+Setup Path
+Why Required
+1
+Agentforce
+Setup > Agentforce > Enable Agentforce
+Required for all AI agent features
+2
+Einstein Features
+Setup > Einstein > Einstein Features > Enable
+Required for ConnectApi.EinsteinLLM (prompt template inference)
+3
+Salesforce Knowledge
+Setup > Knowledge Settings > Enable Knowledge
+Required for Troubleshooting Assistant RAG over articles
+4
+Salesforce Hosted MCP Server
+Setup > API Catalog > MCP Servers > Enable
+Required for React Native mobile app. Enterprise Edition only. GA Summer 26.
+5
+Custom Notifications
+Setup > Custom Notifications > New
+Required for nightly maintenance alert push to managers
+6
+Lightning Experience
+Setup > Lightning Experience > Switch to Lightning
+All LWC components require Lightning Experience
+7
+Chatter / Files
+Setup > Chatter Settings > Enable Chatter
+Required for ContentVersion (service report PDF storage)
+
+2.2  Developer Toolchain
+Tool
+Version
+Install
+Required For
+Salesforce CLI (sf)
+2.x or above
+npm install -g @salesforce/cli
+Deploy all metadata and run tests
+Node.js
+18 LTS or above
+https://nodejs.org
+React Native build
+VS Code + Salesforce Extension Pack
+Latest
+VS Code Marketplace
+Apex development and deployment
+Java JDK
+11 or above
+https://adoptium.net
+Apex test execution via CLI
+
+2.3  Authenticate to Your Org
+sf org login web --alias field360-dev
+sf org display --target-org field360-dev   # verify
+sf config set target-org field360-dev       # set default
+
+3.  Custom Fields on Standard User Object
+CRITICAL -- Do This First: These 7 fields must be created manually in Setup BEFORE deploying any Apex. The Apex classes reference User.F360__Skills__c, User.F360__Is_Active__c, etc. directly. If the fields do not exist, all Apex classes will fail to compile.
+
+Navigate to: Setup > Object Manager > User > Fields and Relationships > New
+
+Field Label
+API Name
+Data Type
+Detail
+Default
+Description
+F360 Skills
+F360__Skills__c
+Long Text Area
+4096 chars
+(blank)
+Comma-separated equipment skills: HVAC, Generator, Compressor, Electrical. Must match Equipment_Type__c on Work Orders for AI matching.
+F360 First Time Fix Rate
+F360__First_Time_Fix_Rate__c
+Percent
+5 digits, 1 decimal
+(blank)
+Percentage of jobs resolved on first visit. Range 0-100. Used in Smart Assignment scoring (0-20 points).
+F360 Is Active
+F360__Is_Active__c
+Checkbox
+--
+true
+Whether this technician is available for assignment. Set false for on-leave or inactive technicians.
+F360 Preferred Language
+F360__Preferred_Language__c
+Picklist
+en | hi | mr | ta | te
+en
+Language for AI responses. Passed to GenAi Prompt Templates.
+F360 Current Latitude
+F360__Current_Latitude__c
+Number
+10 digits, 6 decimal
+(blank)
+GPS latitude updated by React Native app. Used in proximity scoring.
+F360 Current Longitude
+F360__Current_Longitude__c
+Number
+10 digits, 6 decimal
+(blank)
+GPS longitude updated by React Native app.
+F360 Jobs Completed Total
+F360__Jobs_Completed_Total__c
+Number
+6 digits, 0 decimal
+0
+Running total of completed work orders. Incremented by the WO Completed Flow.
+
+After creating each field: go to Profiles > System Administrator > Field-Level Security > set each field to Visible and Editable.
+
+4.  Custom Objects
+Four custom objects form the digiField360 data model. All use the F360__ namespace prefix. Deploy using the XML metadata files in force-app/main/default/objects/.
+
+4.1  F360__Work_Order__c -- digiField360 Work Order
+The central record. Every field service job is a Work Order. Created by dispatcher or booking agent, assigned to a technician, completed via mobile app, auto-archived to Job History on completion.
+
+Field Label
+API Name
+Type
+Req
+Description
+Work Order Number (Name)
+Name
+Auto-Number WO-{0000}
+Yes
+System-generated. Format: WO-0001, WO-0002...
+Subject
+Subject__c
+Text(255)
+Yes
+One-line description. e.g. "HVAC Annual Service -- Block B"
+Status
+Status__c
+Picklist
+Yes
+Values: New, Assigned, In Progress, Completed, Cancelled
+Priority
+Priority__c
+Picklist
+No
+Values: Critical, High, Medium (default), Low
+Description
+Description__c
+Long Text(32768)
+No
+Full job description including customer complaint details
+Account
+Account__c
+Lookup(Account)
+No
+Customer company. Links to standard Salesforce Account object.
+Assigned Technician
+Assigned_Technician__c
+Lookup(User)
+No
+The technician assigned to this job. Must have F360__Is_Active__c = true.
+Scheduled Date
+Scheduled_Date__c
+DateTime
+No
+When technician is scheduled to arrive. Used by booking agent for slot display.
+Completed Date
+Completed_Date__c
+DateTime
+No
+Set automatically by the WO Completed Flow on status change.
+Equipment ID
+Equipment_ID__c
+Text(50), External ID
+No
+Unique ID for the equipment. CRITICAL -- links Work Orders and Job History for the same machine. This is the key field for predictive maintenance.
+Equipment Type
+Equipment_Type__c
+Text(100)
+No
+e.g. HVAC, Generator, Compressor, Chiller. Must match F360__Skills__c values on User for AI matching.
+Site Address
+Site_Address__c
+Text Area(500)
+No
+Physical location. Shown on technician mobile app.
+Technician Notes
+Technician_Notes__c
+Long Text(32768)
+No
+Notes entered by technician. Primary source for AI service report generation.
+Parts Used
+Parts_Used__c
+Long Text(4096)
+No
+Parts and materials. Copied to Job History for future reference.
+Time Logged (Minutes)
+Time_Logged_Minutes__c
+Number(6,0)
+No
+Time on site entered by technician via mobile app. Converted from hours in the LWC.
+AI Pre-Job Briefing
+AI_Pre_Job_Briefing__c
+Long Text(32768)
+No
+Generated by F360_PreJobBriefingAction. Cached to mobile device for offline reading during drive.
+AI Service Report
+AI_Service_Report__c
+Long Text(32768)
+No
+Generated by F360_ServiceReportAction after job completion. Also stored as ContentVersion PDF.
+AI Assignment Reason
+AI_Assignment_Reason__c
+Text Area(1000)
+No
+Human-readable reason from Smart Assignment AI. Shown to dispatcher before they approve assignment.
+AI Risk Score
+AI_Risk_Score__c
+Number(3,0)
+No
+Populated on maintenance alert records. Score 0-100 indicating failure risk.
+Offline Queue ID
+Offline_Queue_ID__c
+Text(50), External ID
+No
+Set by React Native mobile app when work is queued offline. Used for deduplication on sync.
+Last Synced
+Last_Synced__c
+DateTime
+No
+Updated by mobile app after each successful sync. Monitoring and support field.
+Customer Signature URL
+Customer_Signature_URL__c
+URL
+No
+URL of customer signature ContentVersion. Uploaded by mobile app.
+Briefing Generated
+Briefing_Generated__c
+Checkbox
+No
+Set true by flow after AI briefing stored. Prevents duplicate generation on multiple saves.
+Report Sent To Customer
+Report_Sent_To_Customer__c
+Checkbox
+No
+Set true after service report dispatched via WhatsApp or email.
+
+4.2  F360__Technician__c -- digiField360 Technician
+Profile record for each field technician. Linked one-to-one with a Salesforce User. The Smart Assignment action queries this object to build the ranked recommendation list.
+
+Field Label
+API Name
+Type
+Req
+Description
+Technician Name (Name)
+Name
+Text
+Yes
+Full name of the technician.
+User
+User__c
+Lookup(User), Unique
+Yes
+Linked Salesforce User. One-to-one. This is the login account for the mobile app.
+Skills
+Skills__c
+Long Text(4096)
+No
+Comma-separated equipment types. e.g. "HVAC, Generator, Compressor". Must match Equipment_Type__c values for AI matching to work correctly.
+Current Latitude
+Current_Latitude__c
+Number(10,6)
+No
+Updated by mobile app GPS. Used for proximity scoring in Smart Assignment.
+Current Longitude
+Current_Longitude__c
+Number(10,6)
+No
+Updated by mobile app GPS.
+Location Updated
+Location_Updated__c
+DateTime
+No
+Timestamp of last GPS update. Locations older than 4 hours are treated as stale in assignment.
+Is Active
+Is_Active__c
+Checkbox (default true)
+No
+Set false when technician is on leave or no longer employed. Excludes from assignment pool immediately.
+Preferred Language
+Preferred_Language__c
+Picklist
+No
+Language for AI responses: en, hi, mr, ta, te. Passed to GenAi prompt templates.
+First-Time Fix Rate %
+First_Time_Fix_Rate__c
+Percent(5,1)
+No
+Calculated as (FTF jobs / total jobs) x 100. Updated weekly. Used in Smart Assignment scoring (0-20 points).
+Jobs Completed Total
+Jobs_Completed_Total__c
+Number(6,0)
+No
+Running total. Updated by flow on WO completion.
+Jobs Completed This Month
+Jobs_Completed_This_Month__c
+Number(4,0)
+No
+Reset monthly by scheduled flow. Used in technician leaderboard report.
+Device ID
+Device_ID__c
+Text(100), External ID
+No
+UUID of technician mobile device. Set by React Native app on first login. Used for MCP authentication.
+Available For Assignment
+Available_For_Assignment__c
+Checkbox (default true)
+No
+Dispatcher can toggle false to temporarily exclude (e.g. tech is mid-job and should not be double-booked).
+
+4.3  F360__Job_History__c -- digiField360 Job History
+Created automatically by the WO Completed Flow whenever a work order is marked done. This is the training data for the Predictive Maintenance AI. Every completed job writes one record here. Without records, Feature 6 (predictive maintenance) produces nothing meaningful.
+
+Field Label
+API Name
+Type
+Req
+Description
+Job History Number (Name)
+Name
+Auto-Number JH-{0000}
+Yes
+System-generated.
+Work Order
+Work_Order__c
+Lookup(F360__Work_Order__c)
+No
+Source work order. Preserved (set to null, not deleted) if the WO is later archived.
+Account
+Account__c
+Lookup(Account)
+No
+Copied from Work Order on creation. Enables account-level maintenance analysis.
+Equipment ID
+Equipment_ID__c
+Text(50), External ID
+No
+Copied from Work Order. KEY field for grouping by equipment in predictive maintenance.
+Equipment Type
+Equipment_Type__c
+Text(100)
+No
+Copied from Work Order.
+Fault Description
+Fault_Description__c
+Long Text(4096)
+No
+Copied from WO Description. What the fault was.
+Resolution
+Resolution__c
+Long Text(4096)
+No
+Copied from Technician Notes. How it was fixed.
+Root Cause
+Root_Cause__c
+Picklist
+No
+Values: Wear and Tear, Improper Maintenance, Manufacturing Defect, Environmental, Operator Error, Unknown
+Parts Used
+Parts_Used__c
+Long Text(2000)
+No
+Copied from WO Parts Used. Helps predict parts needed for future similar jobs.
+Technician
+Technician__c
+Lookup(User)
+No
+Copied from WO Assigned Technician. Used to compute per-technician FTF rates.
+Job Date
+Job_Date__c
+Date
+No
+Date of completion. Set by Flow.CurrentDate.
+First Time Fix
+First_Time_Fix__c
+Checkbox (default true)
+No
+Set false if same equipment fault recurred within 30 days. Updated by weekly batch.
+Duration (Minutes)
+Duration_Minutes__c
+Number(6,0)
+No
+Copied from WO Time Logged. Used in predictive maintenance to detect complexity trend.
+Customer Satisfaction
+Customer_Satisfaction__c
+Number(1,0)
+No
+1-5 rating. Populated if customer submits CSAT survey (future feature).
+AI Used
+AI_Used__c
+Checkbox
+No
+Set true if technician used Troubleshooting Assistant during this job. Tracks AI adoption.
+
+4.4  F360__Maintenance_Alert__c -- digiField360 Maintenance Alert
+Created by the Predictive Maintenance Apex action during the nightly scheduled run. Each record represents one piece of equipment flagged as high-risk for failure. Service managers review these in the Dispatch Board each morning.
+
+Field Label
+API Name
+Type
+Req
+Description
+Alert Number (Name)
+Name
+Auto-Number MA-{0000}
+Yes
+System-generated.
+Account
+Account__c
+Lookup(Account)
+No
+Customer owning the at-risk equipment.
+Equipment ID
+Equipment_ID__c
+Text(50)
+No
+The equipment ID flagged as high-risk.
+Equipment Type
+Equipment_Type__c
+Text(100)
+No
+HVAC, Generator, etc.
+Risk Score
+Risk_Score__c
+Number(3,0)
+No
+0-100. Computed by predictive maintenance algorithm. Default threshold for alert creation is 65.
+AI Explanation
+AI_Explanation__c
+Long Text(4096)
+No
+Plain-English explanation from F360_MaintenanceAlert prompt template. Explains why flagged and what to do.
+Jobs In Period
+Jobs_In_Period__c
+Number(4,0)
+No
+Count of jobs on this equipment in the analysis period (default 90 days).
+Days Since Last Service
+Days_Since_Last_Service__c
+Number(4,0)
+No
+Days since the last completed job on this equipment.
+Status
+Status__c
+Picklist
+No
+Values: New (default), Reviewed, Work Order Created, Dismissed
+Resulting Work Order
+Resulting_Work_Order__c
+Lookup(F360__Work_Order__c)
+No
+Populated when dispatcher creates preventive WO from the Dispatch Board.
+Analysis Date
+Analysis_Date__c
+Date
+No
+Date this alert was generated.
+
+
+5.  Apex Classes -- Purpose, Inputs, and Dependencies
+Pattern: Every AI action uses the same Agentforce-required pattern: a Request inner class with @InvocableVariable annotated inputs, a Result inner class with @InvocableVariable annotated outputs, and one static @InvocableMethod that accepts List<Request> and returns List<Result>.
+
+5.1  F360_PreJobBriefingAction.cls -- AI Feature 1: Pre-Job Briefing
+Attribute
+Value
+Agentforce Label
+Generate Pre-Job Briefing
+Agentforce Topic
+Job Preparation
+Category
+digiField360 AI
+Sharing
+with sharing
+When called
+Automatically by the WO Assigned Flow when status changes to Assigned
+
+
+Inputs:
+Variable
+Type
+Required
+Description
+workOrderId
+Id
+Yes
+The F360__Work_Order__c record ID to generate briefing for
+languageCode
+String
+No
+ISO 639-1 code: en, hi, mr, ta. Defaults to en. Passed to GenAi Prompt Template.
+
+Outputs:
+Variable
+Type
+Description
+briefingText
+String
+The full AI-generated briefing. Also saved to AI_Pre_Job_Briefing__c on the Work Order automatically inside the action.
+success
+Boolean
+True if briefing generated without error.
+errorMessage
+String
+Populated if success = false. Contains exception message.
+equipmentType
+String
+Equipment_Type__c from the work order (for logging/display).
+similarJobsCount
+Integer
+Number of F360__Job_History__c records found for this equipment.
+
+Dependencies:
+F360__Work_Order__c -- reads Subject__c, Description__c, Priority__c, Equipment_ID__c, Equipment_Type__c, Site_Address__c, Account__r.Name
+F360__Job_History__c -- queries last 5 records WHERE Equipment_ID__c matches the work order equipment
+ConnectApi.EinsteinLLM -- calls generateMessagesForPromptTemplate("F360_PreJobBriefing", ...)
+GenAiPromptTemplate F360_PreJobBriefing -- must be deployed and Published before this action is called
+
+5.2  F360_ServiceReportAction.cls -- AI Feature 2: Auto Service Report
+Attribute
+Value
+Agentforce Label
+Generate Service Report
+Agentforce Topic
+Job Completion
+When called
+Automatically by the WO Completed Flow when status changes to Completed
+
+
+Inputs:
+Variable
+Type
+Required
+Description
+workOrderId
+Id
+Yes
+The completed F360__Work_Order__c record ID
+sendToCustomer
+Boolean
+No
+If true, calls F360_CustomerNotificationAction.notify() to trigger WhatsApp/email send
+
+Side effects (happen inside the action, not just in return values):
+Updates F360__Work_Order__c.AI_Service_Report__c with the generated report text
+Creates a ContentVersion record linked to the Work Order (Title: "Service Report - WO-XXXX")
+If sendToCustomer = true, calls F360_CustomerNotificationAction.notify()
+
+5.3  F360_TroubleshootingAction.cls -- AI Feature 3: Troubleshooting Assistant
+Attribute
+Value
+Agentforce Label
+Get Troubleshooting Guidance
+Agentforce Topic
+On-Site Technical Support
+When called
+On-demand -- technician types a problem in the mobile app or Agentforce copilot
+
+
+Key internal logic:
+Runs SOSL: FIND :searchTerm IN ALL FIELDS RETURNING Knowledge__kav WHERE PublishStatus = "Online" LIMIT 5
+Passes knowledge articles + problem description to F360_Troubleshooting prompt template
+Sets escalateToSenior = true if LLM response contains "escalate", "senior technician", or "specialist"
+Graceful degradation: if ConnectApi call fails, returns a generic fallback message instead of throwing an exception
+Dependency: Salesforce Knowledge must be enabled and published articles must exist. Without Knowledge articles, the AI still responds but without RAG context -- quality will be lower. Create at least 10-20 articles covering common equipment faults before go-live.
+
+5.4  F360_SmartAssignmentAction.cls -- AI Feature 4: Smart Job Assignment
+Attribute
+Value
+Agentforce Label
+Recommend Technician Assignment
+Agentforce Topic
+Work Order Dispatch
+IMPORTANT
+NEVER assigns autonomously. Always returns recommendations for dispatcher approval. The guardrail enforces this.
+
+
+Scoring algorithm (0-100 points per technician):
+Factor
+Points
+Logic
+Skills match
+0-40
+If User.F360__Skills__c contains the WO Equipment_Type__c (case-insensitive) = 40 points
+Equipment experience
+0-25
+Count of F360__Job_History__c records for this Equipment_Type__c per tech x 5 points (max 25)
+First-time fix rate
+0-20
+(F360__First_Time_Fix_Rate__c / 100) x 20 points
+Workload today
+0-15
+15 minus (jobs scheduled today x 5). Zero if 3+ jobs today.
+
+Additional outputs:
+recommendationsJson -- JSON array of up to 3 TechnicianRecommendation objects (Id, name, score, reason, FTF rate, jobs today)
+Also updates F360__Work_Order__c.AI_Assignment_Reason__c with a summary line for the dispatcher
+
+5.5  F360_PredictiveMaintenanceAction.cls -- AI Feature 6: Predictive Maintenance
+Attribute
+Value
+Agentforce Label
+Run Predictive Maintenance Analysis
+Agentforce Topic
+Preventive Maintenance
+When called
+Nightly at 2am IST via Scheduled Flow (automated) or manually by manager (on demand)
+Data requirement
+Minimum 60-90 days of F360__Job_History__c records to produce meaningful risk scores
+
+
+Risk scoring algorithm:
+Factor
+Max Points
+Logic
+Job frequency
+40
+Min(jobCount x 8, 40). Five or more jobs in 90 days = max score.
+Days since last service
+30
+30 pts if over 60 days. 15 pts if 30-60 days. 0 if under 30 days.
+Repeat failures
+20
+3+ distinct Work Orders on same equipment = 20 pts. 2 = 10 pts.
+Average job duration
+10
+Average duration over 180 minutes = 10 pts (long jobs indicate complex faults).
+
+Tuning: Default risk threshold is 65/100. Adjust via the riskThreshold input variable if too many or too few alerts are generated for the customer equipment portfolio.
+
+5.6  F360_BookingAgentAction.cls -- AI Feature 7: Customer Booking
+Two separate @InvocableMethod methods in the same class. Agentforce calls getAvailableSlots first, presents options to the customer, then calls confirmBooking after the customer selects.
+
+Method
+Agentforce Label
+Key Logic
+getAvailableSlots
+Get Available Booking Slots
+Checks next 3 business days (skips weekends). Finds techs with under 5 jobs that day. Offers 09:00, 13:00, 16:00 slots. Returns up to 3 options.
+confirmBooking
+Confirm Service Booking
+Creates F360__Work_Order__c with Status = Assigned. Returns confirmationMessage text ready for WhatsApp send.
+
+
+5.7  F360_DispatchBoardController.cls -- Wire Queries for LWC
+Method
+Cacheable
+Returns
+Filter Logic
+getOpenWorkOrders()
+Yes
+List<F360__Work_Order__c>
+Status NOT IN (Completed, Cancelled). Ordered by Priority then Scheduled_Date__c.
+getActiveTechnicians()
+Yes
+List<User>
+F360__Is_Active__c = true AND IsActive = true. Ordered by Name.
+getMaintenanceAlerts()
+Yes
+List<F360__Maintenance_Alert__c>
+Status = New. Ordered by Risk_Score__c DESC.
+createPreventiveWorkOrder(alertId)
+No
+F360__Work_Order__c
+Creates WO from alert. Sets Priority = High if Risk_Score >= 80, else Medium. Updates alert Status = Work Order Created.
+
+
+5.8  F360_AI_Tests.cls -- Test Class
+Test Method
+What It Tests
+Key Assertion
+testPreJobBriefingSuccess
+Feature 1 basic call
+Returns 1 result without exception
+testPreJobBriefingWithHistory
+Feature 1 with job history
+5 history records found for HVAC-001
+testSmartAssignmentWithTechnician
+Feature 4 scoring
+success = true, recommendationsJson not null, tech with HVAC skills scores highest
+testSmartAssignmentNoTechnicians
+Feature 4 edge case
+success = true, topTechnicianId = null when no active technicians
+testPredictiveMaintenance_HighRisk
+Feature 6 flags HVAC-001
+alertsCreated >= 1 at threshold 30 (5 jobs in 90 days)
+testPredictiveMaintenance_MaxThreshold
+Feature 6 no alerts
+alertsCreated == 0 at threshold 99
+testGetAvailableSlots
+Feature 7 availability
+success = true, hasSlots = true, slot1Summary not null
+testConfirmBooking
+Feature 7 booking creation
+WO created with Status = Assigned, correct tech, message contains "Booking confirmed"
+testDispatchBoardGetOpenWorkOrders
+Controller wire query
+Returns at least 2 test WOs, none Completed or Cancelled
+testDispatchBoardGetActiveTechnicians
+Controller wire query
+Returns at least 1 active technician
+testCreatePreventiveWorkOrder
+Controller action
+WO created, alert Status = Work Order Created, Resulting_Work_Order__c populated
+
+
+Run command:
+sf apex run test --test-level RunLocalTests --target-org field360-dev --wait 20 --result-format human
+
+Target: 80% minimum coverage on all F360_ classes. Expected actual: approximately 85-90%.
+
+6.  Agentforce Configuration
+IMPORTANT: The Agentforce agent CANNOT be deployed via Metadata API or SF CLI. It must be configured manually in Setup > Agentforce > Agents. The agent script file (digiField360_AI_Agent.agent in the package) is a reference document -- it is not a deployable file.
+
+6.1  Create the Agent
+Navigate to: Setup > Agentforce > Agents > New
+
+Setting
+Value
+Agent Name
+digiField360 AI Assistant
+API Name
+digiField360_AI_Agent
+Agent Type
+Internal -- Lightning Experience Copilot
+Description
+AI assistant for field service operations. Supports technicians, dispatchers, and customers.
+
+
+6.2  System Prompt (Paste into Agentforce Builder)
+You are the digiField360 AI Assistant -- a helpful, practical agent for field service
+operations teams in India and Southeast Asia.
+
+Your role is to assist service managers, dispatchers, and field technicians with:
+- Preparing technicians before they arrive on site
+- Recommending the right technician for each job
+- Generating professional service completion reports
+- Answering troubleshooting questions using the knowledge base
+- Predicting which equipment needs preventive maintenance
+- Helping customers book service appointments via WhatsApp
+
+GUARDRAILS:
+- Never assign a technician without dispatcher approval
+- Never complete or cancel a work order autonomously
+- For safety-critical jobs (electrical, gas, high pressure) -- always escalate
+- For angry or upset customers -- escalate to service manager immediately
+- Keep responses concise -- technicians are in the field, not at a desk
+
+6.3  Topics and Actions -- Create in Agentforce Builder
+Topic Label
+Apex Class
+Method
+Agent Instructions
+Job Preparation
+F360_PreJobBriefingAction
+generateBriefing
+Call when WO is assigned or technician asks "brief me on WO-XXXX". Pass workOrderId and languageCode.
+Work Order Dispatch
+F360_SmartAssignmentAction
+recommend
+Call when dispatcher asks who to assign. Present ranked list. Always end with "Which technician would you like to assign?" -- never assign without confirmation.
+Job Completion
+F360_ServiceReportAction
+generateReport
+Call when WO is completed. Confirm notes are complete before generating. Set sendToCustomer = false initially.
+On-Site Technical Support
+F360_TroubleshootingAction
+getTroubleshootingGuidance
+Call when technician describes a problem. Extract equipment type. If escalateToSenior = true, recommend calling senior immediately.
+Preventive Maintenance
+F360_PredictiveMaintenanceAction
+analyseEquipment
+Run nightly as background agent. When run manually, present results clearly. Recommend manager reviews before creating WOs.
+Customer Booking (Get Slots)
+F360_BookingAgentAction
+getAvailableSlots
+After collecting job description. Offer: "Option 1: [slot1], Option 2: [slot2]. Which works for you?"
+Customer Booking (Confirm)
+F360_BookingAgentAction
+confirmBooking
+Call only after customer explicitly confirms. Send confirmationMessage verbatim.
+
+
+6.4  Guardrails -- Add in Agentforce Builder
+Guardrail Type
+Trigger / Condition
+Agent Action
+Topic Restriction
+Request about HR, finance, sales CRM (outside field service)
+Decline and redirect to appropriate tool
+Keyword Escalation
+angry, complaint, refund, legal, court, manager, supervisor
+Escalate: "I understand this is urgent. Let me connect you with our service manager right away."
+Safety Escalation
+electrical danger, gas leak, fire, safety, injury, emergency
+Do NOT attempt AI resolution. Escalate to human dispatcher immediately.
+Autonomous Action Guard
+Any attempt to complete, cancel, or delete a WO without confirmation
+Refuse. Require explicit human confirmation before any status change.
+Max Actions Guard
+More than 10 Apex actions invoked in one session
+Log warning. Escalate to human. Prevents runaway agent loops.
+
+
+6.5  Prompt Templates -- Deploy Then Publish
+Deploy the 4 templates via SF CLI, then manually publish each in Setup > Prompt Builder > [template] > Edit > Publish.
+
+API Name
+Used By
+Input Variables
+Key Constraint
+F360_PreJobBriefing
+F360_PreJobBriefingAction
+WorkOrder (JSON string), JobHistory (text), Language (code)
+Respond in specified language. Exactly 5 sections. Max 300 words. For phone reading.
+F360_ServiceReport
+F360_ServiceReportAction
+JobData (structured text)
+Formal report for customer documentation. Do not invent data. Write "Not recorded" for missing fields.
+F360_Troubleshooting
+F360_TroubleshootingAction
+ProblemDescription, KnowledgeBase (articles), Language
+Max 200 words. Step-by-step checks in order. Include safety notes. Flag escalation if needed.
+F360_MaintenanceAlert
+F360_PredictiveMaintenanceAction
+EquipmentData (JSON with counts and scores)
+Max 150 words. Plain English for service manager. Make business impact clear.
+
+
+7.  Lightning Web Components
+
+7.1  field360WorkOrderDetail -- Technician Mobile View
+Displayed on the F360__Work_Order__c record page. Designed for mobile use. Fully offline-aware -- shows different messages and labels when navigator.onLine is false.
+
+Attribute
+Value
+Component Name
+field360WorkOrderDetail
+Targets
+lightning__RecordPage (primary), lightning__AppPage
+Configurable Property
+technicianLanguage -- sets AI response language. Options: en, hi, mr, ta. Default: en.
+Wire Adapters
+getRecord from lightning/uiRecordApi -- loads all work order fields
+Apex Imports
+F360_PreJobBriefingAction (generateBriefing), F360_ServiceReportAction (generateReport), F360_TroubleshootingAction (getTroubleshootingGuidance)
+Mutations
+updateRecord from lightning/uiRecordApi -- saves notes, parts, status, time
+
+
+UI sections from top to bottom:
+Offline banner -- appears when navigator.onLine = false. Shows queue count if items pending.
+Work Order header -- number badge, subject, account name, site address, scheduled date, status badge, priority badge
+AI Pre-Job Briefing card -- collapsible, auto-expanded on load. If not yet generated: shows Generate button. If generated: shows full briefing with collapse toggle.
+Job Description -- description text, equipment type and ID
+Log Time -- number input (hours) + Log or Queue button. Converts to minutes internally, saves to Time_Logged_Minutes__c via updateRecord.
+Troubleshooting Assistant -- text area + Get Guidance button. Shows diagnostic steps on return. Shows red escalation banner if escalateToSenior = true.
+Technician Notes -- long text area, pre-populated from record value
+Parts Used -- text area, pre-populated from record value
+Complete Job button -- saves notes, parts, sets Status to Completed. Offline-aware: different label and toast message when offline.
+Completed state -- shows Job Completed card with View Report or Generate Report button
+
+Add to record page:
+Setup > Lightning App Builder > New > Record Page > Object: F360__Work_Order__c
+Drag field360WorkOrderDetail to the main content region
+Set technicianLanguage property to match your technicians language preference
+Activate > assign to profile digiField360 Technician and to the digiField360 Mobile app
+
+7.2  field360DispatchBoard -- Dispatcher and Manager View
+App-level page for service managers and dispatchers. Shows all open work orders, AI assignment recommendations, and predictive maintenance alerts.
+
+Attribute
+Value
+Component Name
+field360DispatchBoard
+Targets
+lightning__AppPage, lightning__HomePage
+Wire Methods
+F360_DispatchBoardController: getOpenWorkOrders, getActiveTechnicians, getMaintenanceAlerts
+Apex Actions
+F360_SmartAssignmentAction.recommend (Get AI Recommendation button), F360_DispatchBoardController.createPreventiveWorkOrder (Create Work Order button from alert)
+Mutations
+updateRecord -- assign technician, change WO status to Assigned
+
+
+UI sections:
+Header bar -- title, stats row (unassigned count, in-progress count, completed today count), refresh button
+Needs Assignment section -- cards for each unassigned WO. Shows AI recommendation text if available. If not: shows Get AI Recommendation button. Technician dropdown picker + Assign button.
+In Progress section -- grid of assigned in-progress WOs with technician name shown
+Predictive Maintenance Alerts section -- list of F360__Maintenance_Alert__c records with Status = New. Risk score badge (red over 80, amber 65-80). One-click Create Preventive Work Order button.
+
+Add to app page:
+Setup > Lightning App Builder > New > App Page > Name: digiField360 Dispatch Board
+Drag field360DispatchBoard to a full-width region
+Activate > add to digiField360 app navigation bar > assign to profile digiField360 Dispatcher
+
+8.  Flows
+
+8.1  F360_WO_Assigned_Generate_Briefing -- Record-Triggered
+Attribute
+Value
+Flow Type
+Record-Triggered (After Save)
+Object
+F360__Work_Order__c
+Trigger Event
+Record Updated
+Entry Condition (Formula)
+AND(ISPICKVAL({!$Record.Status__c}, 'Assigned'), NOT(ISPICKVAL({!$Record__Prior.Status__c}, 'Assigned')), NOT(ISBLANK({!$Record.Assigned_Technician__c})))
+Note
+The formula ensures this only runs when status CHANGED TO Assigned (not on other updates to an already-Assigned record)
+
+
+Flow steps:
+Step 1: Get Technician Language -- queries User.F360__Preferred_Language__c for the assigned technician
+Step 2: Generate AI Briefing -- calls F360_PreJobBriefingAction with workOrderId and language code. The Apex action saves the briefing to AI_Pre_Job_Briefing__c directly inside the action class.
+Step 3: Log Task -- creates a Task on the Work Order (Subject: "AI Pre-Job Briefing Generated") for audit trail
+
+8.2  F360_WO_Completed_Generate_Report -- Record-Triggered
+Attribute
+Value
+Flow Type
+Record-Triggered (After Save)
+Object
+F360__Work_Order__c
+Trigger Event
+Record Updated
+Entry Condition (Formula)
+AND(ISPICKVAL({!$Record.Status__c}, 'Completed'), NOT(ISPICKVAL({!$Record__Prior.Status__c}, 'Completed')))
+
+
+Flow steps:
+Step 1: Generate Service Report -- calls F360_ServiceReportAction. Saves report to AI_Service_Report__c and creates ContentVersion automatically inside the action.
+Step 2: Create Job History -- creates F360__Job_History__c record. Copies Equipment_ID__c, Equipment_Type__c, Description__c (to Fault_Description__c), Technician_Notes__c (to Resolution__c), Parts_Used__c, Assigned_Technician__c, Account__c, Time_Logged_Minutes__c.
+Step 3: Update Technician Jobs Count -- updates the assigned User F360__Jobs_Completed_Total__c (increment by 1).
+
+8.3  F360_Nightly_Predictive_Maintenance -- Scheduled Flow
+Attribute
+Value
+Flow Type
+Scheduled
+Schedule
+Daily
+Time
+8:30 PM UTC = 2:00 AM IST -- must set correctly for India-based operations
+Start Date
+Set to the first date you want analysis to run
+
+
+Flow steps:
+Step 1: Run Predictive Analysis -- calls F360_PredictiveMaintenanceAction with lookBackDays = 90 and riskThreshold = 65
+Step 2: Decision -- checks if alertsCreated > 0
+Step 3 (if yes): Custom Notification -- sends push notification to service managers using customNotificationAction
+Setup required: Create a Custom Notification Type called "F360_Maintenance_Alert_Notification" in Setup > Custom Notifications before activating this flow.
+
+9.  Step-by-Step Deployment Sequence
+CRITICAL -- Follow This Exact Order: Apex that references custom objects fails to compile if objects do not exist. Flows that reference Apex actions fail if Apex is not deployed. The agent cannot be activated until all Apex actions are deployed and all prompt templates are Published.
+
+Step
+Action
+Command or Location
+Verify In
+1
+Enable all prerequisite features (manual)
+Setup -- see Section 2.1 for each path
+Each feature shows Enabled in Setup
+2
+Create 7 User custom fields (manual)
+Setup > Object Manager > User > Fields
+All 7 F360__ fields visible on User object
+3
+Deploy Custom Objects
+sf project deploy start --source-dir force-app/main/default/objects
+Setup > Object Manager -- 4 F360__ objects present
+4
+Deploy Apex Classes
+sf project deploy start --source-dir force-app/main/default/classes
+Setup > Apex Classes -- 9 F360_ classes without compile errors
+5
+Deploy GenAi Prompt Templates
+sf project deploy start --source-dir force-app/main/default/genAiPromptTemplates
+Setup > Prompt Builder -- 4 F360_ templates in Draft status
+6
+Publish Prompt Templates (manual)
+Setup > Prompt Builder > each template > Edit > change status to Published
+Each template shows Published status
+7
+Deploy LWC Components
+sf project deploy start --source-dir force-app/main/default/lwc
+Setup > Lightning Components -- field360WorkOrderDetail and field360DispatchBoard listed
+8
+Deploy Flows
+sf project deploy start --source-dir force-app/main/default/flows
+Setup > Flows -- 3 F360_ flows with Status: Active
+9
+Run Test Classes
+sf apex run test --test-level RunLocalTests --wait 20
+All tests pass. Coverage at least 80% on all F360_ classes.
+10
+Create Agentforce Agent (manual)
+Setup > Agentforce > Agents > New -- see Section 6.1
+Agent appears in Setup
+11
+Configure Agent Topics and Actions (manual)
+Agentforce Builder -- see Section 6.3 for each topic
+All 6 topics with Apex actions visible
+12
+Set Agent Guardrails (manual)
+Agentforce Builder -- see Section 6.4
+All 5 guardrails configured
+13
+Activate Agent (manual)
+Agentforce Builder > Activate button
+Agent status shows Active
+14
+Create Custom Notification Type (manual)
+Setup > Custom Notifications > New -- name: F360_Maintenance_Alert_Notification
+Notification type visible in Setup
+15
+Add LWC to App Pages (manual)
+Lightning App Builder -- see Section 7 for each component
+Both components visible in Lightning Experience
+16
+Create Permission Sets and assign (manual)
+Setup > Permission Sets -- see Section 11.2
+Test user can open F360__ records without errors
+17
+Load test data
+sf data import tree --plan test-data/field360-plan.json
+F360__ records visible in Salesforce
+18
+Verify each AI feature manually
+See verification checklist in Section 10
+All 5 features produce expected output
+
+
+9.1  Combined Deploy Command (after all prerequisites are complete)
+cd field360-ai
+
+sf project deploy start \
+  --manifest force-app/main/default/package.xml \
+  --target-org field360-dev \
+  --wait 30 \
+  --verbose
+If combined deploy fails: Deploy step by step using the order above. Combined deploys sometimes fail when Apex compiles before its dependent objects are processed in the same transaction.
+
+10.  Post-Deployment Verification Checklist
+
+10.1  Feature 1 -- Pre-Job Briefing
+Create a F360__Work_Order__c with Equipment_ID__c = TEST-001 and Equipment_Type__c = HVAC
+Create 3 F360__Job_History__c records with Equipment_ID__c = TEST-001
+Assign the work order to any active technician (change Status to Assigned)
+Wait 30 seconds for the Record-Triggered Flow to fire
+Open the Work Order -- AI_Pre_Job_Briefing__c field should be populated with a structured briefing
+Check Tasks related list -- should show "AI Pre-Job Briefing Generated" task
+
+10.2  Feature 2 -- Service Report
+On the test work order, add text to Technician_Notes__c and Parts_Used__c
+Change Status to Completed
+Wait 30 seconds for the Completed flow to fire
+Check AI_Service_Report__c -- should contain a formal service report with section headers
+Check Files related list -- should show "Service Report - WO-XXXX" file
+
+10.3  Feature 3 -- Troubleshooting Assistant
+Open the Work Order record page -- field360WorkOrderDetail LWC should be visible
+Type "compressor not starting" in the troubleshooting text area
+Click Get Guidance
+Within 10 seconds: diagnostic steps appear below the input field
+If Salesforce Knowledge has relevant articles: response references them. If not: still responds with general guidance.
+
+10.4  Feature 4 -- Smart Assignment
+Open the Dispatch Board app page
+Find an unassigned work order with Equipment_Type__c = HVAC
+Click Get AI Recommendation
+Technician with HVAC in their F360__Skills__c should be recommended with a reason
+Check the Work Order -- AI_Assignment_Reason__c should be populated with the summary
+Select the technician from the dropdown and click Assign -- status should change to Assigned
+
+10.5  Feature 6 -- Predictive Maintenance
+Create 5 or more F360__Job_History__c records all with Equipment_ID__c = HVAC-001 within last 90 days
+Go to Setup > Flows > F360_Nightly_Predictive_Maintenance > Run (manual test run)
+Check F360__Maintenance_Alert__c -- a record for HVAC-001 should be created with Risk_Score > 30
+Open Dispatch Board -- Predictive Maintenance Alerts section should show the alert
+Click Create Preventive Work Order -- a new WO should be created and the alert Status should update
+
+10.6  Common Errors and Fixes
+Error
+Cause
+Fix
+F360__Skills__c does not exist on User
+User custom fields not created before Apex deploy
+Create all 7 User fields in Setup first (Section 3). Then redeploy Apex classes.
+Knowledge__kav does not support query
+Salesforce Knowledge not enabled
+Setup > Knowledge Settings > Enable Knowledge. May take 5-10 minutes to propagate.
+ConnectApi.EinsteinLLM method not found
+Einstein not enabled or wrong API version
+Enable Einstein in Setup. Ensure all class files have @since / api version 66.0.
+Flow: Cannot find apex action
+Apex not deployed before Flow was deployed
+Deploy Apex first, then Flows separately. Never in same transaction when Apex is new.
+GenAiPromptTemplate not found at runtime
+Template deployed but Status is still Draft
+Setup > Prompt Builder > each template > Edit > Publish. Status must show Published.
+Agent activation failed: action not found
+Apex class not accessible to agent integration user
+Check Permission Sets -- agent integration user needs execute permission on all F360_ Apex classes.
+MCP Server: External Client App not found
+ECA not configured for React Native app
+Setup > App Manager > New Connected App. See Section 12.1 for full configuration.
+Test coverage below 75%
+F360_MockPromptTemplate not in its own file
+Move the F360_MockPromptTemplate class to a separate .cls file. Test files should contain only one top-level class.
+Nightly flow not creating alerts
+Insufficient job history (under 60-90 days)
+Load historical job data or lower the riskThreshold parameter. Need minimum 3-5 jobs per equipment in the analysis period.
+
+
+11.  Security Model and Permission Sets
+
+11.1  Profiles Required
+Profile Name
+Base Profile
+Assigned To
+digiField360 Technician
+Minimum Access
+All field technicians. Sees only F360__ objects and their own records via sharing.
+digiField360 Dispatcher
+Standard User
+Service managers and dispatchers. Full F360__ object access and Dispatch Board.
+digiField360 AI Integration
+Minimum Access
+Non-human user account for Agentforce agent. Must have execute access to all F360_ Apex classes.
+System Administrator
+System Administrator
+Implementation team only. Full access.
+
+
+11.2  Permission Sets Required
+Permission Set
+Assigned To
+Key Permissions
+digiField360 Core
+All human users
+CRUD on all F360__ objects, Read on Account, Create Task and Event
+digiField360 AI Actions
+AI Integration User (Agentforce)
+Execute all F360_ Apex classes, CRUD on F360__Work_Order__c, Create F360__Job_History__c, Create F360__Maintenance_Alert__c
+digiField360 Dispatch
+Dispatchers and Managers
+Read F360__Maintenance_Alert__c, Execute F360_DispatchBoardController, Access Dispatch Board app page
+digiField360 Knowledge
+All users
+Read Knowledge__kav articles. Required for Troubleshooting Assistant.
+
+
+11.3  Object-Level Security
+Object
+Technician Profile
+Dispatcher Profile
+AI Integration User
+F360__Work_Order__c
+Read, Edit (own records)
+Read, Create, Edit, Delete
+Read, Edit, Create
+F360__Technician__c
+Read (own record only)
+Read, Create, Edit, Delete
+Read
+F360__Job_History__c
+Read (own records)
+Read, Create
+Read, Create
+F360__Maintenance_Alert__c
+No access
+Read, Edit
+Read, Create, Edit
+Account
+Read
+Read
+Read
+User
+Read
+Read
+Read
+ContentVersion
+Read, Create
+Read, Create, Edit
+Read, Create
+
+
+12.  React Native Mobile App -- Salesforce Configuration
+The React Native mobile app (in field360_complete_package.zip) connects to Salesforce via the Salesforce Hosted MCP Server using OfflineMCPGateway.js. The following Salesforce configuration is required to support the mobile app.
+
+12.1  External Client App (ECA) for OAuth
+Navigate to: Setup > App Manager > New Connected App
+
+Setting
+Value
+App Name
+digiField360 Mobile
+API Name
+digiField360_Mobile
+Enable OAuth Settings
+Yes
+Callback URL
+field360://callback
+OAuth Scopes
+api, refresh_token, offline_access
+Require PKCE
+Yes (essential for mobile security)
+Permitted Users
+Admin-approved users only
+IP Relaxation
+Relax IP restrictions (mobile devices use dynamic IPs)
+
+
+After saving, copy the Consumer Key. Set these values in the React Native .env file:
+SF_MCP_SERVER_URL=https://[yourorg].my.salesforce.com/services/mcp/v1
+SF_OAUTH_CLIENT_ID=[Consumer Key from Connected App above]
+SF_OAUTH_CALLBACK_URL=field360://callback
+SF_INSTANCE_URL=https://[yourorg].my.salesforce.com
+
+12.2  MCP Server Tools the Mobile App Uses
+MCP Tool
+Type
+Used For in digiField360
+sobject_query
+Read (cached)
+Fetch work orders, technician profile, job history for offline cache during morning pre-load
+sobject_search
+Read (cached)
+Product catalogue search, knowledge article lookup in troubleshooting assistant
+sobject_update
+Write (queued offline)
+Update work order status, notes, parts used, completion date, time logged
+sobject_create
+Write (queued offline)
+Create time log entries, photo attachment records
+sobject_describe
+Read (cached)
+Fetch object schema for offline field validation
+
+
+Appendix -- Complete File Inventory
+File Path in Package
+Type
+Purpose
+objects/F360__Work_Order__c/
+Metadata XML
+Work Order custom object -- 24 fields
+objects/F360__Technician__c/
+Metadata XML
+Technician profile custom object -- 13 fields
+objects/F360__Job_History__c/
+Metadata XML
+Job history archive -- 15 fields. Training data for predictive AI.
+objects/F360__Maintenance_Alert__c/
+Metadata XML
+Predictive maintenance alert records -- 11 fields
+classes/F360_PreJobBriefingAction.cls
+Apex
+AI Feature 1 -- Pre-Job Briefing generator
+classes/F360_ServiceReportAction.cls
+Apex
+AI Feature 2 -- Auto Service Report generator
+classes/F360_TroubleshootingAction.cls + F360_CustomerNotificationAction
+Apex
+AI Feature 3 -- Troubleshooting Assistant + WhatsApp notification helper
+classes/F360_SmartAssignmentAction.cls
+Apex
+AI Feature 4 -- Smart Job Assignment scoring and recommendation
+classes/F360_PredictiveMaintenanceAction.cls
+Apex
+AI Feature 6 -- Predictive Maintenance risk scoring
+classes/F360_BookingAgentAction.cls
+Apex
+AI Feature 7 -- Customer Self-Service Booking (2 methods)
+classes/F360_DispatchBoardController.cls
+Apex
+Wire queries and mutations for field360DispatchBoard LWC
+classes/F360_AI_Tests.cls
+Apex Test
+Full test coverage for all above classes (11 test methods)
+genAiPromptTemplates/F360_PreJobBriefing
+XML
+LLM prompt for pre-job briefing. 5 sections. Max 300 words. Multilingual.
+genAiPromptTemplates/F360_ServiceReport
+XML
+LLM prompt for formal service report. Customer-ready documentation.
+genAiPromptTemplates/F360_Troubleshooting
+XML
+LLM prompt for on-site diagnostic guidance. Max 200 words. RAG-enhanced.
+genAiPromptTemplates/F360_MaintenanceAlert
+XML
+LLM prompt for maintenance risk explanation. Manager-facing. Max 150 words.
+lwc/field360WorkOrderDetail/
+LWC (HTML + JS + meta)
+Technician mobile work order view with AI briefing and troubleshooting
+lwc/field360DispatchBoard/
+LWC (HTML + JS + meta)
+Dispatcher board with AI assignment recommendations and maintenance alerts
+flows/F360_WO_Assigned_Generate_Briefing
+Flow XML
+Fires when WO status changes to Assigned. Triggers Pre-Job Briefing.
+flows/F360_WO_Completed_Generate_Report
+Flow XML
+Fires when WO status changes to Completed. Triggers Service Report + Job History.
+flows/F360_Nightly_Predictive_Maintenance
+Flow XML
+Scheduled daily at 2am IST. Triggers Predictive Maintenance analysis.
+package.xml
+Manifest
+SF CLI deployment manifest. API version 66.0.
+agent-script/digiField360_AI_Agent.agent
+Reference doc
+Agent configuration reference. NOT a deployable file -- for manual setup only.
+docs/DEPLOYMENT_GUIDE.md
+Documentation
+CLI deployment quick reference guide

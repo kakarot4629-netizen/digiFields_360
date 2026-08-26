@@ -51,6 +51,7 @@ graph TD
 ## 3. Functional Requirements
 
 ### 3.1 Morning Pre-Load & Cache Sync
+
 - **Requirement**: When a technician starts their shift, the mobile app downloads:
   - All assigned `Work_Order__c` records for today.
   - Equipment records and the last 5 `Job_History__c` records per equipment.
@@ -59,6 +60,7 @@ graph TD
   - SObject schema definitions (`sobject_describe`) for offline input validation.
 
 ### 3.2 Offline Mutation Queue & Synchronization
+
 - **Requirement**: While offline, technicians can:
   - Change Work Order status (`In Progress`, `Completed`).
   - Log hours worked and parts used.
@@ -67,16 +69,19 @@ graph TD
 - **Sync Mechanism**: Every mutation is stamped with a UUID (`Offline_Queue_ID__c`) and timestamp. Once connectivity is restored, the `OfflineMCPGateway` replays mutations sequentially to the MCP Server, which executes Salesforce updates and reconciles timestamps (`Last_Synced__c`).
 
 ### 3.3 On-Site AI Troubleshooting Assistant
-- **Requirement**: Technicians can type or voice-dictate symptoms (e.g. *"compressor not starting after oil change"*).
+
+- **Requirement**: Technicians can type or voice-dictate symptoms (e.g. _"compressor not starting after oil change"_).
 - If online: Calls `F360_TroubleshootingAction` / `sobject_search` via MCP for real-time LLM diagnostic guidance in technician's preferred language (en, hi, mr, ta, te).
 - If offline: Searches local Knowledge cache for matching diagnostic checklists.
 
 ### 3.4 Job Completion & Service Report Generation
+
 - **Requirement**: Upon completing a job, the technician confirms notes and parts used.
 - Trigger `F360_ServiceReportAction` via MCP Server.
 - Save report to `AI_Service_Report__c` and create a `ContentVersion` PDF attachment.
 
 ### 3.5 GPS Location & Technician Telemetry
+
 - **Requirement**: Mobile device periodically sends GPS coordinates (`Current_Latitude__c`, `Current_Longitude__c`) to optimize dispatch routing and smart assignment calculations.
 
 ---
@@ -86,16 +91,19 @@ graph TD
 The Mobile Server Gateway implements JSON-RPC 2.0 endpoints supporting both individual tool calls and batch sync operations:
 
 ### 4.1 `sobject_query`
+
 - **Purpose**: SOQL query execution for morning pre-load and delta sync.
 - **Input**: `{ "soql": "SELECT Id, Subject__c, Status__c, Priority__c, Equipment_Type__c, Equipment_ID__c, Site_Address__c, AI_Pre_Job_Briefing__c FROM Work_Order__c WHERE Status__c IN ('Assigned', 'In Progress')" }`
 - **Output**: JSON array of matching records with pagination metadata.
 
 ### 4.2 `sobject_search`
+
 - **Purpose**: SOSL / Knowledge base search for troubleshooting.
 - **Input**: `{ "searchTerm": "compressor tripping breaker", "sobjectName": "Knowledge__kav" }`
 - **Output**: Ranked knowledge articles, diagnostic steps, and senior escalation flags.
 
 ### 4.3 `sobject_update`
+
 - **Purpose**: Updating work order status, technician notes, parts used, completion dates.
 - **Input**:
   ```json
@@ -114,6 +122,7 @@ The Mobile Server Gateway implements JSON-RPC 2.0 endpoints supporting both indi
 - **Output**: `{ "success": true, "id": "a00000000000WO1" }`
 
 ### 4.4 `sobject_create`
+
 - **Purpose**: Creating `Job_History__c` records, time logs, or `ContentVersion` attachments.
 - **Input**:
   ```json
@@ -131,11 +140,13 @@ The Mobile Server Gateway implements JSON-RPC 2.0 endpoints supporting both indi
 - **Output**: `{ "success": true, "id": "a020000000000H1" }`
 
 ### 4.5 `sobject_describe`
+
 - **Purpose**: Schema introspection for dynamic mobile UI field validation.
 - **Input**: `{ "sobjectName": "Work_Order__c" }`
 - **Output**: Object label, field types, picklist values, required flags.
 
 ### 4.6 `process_offline_queue` (Batch Endpoint)
+
 - **Purpose**: Replay an array of queued offline mutations atomically.
 - **Input**:
   ```json
@@ -180,10 +191,10 @@ The Mobile Server Gateway implements JSON-RPC 2.0 endpoints supporting both indi
 
 ## 6. Mobile Application Screen Structure
 
-| Screen Name | Purpose & Primary Actions |
-| --- | --- |
-| **Shift Dashboard** | Morning Pre-Load button, Shift Status, Today's Work Order List, Sync Status indicator |
-| **Work Order Detail** | Job Details, Customer Contact, AI Pre-Job Briefing expandable card, Status change buttons |
-| **Troubleshooting Hub** | Search bar, Voice input, Diagnostic steps card, Senior Technician escalation button |
-| **Job Completion Form** | Hours worked picker, Parts used checklist, Technician notes textarea, Complete & Generate Report |
-| **Offline Sync Manager** | List of pending offline mutations, Manual Sync Trigger, Last Synced timestamp |
+| Screen Name              | Purpose & Primary Actions                                                                        |
+| ------------------------ | ------------------------------------------------------------------------------------------------ |
+| **Shift Dashboard**      | Morning Pre-Load button, Shift Status, Today's Work Order List, Sync Status indicator            |
+| **Work Order Detail**    | Job Details, Customer Contact, AI Pre-Job Briefing expandable card, Status change buttons        |
+| **Troubleshooting Hub**  | Search bar, Voice input, Diagnostic steps card, Senior Technician escalation button              |
+| **Job Completion Form**  | Hours worked picker, Parts used checklist, Technician notes textarea, Complete & Generate Report |
+| **Offline Sync Manager** | List of pending offline mutations, Manual Sync Trigger, Last Synced timestamp                    |

@@ -1,7 +1,14 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8" ?>
 <CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
     <fullName>Root_Cause__c</fullName>
     <label>Root Cause</label>
     <type>Picklist</type>
-    <valueSet><valueSetDefinition><sorted>false</sorted><value><fullName>Wear and Tear</fullName></value><value><fullName>Improper Maintenance</fullName></value><value><fullName>Manufacturing Defect</fullName></value><value><fullName>Environmental</fullName></value><value><fullName>Operator Error</fullName></value><value><fullName>Unknown</fullName><default>true</default></value></valueSetDefinition></valueSet>
+    <valueSet><valueSetDefinition><sorted>false</sorted><value><fullName
+        >Wear and Tear</fullName></value><value><fullName
+        >Improper Maintenance</fullName></value><value><fullName
+        >Manufacturing Defect</fullName></value><value><fullName
+        >Environmental</fullName></value><value><fullName
+        >Operator Error</fullName></value><value><fullName
+        >Unknown</fullName><default
+        >true</default></value></valueSetDefinition></valueSet>
 </CustomField>

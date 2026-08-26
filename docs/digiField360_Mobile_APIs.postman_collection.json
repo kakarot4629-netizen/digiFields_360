@@ -38,12 +38,8 @@
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/health",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "health"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["health"]
             },
             "description": "Check if API server is running and discover all available endpoints."
           }
@@ -54,17 +50,13 @@
       "name": "2. Authentication & Profile",
       "item": [
         {
-          "name": "2.1 POST Technician Login",
+          "name": "2.1 POST Technician Login (Valid Credentials)",
           "request": {
             "method": "POST",
             "header": [
               {
                 "key": "Content-Type",
                 "value": "application/json"
-              },
-              {
-                "key": "x-mock-mode",
-                "value": "true"
               }
             ],
             "body": {
@@ -73,22 +65,19 @@
             },
             "url": {
               "raw": "{{baseUrl}}/api/auth/login",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "auth",
-                "login"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "login"]
             },
-            "description": "Authenticate technician and obtain Bearer token. Enter any username/email (e.g. vikram.sharma@digifield360.com, ananya.roy@digifield360.com, or your custom email)."
+            "description": "Authenticate technician and obtain Bearer token. Registered mock accounts include: vikram.sharma@digifield360.com, piyush.channe@digifield360.com, ananya.roy@digifield360.com (Password: Password123)."
           },
           "event": [
             {
               "listen": "test",
               "script": {
                 "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
                   "var jsonData = pm.response.json();",
                   "if (jsonData.success && jsonData.token) {",
                   "    pm.collectionVariables.set('authToken', jsonData.token);",
@@ -103,7 +92,46 @@
           ]
         },
         {
-          "name": "2.2 POST Refresh Token",
+          "name": "2.2 POST Technician Login (Invalid Credentials - Expect 401)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"vikram.sharma@digifield360.com\",\n  \"password\": \"WRONG_PASSWORD_999\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "login"]
+            },
+            "description": "Verification test endpoint demonstrating that incorrect password or non-existent username returns HTTP 401 Unauthorized."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 401 Unauthorized\", function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});",
+                  "var jsonData = pm.response.json();",
+                  "pm.test(\"Error code is INVALID_CREDENTIALS\", function () {",
+                  "    pm.expect(jsonData.code).to.eql(\"INVALID_CREDENTIALS\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "2.3 POST Refresh Token",
           "request": {
             "method": "POST",
             "header": [
@@ -112,79 +140,54 @@
                 "value": "application/json"
               },
               {
-                "key": "x-mock-mode",
-                "value": "true"
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
               }
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"refreshToken\": \"sample_refresh_token_uuid_88392\"\n}"
+              "raw": "{\n  \"refreshToken\": \"{{authToken}}\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/auth/refresh",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "auth",
-                "refresh"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "refresh"]
             },
             "description": "Silent token refresh for mobile background session."
           }
         },
         {
-          "name": "2.3 GET Technician Profile",
+          "name": "2.4 GET Technician Profile",
           "request": {
             "method": "GET",
             "header": [
               {
                 "key": "Authorization",
                 "value": "Bearer {{authToken}}"
-              },
-              {
-                "key": "x-mock-mode",
-                "value": "true"
               }
             ],
             "url": {
               "raw": "{{baseUrl}}/api/technician/profile",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "technician",
-                "profile"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "technician", "profile"]
             },
             "description": "Fetch logged-in technician profile, skills, and fix rates."
           }
         },
         {
-          "name": "2.4 GET Top 10 Customer Accounts",
+          "name": "2.5 GET Top 10 Customer Accounts",
           "request": {
             "method": "GET",
             "header": [
               {
                 "key": "Authorization",
                 "value": "Bearer {{authToken}}"
-              },
-              {
-                "key": "x-mock-mode",
-                "value": "true"
               }
             ],
             "url": {
               "raw": "{{baseUrl}}/api/accounts?limit=10",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "accounts"
-              ],
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "accounts"],
               "query": [
                 {
                   "key": "limit",
@@ -196,29 +199,19 @@
           }
         },
         {
-          "name": "2.5 GET Full Authenticated User Details & Work Orders",
+          "name": "2.6 GET Full Authenticated User Details & Work Orders",
           "request": {
             "method": "GET",
             "header": [
               {
                 "key": "Authorization",
                 "value": "Bearer {{authToken}}"
-              },
-              {
-                "key": "x-mock-mode",
-                "value": "true"
               }
             ],
             "url": {
               "raw": "{{baseUrl}}/api/user/details",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "user",
-                "details"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "user", "details"]
             },
             "description": "Fetch complete aggregated user details, profile, assigned work orders, equipment history, and accounts for the authenticated user decoded directly from the Bearer JWT token."
           },
@@ -241,29 +234,19 @@
           ]
         },
         {
-          "name": "2.6 GET User Details (Invalid Token - Expect 404)",
+          "name": "2.7 GET User Details (Invalid Token - Expect 404)",
           "request": {
             "method": "GET",
             "header": [
               {
                 "key": "Authorization",
                 "value": "Bearer invalid_unregistered_token_999"
-              },
-              {
-                "key": "x-mock-mode",
-                "value": "true"
               }
             ],
             "url": {
               "raw": "{{baseUrl}}/api/user/details",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "user",
-                "details"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "user", "details"]
             },
             "description": "Verification test endpoint demonstrating that invalid or unidentified JWT tokens return HTTP 404 User Not Found."
           }
@@ -289,14 +272,8 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/api/sync/morning-payload",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "sync",
-                "morning-payload"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "sync", "morning-payload"]
             },
             "description": "High performance pre-load batch downloading all today's jobs, equipment history, and troubleshooting guides into mobile local storage."
           },
@@ -331,13 +308,8 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/api/work-orders?status=Assigned",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "work-orders"
-              ],
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "work-orders"],
               "query": [
                 {
                   "key": "status",
@@ -378,14 +350,8 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/api/work-orders/{{workOrderId}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "work-orders",
-                "{{workOrderId}}"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "work-orders", "{{workOrderId}}"]
             },
             "description": "Get full details of a work order including equipment job history."
           }
@@ -414,15 +380,8 @@
             },
             "url": {
               "raw": "{{baseUrl}}/api/work-orders/{{workOrderId}}/status",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "work-orders",
-                "{{workOrderId}}",
-                "status"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "work-orders", "{{workOrderId}}", "status"]
             },
             "description": "Change work order status (e.g. In Progress, En Route, On Site)."
           }
@@ -451,15 +410,8 @@
             },
             "url": {
               "raw": "{{baseUrl}}/api/work-orders/{{workOrderId}}/time-log",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "work-orders",
-                "{{workOrderId}}",
-                "time-log"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "work-orders", "{{workOrderId}}", "time-log"]
             },
             "description": "Log hours and minutes worked on a job."
           }
@@ -488,15 +440,8 @@
             },
             "url": {
               "raw": "{{baseUrl}}/api/work-orders/{{workOrderId}}/complete",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "work-orders",
-                "{{workOrderId}}",
-                "complete"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "work-orders", "{{workOrderId}}", "complete"]
             },
             "description": "Mark work order as Completed with notes, parts used, base64 photos, and trigger AI service report generation."
           }
@@ -525,14 +470,8 @@
             },
             "url": {
               "raw": "{{baseUrl}}/api/attachments/upload",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "attachments",
-                "upload"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "attachments", "upload"]
             },
             "description": "Upload a customer digital signature or job site photo directly into Salesforce ContentVersion & ContentDocumentLink attached to the Work Order."
           }
@@ -566,14 +505,8 @@
             },
             "url": {
               "raw": "{{baseUrl}}/api/ai/query",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "ai",
-                "query"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "ai", "query"]
             },
             "description": "Dynamic Query: Automatically resolves target SObject = Account, selects revenue & city fields, applies WHERE BillingCity = 'Pune' ORDER BY AnnualRevenue DESC, and returns records + AI summary."
           }
@@ -602,14 +535,8 @@
             },
             "url": {
               "raw": "{{baseUrl}}/api/ai/query",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "ai",
-                "query"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "ai", "query"]
             },
             "description": "Dynamic Query: Automatically resolves target SObject = Account, applies WHERE Industry = 'Biotechnology', and returns records + AI summary."
           }
@@ -638,14 +565,8 @@
             },
             "url": {
               "raw": "{{baseUrl}}/api/ai/query",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "ai",
-                "query"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "ai", "query"]
             },
             "description": "Dynamic Query: Automatically resolves target SObject = Technician__c, filters Skills__c LIKE '%HVAC%' AND City__c = 'Mumbai', and returns records + AI summary."
           }
@@ -674,14 +595,8 @@
             },
             "url": {
               "raw": "{{baseUrl}}/api/ai/query",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "ai",
-                "query"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "ai", "query"]
             },
             "description": "Dynamic Query: Automatically resolves target SObject = Work_Order__c, filters Priority__c IN ('Critical', 'High'), and returns records + AI summary."
           }
@@ -710,14 +625,8 @@
             },
             "url": {
               "raw": "{{baseUrl}}/api/ai/query",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "ai",
-                "query"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "ai", "query"]
             },
             "description": "Dynamic Query: Automatically resolves target SObject = Maintenance_Alert__c, filters Severity__c = 'Critical' AND Status__c = 'Open', and returns records + AI summary."
           }
@@ -746,14 +655,8 @@
             },
             "url": {
               "raw": "{{baseUrl}}/api/query/soql",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "query",
-                "soql"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "query", "soql"]
             },
             "description": "Directly execute any raw SOQL query against Salesforce or mock schema."
           }
@@ -782,14 +685,8 @@
             },
             "url": {
               "raw": "{{baseUrl}}/api/ai/troubleshoot",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "ai",
-                "troubleshoot"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "ai", "troubleshoot"]
             },
             "description": "Knowledge search & AI diagnostic checklist generation."
           }
@@ -818,14 +715,8 @@
             },
             "url": {
               "raw": "{{baseUrl}}/api/ai/pre-job-briefing",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "ai",
-                "pre-job-briefing"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "ai", "pre-job-briefing"]
             },
             "description": "Generate or retrieve AI pre-job briefing for the technician."
           }
@@ -854,14 +745,8 @@
             },
             "url": {
               "raw": "{{baseUrl}}/api/ai/service-report",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "ai",
-                "service-report"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "ai", "service-report"]
             },
             "description": "Generate AI service report from job notes."
           }
@@ -895,14 +780,8 @@
             },
             "url": {
               "raw": "{{baseUrl}}/api/sync/offline-queue",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "sync",
-                "offline-queue"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "sync", "offline-queue"]
             },
             "description": "Replay an array of mutations queued on device while offline."
           }
@@ -931,14 +810,8 @@
             },
             "url": {
               "raw": "{{baseUrl}}/api/technician/location",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "technician",
-                "location"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "technician", "location"]
             },
             "description": "Update technician GPS coordinates for smart dispatch tracking."
           }
@@ -959,14 +832,8 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/api/schema/Work_Order__c",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "schema",
-                "Work_Order__c"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "schema", "Work_Order__c"]
             },
             "description": "Fetch schema metadata for offline mobile form validation."
           }
@@ -983,12 +850,8 @@
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/mcp",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "mcp"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["mcp"]
             },
             "description": "Check MCP server status and endpoint."
           }
@@ -1009,12 +872,8 @@
             },
             "url": {
               "raw": "{{baseUrl}}/mcp",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "mcp"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["mcp"]
             },
             "description": "List all 5 MCP tools supported by the server."
           }
@@ -1039,12 +898,8 @@
             },
             "url": {
               "raw": "{{baseUrl}}/mcp",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "mcp"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["mcp"]
             },
             "description": "Execute a SOQL query via MCP tool."
           }
@@ -1069,12 +924,8 @@
             },
             "url": {
               "raw": "{{baseUrl}}/mcp",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "mcp"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["mcp"]
             },
             "description": "Search Knowledge base via MCP tool."
           }
@@ -1099,12 +950,8 @@
             },
             "url": {
               "raw": "{{baseUrl}}/mcp",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "mcp"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["mcp"]
             },
             "description": "Update record fields via MCP tool."
           }
@@ -1129,12 +976,8 @@
             },
             "url": {
               "raw": "{{baseUrl}}/mcp",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "mcp"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["mcp"]
             },
             "description": "Create a new record via MCP tool."
           }
@@ -1159,12 +1002,8 @@
             },
             "url": {
               "raw": "{{baseUrl}}/mcp",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "mcp"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["mcp"]
             },
             "description": "Describe SObject schema via MCP tool."
           }
@@ -1189,12 +1028,8 @@
             },
             "url": {
               "raw": "{{baseUrl}}/mcp",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "mcp"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["mcp"]
             },
             "description": "Query top 10 Accounts via MCP tool."
           }
@@ -1219,12 +1054,8 @@
             },
             "url": {
               "raw": "{{baseUrl}}/mcp",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "mcp"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["mcp"]
             },
             "description": "Execute any natural language prompt via MCP tool dynamically."
           }

@@ -4,11 +4,11 @@
 
 The four custom objects and their fields are now source-controlled with these API names:
 
-| Specification name | Project API name |
-| --- | --- |
-| `F360__Work_Order__c` | `Work_Order__c` |
-| `F360__Technician__c` | `Technician__c` |
-| `F360__Job_History__c` | `Job_History__c` |
+| Specification name           | Project API name       |
+| ---------------------------- | ---------------------- |
+| `F360__Work_Order__c`        | `Work_Order__c`        |
+| `F360__Technician__c`        | `Technician__c`        |
+| `F360__Job_History__c`       | `Job_History__c`       |
 | `F360__Maintenance_Alert__c` | `Maintenance_Alert__c` |
 
 This is the required mapping for every Apex class, Flow, LWC import, permission set, test, and manifest entry. Do not deploy the existing Apex, LWC, Flows, or permission sets yet: they still reference the old `F360__...` object API names and will fail.

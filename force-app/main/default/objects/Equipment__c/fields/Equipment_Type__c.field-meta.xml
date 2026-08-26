@@ -1,7 +1,14 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8" ?>
 <CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
     <fullName>Equipment_Type__c</fullName>
     <label>Equipment Type</label>
     <type>Picklist</type>
-    <valueSet><valueSetDefinition><sorted>false</sorted><value><fullName>HVAC</fullName></value><value><fullName>Generator</fullName></value><value><fullName>Compressor</fullName></value><value><fullName>Pump</fullName></value><value><fullName>Motor</fullName></value><value><fullName>Electrical</fullName></value><value><fullName>Plumbing</fullName></value><value><fullName>Other</fullName></value></valueSetDefinition></valueSet>
+    <valueSet><valueSetDefinition><sorted>false</sorted><value><fullName
+        >HVAC</fullName></value><value><fullName
+        >Generator</fullName></value><value><fullName
+        >Compressor</fullName></value><value><fullName
+        >Pump</fullName></value><value><fullName>Motor</fullName></value><value
+      ><fullName>Electrical</fullName></value><value><fullName
+        >Plumbing</fullName></value><value><fullName
+        >Other</fullName></value></valueSetDefinition></valueSet>
 </CustomField>

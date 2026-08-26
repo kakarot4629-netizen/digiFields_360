@@ -1,6 +1,7 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8" ?>
 <CustomApplication xmlns="http://soap.sforce.com/2006/04/metadata">
-    <description>digiField 360 Starter - A custom Field Service management system on the Salesforce Platform.</description>
+    <description
+  >digiField 360 Starter - A custom Field Service management system on the Salesforce Platform.</description>
     <formFactors>Large</formFactors>
     <label>digiField 360</label>
     <navType>Standard</navType>

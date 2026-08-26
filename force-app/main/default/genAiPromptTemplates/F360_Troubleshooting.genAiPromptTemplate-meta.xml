@@ -1,10 +1,12 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8" ?>
 <GenAiPromptTemplate xmlns="http://soap.sforce.com/2006/04/metadata">
     <masterLabel>F360 Troubleshooting</masterLabel>
     <type>einstein_gpt__flex</type>
-    <description>On-site diagnostic guidance for field technicians. Searches knowledge base and returns ranked probable causes with step-by-step resolution in the technician's preferred language.</description>
+    <description
+  >On-site diagnostic guidance for field technicians. Searches knowledge base and returns ranked probable causes with step-by-step resolution in the technician's preferred language.</description>
     <templateVersions>
-        <content>You are an expert field service troubleshooting assistant. A technician on site has a problem they cannot immediately solve. Give them practical, step-by-step diagnostic guidance.
+        <content
+    >You are an expert field service troubleshooting assistant. A technician on site has a problem they cannot immediately solve. Give them practical, step-by-step diagnostic guidance.
 
 LANGUAGE: Respond in {!$Input:Language}. If "hi" write in Hindi. If "mr" write in Marathi. If "ta" write in Tamil. Otherwise English. Technical terms (part names, measurements) can remain in English even in Hindi/regional language responses.
 

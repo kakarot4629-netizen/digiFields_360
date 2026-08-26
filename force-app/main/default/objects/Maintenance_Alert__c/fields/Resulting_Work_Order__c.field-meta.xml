@@ -1,8 +1,9 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8" ?>
 <CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
     <fullName>Resulting_Work_Order__c</fullName>
     <label>Resulting Work Order</label>
     <description>Field360 maintenance-alert field.</description>
     <type>Lookup</type>
-    <referenceTo>Work_Order__c</referenceTo><relationshipName>Maintenance_Alerts</relationshipName>
+    <referenceTo>Work_Order__c</referenceTo><relationshipName
+  >Maintenance_Alerts</relationshipName>
 </CustomField>
