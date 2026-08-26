@@ -87,17 +87,43 @@ x-mock-mode: true  (Optional: returns rich mock data for offline UI testing)
         "BillingCity": "Pune",
         "Phone": "+91 20 2690 0000",
         "AnnualRevenue": 85000000
-      },
-      {
-        "Id": "0010000002",
-        "Name": "DLF CyberCity Towers",
-        "Industry": "Real Estate",
-        "Type": "Customer - Direct",
-        "BillingCity": "Gurugram",
-        "Phone": "+91 124 456 7890",
-        "AnnualRevenue": 120000000
       }
     ]
+  }
+  ```
+
+### 2.5 Get Full Authenticated User Details & Work Orders
+- **Method & Path**: `GET /api/user/details`
+- **Headers**: `Authorization: Bearer <ACCESS_TOKEN>`
+- **Description**: Automatically decodes user identity directly from the Bearer JWT Auth Token and returns full aggregated profile details, assigned work orders, equipment history, and top customer accounts in a single payload.
+- **Success Response (200 OK)**:
+  ```json
+  {
+    "success": true,
+    "user": {
+      "id": "TECH-001",
+      "name": "Vikram Sharma",
+      "email": "vikram.sharma@digifield360.com",
+      "skills": ["Generator", "HVAC", "Compressor", "Electrical"],
+      "firstTimeFixRate": 92.5
+    },
+    "workOrdersCount": 3,
+    "workOrders": [ ... ],
+    "equipmentHistory": [ ... ],
+    "accounts": [ ... ],
+    "aiPreJobBriefing": "ALERT for Vikram Sharma: Asset EQ-GEN-001 overheated..."
+  }
+  ```
+
+### 2.6 Strict Authentication Error Handling (User Not Found)
+- **Status Code**: `404 Not Found` (or `401 Unauthorized`)
+- **Condition**: Sent when an invalid, missing, or unrecognized JWT Auth Token is supplied. The server strictly rejects unidentified requests without fallback to mock defaults.
+- **Error Response**:
+  ```json
+  {
+    "success": false,
+    "error": "User not found for provided JWT auth token",
+    "code": "USER_NOT_FOUND"
   }
   ```
 

@@ -5,9 +5,51 @@
  */
 const http = require('http');
 const url = require('url');
+const crypto = require('crypto');
 
 const PORT = process.env.PORT || 3000;
 const DEFAULT_INSTANCE_URL = process.env.SF_INSTANCE_URL || 'https://orgfarm-4036b01401-dev-ed.develop.my.salesforce.com';
+const JWT_SECRET = process.env.JWT_SECRET || 'digifield360_mobile_app_jwt_secret_key_2026';
+
+function generateJWT(tech) {
+  const header = { alg: 'HS256', typ: 'JWT' };
+  const payload = {
+    sub: tech.id,
+    name: tech.name,
+    email: tech.email,
+    skills: tech.skills || [],
+    iss: 'digiField360_Backend_Gateway',
+    iat: Math.floor(Date.now() / 1000),
+    exp: Math.floor(Date.now() / 1000) + 7200
+  };
+
+  const base64Header = Buffer.from(JSON.stringify(header)).toString('base64url');
+  const base64Payload = Buffer.from(JSON.stringify(payload)).toString('base64url');
+  const signature = crypto
+    .createHmac('sha256', JWT_SECRET)
+    .update(`${base64Header}.${base64Payload}`)
+    .digest('base64url');
+
+  return `${base64Header}.${base64Payload}.${signature}`;
+}
+
+function verifyAndDecodeJWT(tokenStr) {
+  if (!tokenStr) return null;
+  const raw = String(tokenStr).trim().replace(/^Bearer\s+/i, '');
+  const parts = raw.split('.');
+  if (parts.length === 3) {
+    try {
+      const payload = JSON.parse(Buffer.from(parts[1], 'base64url').toString('utf8'));
+      if (payload.exp && payload.exp < Math.floor(Date.now() / 1000)) {
+        return null;
+      }
+      return payload;
+    } catch (e) {
+      return null;
+    }
+  }
+  return null;
+}
 
 // ── Mock Data for Mobile Developer Sandbox / Offline Testing ────────────────
 const MOCK_TECHNICIANS = [
@@ -58,6 +100,18 @@ const MOCK_TECHNICIANS = [
     currentLatitude: 28.613939,
     currentLongitude: 77.209021,
     jobsCompletedTotal: 312
+  },
+  {
+    id: 'TECH-005',
+    name: 'Piyush Channe',
+    email: 'piyush.channe@digifield360.com',
+    skills: ['Generator', 'HVAC', 'Compressor', 'Electrical'],
+    firstTimeFixRate: 95.0,
+    isActive: true,
+    preferredLanguage: 'en',
+    currentLatitude: 18.52043,
+    currentLongitude: 73.856743,
+    jobsCompletedTotal: 180
   }
 ];
 
@@ -66,12 +120,19 @@ const MOCK_TECHNICIAN = MOCK_TECHNICIANS[0];
 function resolveTechnicianProfile(inputUser, inputEmail, tokenStr) {
   let searchStr = (inputUser || inputEmail || '').trim().toLowerCase();
 
-  if (!searchStr && tokenStr) {
-    const tokenMatch = String(tokenStr).match(/mock_jwt_token_([A-Za-z0-9_\-\.]+)/i);
-    if (tokenMatch && tokenMatch[1]) {
-      searchStr = tokenMatch[1].toLowerCase();
+  if (tokenStr) {
+    const decodedPayload = verifyAndDecodeJWT(tokenStr);
+    if (decodedPayload) {
+      if (decodedPayload.email) searchStr = decodedPayload.email.toLowerCase();
+      else if (decodedPayload.sub) searchStr = decodedPayload.sub.toLowerCase();
     } else {
-      searchStr = String(tokenStr).toLowerCase();
+      const strToken = String(tokenStr).trim();
+      const tokenMatch = strToken.match(/(?:mock_jwt_token_|sf_token_)([A-Za-z0-9_\-\.\@]+)/i);
+      if (tokenMatch && tokenMatch[1]) {
+        searchStr = tokenMatch[1].toLowerCase();
+      } else if (!searchStr && strToken) {
+        searchStr = strToken.toLowerCase();
+      }
     }
   }
 
@@ -81,17 +142,36 @@ function resolveTechnicianProfile(inputUser, inputEmail, tokenStr) {
       t.email.toLowerCase() === searchStr ||
       t.name.toLowerCase().includes(searchStr) ||
       searchStr.includes(t.id.toLowerCase()) ||
+      searchStr.includes(t.name.toLowerCase().replace(/\s+/g, '.')) ||
+      searchStr.includes(t.name.toLowerCase().replace(/\s+/g, '_')) ||
       searchStr.includes(t.name.split(' ')[0].toLowerCase())
     );
     if (found) return found;
 
-    // Generate dynamic profile on-the-fly for unknown email/username
+    // Strict validation: Token or identity provided but user is NOT found -> return null
+    return null;
+  }
+
+  // If no token or search parameter provided, default to primary mock technician
+  return MOCK_TECHNICIANS[0];
+}
+
+function registerOrGetTechnician(targetUser, email) {
+  let searchStr = (targetUser || email || '').trim().toLowerCase();
+  if (searchStr) {
+    const existing = MOCK_TECHNICIANS.find(t =>
+      t.id.toLowerCase() === searchStr ||
+      t.email.toLowerCase() === searchStr ||
+      t.name.toLowerCase().includes(searchStr)
+    );
+    if (existing) return existing;
+
     let displayName = searchStr.includes('@') ? searchStr.split('@')[0] : searchStr;
     displayName = displayName.replace(/[_\.\-]/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
-    const userEmail = inputEmail || (searchStr.includes('@') ? searchStr : `${searchStr.replace(/\s+/g, '.')}@digifield360.com`);
+    const userEmail = email || (searchStr.includes('@') ? searchStr : `${searchStr.replace(/\s+/g, '.')}@digifield360.com`);
     const cleanId = 'TECH-' + (Math.abs(hashString(searchStr)) % 900 + 100);
 
-    return {
+    const newTech = {
       id: cleanId,
       name: displayName || 'Field Technician',
       email: userEmail,
@@ -103,6 +183,8 @@ function resolveTechnicianProfile(inputUser, inputEmail, tokenStr) {
       currentLongitude: 73.856743,
       jobsCompletedTotal: 50
     };
+    MOCK_TECHNICIANS.push(newTech);
+    return newTech;
   }
 
   return MOCK_TECHNICIANS[0];
@@ -580,12 +662,13 @@ const server = http.createServer(async (req, res) => {
       const body = await parseRequestBody(req);
       const { username, email, password, oauthCode, accessToken } = body;
       const targetUser = username || email || 'Vikram Sharma';
-      const activeTech = resolveTechnicianProfile(targetUser, email, token);
+      const activeTech = registerOrGetTechnician(targetUser, email);
+      const jwtToken = generateJWT(activeTech);
 
       if (isMockMode) {
         return sendJSON(res, 200, {
           success: true,
-          token: `mock_jwt_token_${activeTech.id.toLowerCase()}`,
+          token: jwtToken,
           tokenType: 'Bearer',
           expiresIn: 7200,
           instanceUrl: DEFAULT_INSTANCE_URL,
@@ -619,14 +702,16 @@ const server = http.createServer(async (req, res) => {
 
         return sendJSON(res, 200, {
           success: true,
-          token: accessToken || token || `sf_token_${activeTech.id}`,
+          token: accessToken || jwtToken,
+          tokenType: 'Bearer',
           instanceUrl: instanceUrl,
           technician: liveTechProfile
         });
       } catch (err) {
         return sendJSON(res, 200, {
           success: true,
-          token: accessToken || token || `sf_token_${activeTech.id}`,
+          token: accessToken || jwtToken,
+          tokenType: 'Bearer',
           instanceUrl: instanceUrl,
           technician: activeTech
         });
@@ -635,9 +720,14 @@ const server = http.createServer(async (req, res) => {
 
     if (req.method === 'POST' && pathname === '/api/auth/refresh') {
       const body = await parseRequestBody(req);
+      const targetUser = body.username || body.email || 'Vikram Sharma';
+      const activeTech = registerOrGetTechnician(targetUser, body.email);
+      const refreshedToken = generateJWT(activeTech);
+
       return sendJSON(res, 200, {
         success: true,
-        accessToken: 'refreshed_mock_jwt_token_' + Date.now(),
+        accessToken: refreshedToken,
+        tokenType: 'Bearer',
         expiresIn: 7200,
         refreshedAt: new Date().toISOString()
       });
@@ -647,9 +737,42 @@ const server = http.createServer(async (req, res) => {
       const targetUser = query.username || query.email || query.technicianId;
       const activeTech = resolveTechnicianProfile(targetUser, query.email, token);
 
+      if (!activeTech) {
+        return sendJSON(res, 404, {
+          success: false,
+          error: 'User not found for provided JWT auth token',
+          code: 'USER_NOT_FOUND'
+        });
+      }
+
       return sendJSON(res, 200, {
         success: true,
         technician: activeTech
+      });
+    }
+
+    // GET /api/user/details (Full User Profile, Work Orders & Aggregated Data via JWT Token)
+    if (req.method === 'GET' && pathname === '/api/user/details') {
+      const targetUser = query.username || query.email || query.technicianId;
+      const activeTech = resolveTechnicianProfile(targetUser, query.email, token);
+
+      if (!activeTech) {
+        return sendJSON(res, 404, {
+          success: false,
+          error: 'User not found for provided JWT auth token',
+          code: 'USER_NOT_FOUND'
+        });
+      }
+
+      const userWorkOrders = getWorkOrdersForTechnician(activeTech);
+      return sendJSON(res, 200, {
+        success: true,
+        user: activeTech,
+        workOrdersCount: userWorkOrders.length,
+        workOrders: userWorkOrders,
+        equipmentHistory: MOCK_JOB_HISTORY,
+        accounts: MOCK_ACCOUNTS.slice(0, 5),
+        aiPreJobBriefing: userWorkOrders[0]?.AI_Pre_Job_Briefing__c || null
       });
     }
 
@@ -657,8 +780,17 @@ const server = http.createServer(async (req, res) => {
     // 3. MORNING PRE-LOAD & BATCH SYNC APIS
     // ═════════════════════════════════════════════════════════════════════════
     if (req.method === 'GET' && pathname === '/api/sync/morning-payload') {
-      const technicianId = query.technicianId || query.username || token;
+      const technicianId = query.technicianId || query.username;
       const activeTech = resolveTechnicianProfile(technicianId, query.email, token);
+
+      if (!activeTech) {
+        return sendJSON(res, 404, {
+          success: false,
+          error: 'User not found for provided JWT auth token',
+          code: 'USER_NOT_FOUND'
+        });
+      }
+
       const dynamicOrders = getWorkOrdersForTechnician(activeTech);
 
       if (isMockMode) {
@@ -738,6 +870,15 @@ const server = http.createServer(async (req, res) => {
     // ═════════════════════════════════════════════════════════════════════════
     if (req.method === 'GET' && pathname === '/api/work-orders') {
       const activeTech = resolveTechnicianProfile(query.technicianId || query.username, query.email, token);
+
+      if (!activeTech) {
+        return sendJSON(res, 404, {
+          success: false,
+          error: 'User not found for provided JWT auth token',
+          code: 'USER_NOT_FOUND'
+        });
+      }
+
       const statusFilter = query.status;
       let results = getWorkOrdersForTechnician(activeTech);
       if (statusFilter) {

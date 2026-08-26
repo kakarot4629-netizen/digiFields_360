@@ -1,6 +1,6 @@
 {
   "info": {
-    "_postman_id": "8f3b2d10-4c91-41e2-b918-digifield360mobile",
+    "_postman_id": "8f3b2d10-4c91-41e2-b918-9e4a3b2c1d0f",
     "name": "digiField360 - Mobile Application & MCP APIs",
     "description": "Comprehensive Postman Collection for testing the digiField360 Mobile Application Backend REST APIs and MCP JSON-RPC Gateway.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
@@ -8,12 +8,12 @@
   "variable": [
     {
       "key": "baseUrl",
-      "value": "https://digifields-360.onrender.com",
+      "value": "http://localhost:3000",
       "type": "string"
     },
     {
       "key": "authToken",
-      "value": "mock_jwt_token_technician_vikram_sharma",
+      "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJURUNILTAwMSIsIm5hbWUiOiJWaWtyYW0gU2hhcm1hIiwiZW1haWwiOiJ2aWtyYW0uc2hhcm1hQGRpZ2lmaWVsZDM2MC5jb20iLCJpc3MiOiJkaWdpRmllbGQzNjBfQmFja2VuZF9HYXRld2F5IiwiaWF0IjoxNzU2MTk1MjAwLCJleHAiOjE3NTYyMDI0MDB9.s7zD_09x-8W9X",
       "type": "string"
     },
     {
@@ -38,8 +38,12 @@
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/health",
-              "host": ["{{baseUrl}}"],
-              "path": ["health"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "health"
+              ]
             },
             "description": "Check if API server is running and discover all available endpoints."
           }
@@ -54,8 +58,14 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "x-mock-mode", "value": "true" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-mock-mode",
+                "value": "true"
+              }
             ],
             "body": {
               "mode": "raw",
@@ -63,8 +73,14 @@
             },
             "url": {
               "raw": "{{baseUrl}}/api/auth/login",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "auth", "login"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
             },
             "description": "Authenticate technician and obtain Bearer token. Enter any username/email (e.g. vikram.sharma@digifield360.com, ananya.roy@digifield360.com, or your custom email)."
           },
@@ -91,8 +107,14 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "x-mock-mode", "value": "true" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-mock-mode",
+                "value": "true"
+              }
             ],
             "body": {
               "mode": "raw",
@@ -100,8 +122,14 @@
             },
             "url": {
               "raw": "{{baseUrl}}/api/auth/refresh",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "auth", "refresh"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "refresh"
+              ]
             },
             "description": "Silent token refresh for mobile background session."
           }
@@ -111,13 +139,25 @@
           "request": {
             "method": "GET",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{authToken}}" },
-              { "key": "x-mock-mode", "value": "true" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              },
+              {
+                "key": "x-mock-mode",
+                "value": "true"
+              }
             ],
             "url": {
               "raw": "{{baseUrl}}/api/technician/profile",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "technician", "profile"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "technician",
+                "profile"
+              ]
             },
             "description": "Fetch logged-in technician profile, skills, and fix rates."
           }
@@ -127,18 +167,105 @@
           "request": {
             "method": "GET",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{authToken}}" },
-              { "key": "x-mock-mode", "value": "true" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              },
+              {
+                "key": "x-mock-mode",
+                "value": "true"
+              }
             ],
             "url": {
               "raw": "{{baseUrl}}/api/accounts?limit=10",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "accounts"],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "accounts"
+              ],
               "query": [
-                { "key": "limit", "value": "10" }
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
               ]
             },
             "description": "Fetch top 10 enterprise customer accounts dynamically by annual revenue and size."
+          }
+        },
+        {
+          "name": "2.5 GET Full Authenticated User Details & Work Orders",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              },
+              {
+                "key": "x-mock-mode",
+                "value": "true"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/user/details",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "user",
+                "details"
+              ]
+            },
+            "description": "Fetch complete aggregated user details, profile, assigned work orders, equipment history, and accounts for the authenticated user decoded directly from the Bearer JWT token."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.success && jsonData.user && jsonData.user.id) {",
+                  "    pm.collectionVariables.set('technicianId', jsonData.user.id);",
+                  "}",
+                  "if (jsonData.success && jsonData.workOrders && jsonData.workOrders.length > 0) {",
+                  "    pm.collectionVariables.set('workOrderId', jsonData.workOrders[0].Id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "2.6 GET User Details (Invalid Token - Expect 404)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer invalid_unregistered_token_999"
+              },
+              {
+                "key": "x-mock-mode",
+                "value": "true"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/user/details",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "user",
+                "details"
+              ]
+            },
+            "description": "Verification test endpoint demonstrating that invalid or unidentified JWT tokens return HTTP 404 User Not Found."
           }
         }
       ]
@@ -151,15 +278,24 @@
           "request": {
             "method": "GET",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{authToken}}" },
-              { "key": "x-mock-mode", "value": "true" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              },
+              {
+                "key": "x-mock-mode",
+                "value": "true"
+              }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/sync/morning-payload?technicianId={{technicianId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "sync", "morning-payload"],
-              "query": [
-                { "key": "technicianId", "value": "{{technicianId}}" }
+              "raw": "{{baseUrl}}/api/sync/morning-payload",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "sync",
+                "morning-payload"
               ]
             },
             "description": "High performance pre-load batch downloading all today's jobs, equipment history, and troubleshooting guides into mobile local storage."
@@ -184,15 +320,29 @@
           "request": {
             "method": "GET",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{authToken}}" },
-              { "key": "x-mock-mode", "value": "true" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              },
+              {
+                "key": "x-mock-mode",
+                "value": "true"
+              }
             ],
             "url": {
               "raw": "{{baseUrl}}/api/work-orders?status=Assigned",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "work-orders"],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "work-orders"
+              ],
               "query": [
-                { "key": "status", "value": "Assigned" }
+                {
+                  "key": "status",
+                  "value": "Assigned"
+                }
               ]
             },
             "description": "Get assigned work orders with optional status filter."
@@ -217,13 +367,25 @@
           "request": {
             "method": "GET",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{authToken}}" },
-              { "key": "x-mock-mode", "value": "true" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              },
+              {
+                "key": "x-mock-mode",
+                "value": "true"
+              }
             ],
             "url": {
               "raw": "{{baseUrl}}/api/work-orders/{{workOrderId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "work-orders", "{{workOrderId}}"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "work-orders",
+                "{{workOrderId}}"
+              ]
             },
             "description": "Get full details of a work order including equipment job history."
           }
@@ -233,9 +395,18 @@
           "request": {
             "method": "PATCH",
             "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "Authorization", "value": "Bearer {{authToken}}" },
-              { "key": "x-mock-mode", "value": "true" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              },
+              {
+                "key": "x-mock-mode",
+                "value": "true"
+              }
             ],
             "body": {
               "mode": "raw",
@@ -243,8 +414,15 @@
             },
             "url": {
               "raw": "{{baseUrl}}/api/work-orders/{{workOrderId}}/status",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "work-orders", "{{workOrderId}}", "status"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "work-orders",
+                "{{workOrderId}}",
+                "status"
+              ]
             },
             "description": "Change work order status (e.g. In Progress, En Route, On Site)."
           }
@@ -254,9 +432,18 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "Authorization", "value": "Bearer {{authToken}}" },
-              { "key": "x-mock-mode", "value": "true" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              },
+              {
+                "key": "x-mock-mode",
+                "value": "true"
+              }
             ],
             "body": {
               "mode": "raw",
@@ -264,8 +451,15 @@
             },
             "url": {
               "raw": "{{baseUrl}}/api/work-orders/{{workOrderId}}/time-log",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "work-orders", "{{workOrderId}}", "time-log"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "work-orders",
+                "{{workOrderId}}",
+                "time-log"
+              ]
             },
             "description": "Log hours and minutes worked on a job."
           }
@@ -275,9 +469,18 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "Authorization", "value": "Bearer {{authToken}}" },
-              { "key": "x-mock-mode", "value": "true" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              },
+              {
+                "key": "x-mock-mode",
+                "value": "true"
+              }
             ],
             "body": {
               "mode": "raw",
@@ -285,8 +488,15 @@
             },
             "url": {
               "raw": "{{baseUrl}}/api/work-orders/{{workOrderId}}/complete",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "work-orders", "{{workOrderId}}", "complete"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "work-orders",
+                "{{workOrderId}}",
+                "complete"
+              ]
             },
             "description": "Mark work order as Completed with notes, parts used, base64 photos, and trigger AI service report generation."
           }
@@ -301,9 +511,18 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "Authorization", "value": "Bearer {{authToken}}" },
-              { "key": "x-mock-mode", "value": "true" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              },
+              {
+                "key": "x-mock-mode",
+                "value": "true"
+              }
             ],
             "body": {
               "mode": "raw",
@@ -311,8 +530,14 @@
             },
             "url": {
               "raw": "{{baseUrl}}/api/ai/query",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "ai", "query"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "ai",
+                "query"
+              ]
             },
             "description": "Dynamic Query: Automatically resolves target SObject = Account, selects revenue & city fields, applies WHERE BillingCity = 'Pune' ORDER BY AnnualRevenue DESC, and returns records + AI summary."
           }
@@ -322,9 +547,18 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "Authorization", "value": "Bearer {{authToken}}" },
-              { "key": "x-mock-mode", "value": "true" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              },
+              {
+                "key": "x-mock-mode",
+                "value": "true"
+              }
             ],
             "body": {
               "mode": "raw",
@@ -332,8 +566,14 @@
             },
             "url": {
               "raw": "{{baseUrl}}/api/ai/query",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "ai", "query"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "ai",
+                "query"
+              ]
             },
             "description": "Dynamic Query: Automatically resolves target SObject = Account, applies WHERE Industry = 'Biotechnology', and returns records + AI summary."
           }
@@ -343,9 +583,18 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "Authorization", "value": "Bearer {{authToken}}" },
-              { "key": "x-mock-mode", "value": "true" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              },
+              {
+                "key": "x-mock-mode",
+                "value": "true"
+              }
             ],
             "body": {
               "mode": "raw",
@@ -353,8 +602,14 @@
             },
             "url": {
               "raw": "{{baseUrl}}/api/ai/query",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "ai", "query"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "ai",
+                "query"
+              ]
             },
             "description": "Dynamic Query: Automatically resolves target SObject = Technician__c, filters Skills__c LIKE '%HVAC%' AND City__c = 'Mumbai', and returns records + AI summary."
           }
@@ -364,9 +619,18 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "Authorization", "value": "Bearer {{authToken}}" },
-              { "key": "x-mock-mode", "value": "true" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              },
+              {
+                "key": "x-mock-mode",
+                "value": "true"
+              }
             ],
             "body": {
               "mode": "raw",
@@ -374,8 +638,14 @@
             },
             "url": {
               "raw": "{{baseUrl}}/api/ai/query",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "ai", "query"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "ai",
+                "query"
+              ]
             },
             "description": "Dynamic Query: Automatically resolves target SObject = Work_Order__c, filters Priority__c IN ('Critical', 'High'), and returns records + AI summary."
           }
@@ -385,9 +655,18 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "Authorization", "value": "Bearer {{authToken}}" },
-              { "key": "x-mock-mode", "value": "true" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              },
+              {
+                "key": "x-mock-mode",
+                "value": "true"
+              }
             ],
             "body": {
               "mode": "raw",
@@ -395,8 +674,14 @@
             },
             "url": {
               "raw": "{{baseUrl}}/api/ai/query",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "ai", "query"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "ai",
+                "query"
+              ]
             },
             "description": "Dynamic Query: Automatically resolves target SObject = Maintenance_Alert__c, filters Severity__c = 'Critical' AND Status__c = 'Open', and returns records + AI summary."
           }
@@ -406,9 +691,18 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "Authorization", "value": "Bearer {{authToken}}" },
-              { "key": "x-mock-mode", "value": "true" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              },
+              {
+                "key": "x-mock-mode",
+                "value": "true"
+              }
             ],
             "body": {
               "mode": "raw",
@@ -416,8 +710,14 @@
             },
             "url": {
               "raw": "{{baseUrl}}/api/query/soql",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "query", "soql"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "query",
+                "soql"
+              ]
             },
             "description": "Directly execute any raw SOQL query against Salesforce or mock schema."
           }
@@ -427,9 +727,18 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "Authorization", "value": "Bearer {{authToken}}" },
-              { "key": "x-mock-mode", "value": "true" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              },
+              {
+                "key": "x-mock-mode",
+                "value": "true"
+              }
             ],
             "body": {
               "mode": "raw",
@@ -437,8 +746,14 @@
             },
             "url": {
               "raw": "{{baseUrl}}/api/ai/troubleshoot",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "ai", "troubleshoot"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "ai",
+                "troubleshoot"
+              ]
             },
             "description": "Knowledge search & AI diagnostic checklist generation."
           }
@@ -448,9 +763,18 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "Authorization", "value": "Bearer {{authToken}}" },
-              { "key": "x-mock-mode", "value": "true" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              },
+              {
+                "key": "x-mock-mode",
+                "value": "true"
+              }
             ],
             "body": {
               "mode": "raw",
@@ -458,8 +782,14 @@
             },
             "url": {
               "raw": "{{baseUrl}}/api/ai/pre-job-briefing",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "ai", "pre-job-briefing"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "ai",
+                "pre-job-briefing"
+              ]
             },
             "description": "Generate or retrieve AI pre-job briefing for the technician."
           }
@@ -469,9 +799,18 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "Authorization", "value": "Bearer {{authToken}}" },
-              { "key": "x-mock-mode", "value": "true" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              },
+              {
+                "key": "x-mock-mode",
+                "value": "true"
+              }
             ],
             "body": {
               "mode": "raw",
@@ -479,8 +818,14 @@
             },
             "url": {
               "raw": "{{baseUrl}}/api/ai/service-report",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "ai", "service-report"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "ai",
+                "service-report"
+              ]
             },
             "description": "Generate AI service report from job notes."
           }
@@ -495,9 +840,18 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "Authorization", "value": "Bearer {{authToken}}" },
-              { "key": "x-mock-mode", "value": "true" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              },
+              {
+                "key": "x-mock-mode",
+                "value": "true"
+              }
             ],
             "body": {
               "mode": "raw",
@@ -505,8 +859,14 @@
             },
             "url": {
               "raw": "{{baseUrl}}/api/sync/offline-queue",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "sync", "offline-queue"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "sync",
+                "offline-queue"
+              ]
             },
             "description": "Replay an array of mutations queued on device while offline."
           }
@@ -516,9 +876,18 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "Authorization", "value": "Bearer {{authToken}}" },
-              { "key": "x-mock-mode", "value": "true" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              },
+              {
+                "key": "x-mock-mode",
+                "value": "true"
+              }
             ],
             "body": {
               "mode": "raw",
@@ -526,8 +895,14 @@
             },
             "url": {
               "raw": "{{baseUrl}}/api/technician/location",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "technician", "location"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "technician",
+                "location"
+              ]
             },
             "description": "Update technician GPS coordinates for smart dispatch tracking."
           }
@@ -537,13 +912,25 @@
           "request": {
             "method": "GET",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{authToken}}" },
-              { "key": "x-mock-mode", "value": "true" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              },
+              {
+                "key": "x-mock-mode",
+                "value": "true"
+              }
             ],
             "url": {
               "raw": "{{baseUrl}}/api/schema/Work_Order__c",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "schema", "Work_Order__c"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "schema",
+                "Work_Order__c"
+              ]
             },
             "description": "Fetch schema metadata for offline mobile form validation."
           }
@@ -560,8 +947,12 @@
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/mcp",
-              "host": ["{{baseUrl}}"],
-              "path": ["mcp"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "mcp"
+              ]
             },
             "description": "Check MCP server status and endpoint."
           }
@@ -571,7 +962,10 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Content-Type", "value": "application/json" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
             ],
             "body": {
               "mode": "raw",
@@ -579,8 +973,12 @@
             },
             "url": {
               "raw": "{{baseUrl}}/mcp",
-              "host": ["{{baseUrl}}"],
-              "path": ["mcp"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "mcp"
+              ]
             },
             "description": "List all 5 MCP tools supported by the server."
           }
@@ -590,8 +988,14 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "x-mock-mode", "value": "true" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-mock-mode",
+                "value": "true"
+              }
             ],
             "body": {
               "mode": "raw",
@@ -599,8 +1003,12 @@
             },
             "url": {
               "raw": "{{baseUrl}}/mcp",
-              "host": ["{{baseUrl}}"],
-              "path": ["mcp"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "mcp"
+              ]
             },
             "description": "Execute a SOQL query via MCP tool."
           }
@@ -610,8 +1018,14 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "x-mock-mode", "value": "true" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-mock-mode",
+                "value": "true"
+              }
             ],
             "body": {
               "mode": "raw",
@@ -619,8 +1033,12 @@
             },
             "url": {
               "raw": "{{baseUrl}}/mcp",
-              "host": ["{{baseUrl}}"],
-              "path": ["mcp"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "mcp"
+              ]
             },
             "description": "Search Knowledge base via MCP tool."
           }
@@ -630,8 +1048,14 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "x-mock-mode", "value": "true" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-mock-mode",
+                "value": "true"
+              }
             ],
             "body": {
               "mode": "raw",
@@ -639,8 +1063,12 @@
             },
             "url": {
               "raw": "{{baseUrl}}/mcp",
-              "host": ["{{baseUrl}}"],
-              "path": ["mcp"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "mcp"
+              ]
             },
             "description": "Update record fields via MCP tool."
           }
@@ -650,8 +1078,14 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "x-mock-mode", "value": "true" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-mock-mode",
+                "value": "true"
+              }
             ],
             "body": {
               "mode": "raw",
@@ -659,8 +1093,12 @@
             },
             "url": {
               "raw": "{{baseUrl}}/mcp",
-              "host": ["{{baseUrl}}"],
-              "path": ["mcp"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "mcp"
+              ]
             },
             "description": "Create a new record via MCP tool."
           }
@@ -670,8 +1108,14 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "x-mock-mode", "value": "true" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-mock-mode",
+                "value": "true"
+              }
             ],
             "body": {
               "mode": "raw",
@@ -679,8 +1123,12 @@
             },
             "url": {
               "raw": "{{baseUrl}}/mcp",
-              "host": ["{{baseUrl}}"],
-              "path": ["mcp"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "mcp"
+              ]
             },
             "description": "Describe SObject schema via MCP tool."
           }
@@ -690,8 +1138,14 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "x-mock-mode", "value": "true" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-mock-mode",
+                "value": "true"
+              }
             ],
             "body": {
               "mode": "raw",
@@ -699,8 +1153,12 @@
             },
             "url": {
               "raw": "{{baseUrl}}/mcp",
-              "host": ["{{baseUrl}}"],
-              "path": ["mcp"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "mcp"
+              ]
             },
             "description": "Query top 10 Accounts via MCP tool."
           }
@@ -710,8 +1168,14 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "x-mock-mode", "value": "true" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-mock-mode",
+                "value": "true"
+              }
             ],
             "body": {
               "mode": "raw",
@@ -719,8 +1183,12 @@
             },
             "url": {
               "raw": "{{baseUrl}}/mcp",
-              "host": ["{{baseUrl}}"],
-              "path": ["mcp"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "mcp"
+              ]
             },
             "description": "Execute any natural language prompt via MCP tool dynamically."
           }

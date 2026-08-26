@@ -46,7 +46,7 @@ async function runApiTests() {
     const res = await fetch(`${BASE_URL}/api/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-mock-mode': 'true' },
-      body: JSON.stringify({ username: 'vikram.sharma@digifield360.com', password: '123' })
+      body: JSON.stringify({ username: 'piyush.channe@digifield360.com', password: '123' })
     });
     const data = await res.json();
     if (!data.success || !data.token || !data.technician?.skills) {
