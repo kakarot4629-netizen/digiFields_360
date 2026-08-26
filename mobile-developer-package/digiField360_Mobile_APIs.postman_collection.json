@@ -18,12 +18,12 @@
     },
     {
       "key": "workOrderId",
-      "value": "WO-001001",
+      "value": "a03g500000fYquEAAS",
       "type": "string"
     },
     {
       "key": "technicianId",
-      "value": "TECH-001",
+      "value": "a02g500000Bvf9mAAB",
       "type": "string"
     }
   ],
@@ -61,14 +61,14 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"username\": \"vikram.sharma@digifield360.com\",\n  \"password\": \"Password123\"\n}"
+              "raw": "{\n  \"username\": \"piyush.channe.3868c7575da5@agentforce.com\",\n  \"password\": \"ImIronMan@3000\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/auth/login",
               "host": ["{{baseUrl}}"],
               "path": ["api", "auth", "login"]
             },
-            "description": "Authenticate technician and obtain Bearer token. Registered mock accounts include: vikram.sharma@digifield360.com, piyush.channe@digifield360.com, ananya.roy@digifield360.com (Password: Password123)."
+            "description": "Authenticate technician against live Salesforce Org and obtain Bearer JWT token."
           },
           "event": [
             {
