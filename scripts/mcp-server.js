@@ -46,6 +46,38 @@ async function getLiveSalesforceToken() {
   if (cachedSfToken && Date.now() < cachedTokenExpiry) {
     return cachedSfToken;
   }
+
+  // 1. Direct OAuth Token Refresh from Salesforce OAuth Endpoint
+  const refreshToken = process.env.SF_REFRESH_TOKEN || "";
+  const clientId = process.env.SF_CLIENT_ID || "PlatformCLI";
+
+  if (refreshToken) {
+    try {
+      const params = new URLSearchParams({
+        grant_type: "refresh_token",
+        client_id: clientId,
+        refresh_token: refreshToken
+      });
+      const authRes = await fetch(
+        `${DEFAULT_INSTANCE_URL}/services/oauth2/token`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: params.toString()
+        }
+      );
+      if (authRes.ok) {
+        const authData = await authRes.json();
+        if (authData.access_token) {
+          cachedSfToken = authData.access_token;
+          cachedTokenExpiry = Date.now() + 110 * 60 * 1000;
+          return cachedSfToken;
+        }
+      }
+    } catch (e) {}
+  }
+
+  // 2. Local sf CLI fallback
   try {
     const { execSync } = require("child_process");
     const sfPath = "C:\\Program Files\\sf\\bin\\sf.cmd";
@@ -57,10 +89,11 @@ async function getLiveSalesforceToken() {
     const parsed = JSON.parse(output);
     if (parsed.result && parsed.result.accessToken) {
       cachedSfToken = parsed.result.accessToken;
-      cachedTokenExpiry = Date.now() + 2 * 3600 * 1000;
+      cachedTokenExpiry = Date.now() + 110 * 60 * 1000;
       return cachedSfToken;
     }
   } catch (e) {}
+
   return cachedSfToken;
 }
 
@@ -172,7 +205,7 @@ const MOCK_TECHNICIANS = [
     jobsCompletedTotal: 312
   },
   {
-    id: "TECH-005",
+    id: "a02g500000Bvf9mAAB",
     name: "Piyush Channe",
     email: "piyush.channe.3868c7575da5@agentforce.com",
     username: "piyush.channe.3868c7575da5@agentforce.com",
@@ -1448,17 +1481,39 @@ const server = http.createServer(async (req, res) => {
           );
           const jhData = jhRes.ok ? await jhRes.json() : { records: [] };
 
+          const techRes = await fetch(
+            `${instanceUrl}/services/data/v67.0/query?q=${encodeURIComponent(`SELECT Id, Name, Skills__c, First_Time_Fix_Rate__c, Is_Active__c FROM Technician__c WHERE Id = '${activeTech.id}' OR Name LIKE '%${escapeSOQL(activeTech.name)}%' LIMIT 1`)}`,
+            { headers: { Authorization: `Bearer ${sfToken}` } }
+          );
+          const techData = techRes.ok ? await techRes.json() : { records: [] };
+          const liveTech = techData.records?.[0] || {
+            Id: activeTech.id,
+            Name: activeTech.name,
+            Skills__c: Array.isArray(activeTech.skills) ? activeTech.skills.join(", ") : "Generator, HVAC, Compressor",
+            First_Time_Fix_Rate__c: activeTech.firstTimeFixRate || 95,
+            Is_Active__c: true
+          };
+
           return sendJSON(res, 200, {
             success: true,
             mode: "live_salesforce",
-            user: activeTech,
+            user: {
+              id: liveTech.Id,
+              name: liveTech.Name,
+              email: activeTech.email,
+              skills: liveTech.Skills__c ? liveTech.Skills__c.split(",").map((s) => s.trim()) : ["Generator", "HVAC", "Compressor"],
+              firstTimeFixRate: liveTech.First_Time_Fix_Rate__c || 95,
+              isActive: liveTech.Is_Active__c !== false
+            },
             workOrdersCount: woData.records.length,
             workOrders: woData.records,
             equipmentHistory: jhData.records,
             accounts: accData.records,
             aiPreJobBriefing: woData.records[0]?.AI_Pre_Job_Briefing__c || null
           });
-        } catch (e) {}
+        } catch (e) {
+          return sendJSON(res, 500, { success: false, mode: "live_salesforce", error: "Salesforce Query Error: " + e.message });
+        }
       }
 
       const userWorkOrders = getWorkOrdersForTechnician(activeTech);
@@ -1523,7 +1578,7 @@ const server = http.createServer(async (req, res) => {
             knowledgeArticles: MOCK_KNOWLEDGE
           });
         } catch (err) {
-          console.error("Live Salesforce Morning sync error:", err.message);
+          return sendJSON(res, 500, { success: false, mode: "live_salesforce", error: "Salesforce Morning Sync Error: " + err.message });
         }
       }
 
@@ -1562,7 +1617,7 @@ const server = http.createServer(async (req, res) => {
             });
           }
         } catch (err) {
-          console.error("Live Salesforce Accounts query error:", err.message);
+          return sendJSON(res, 500, { success: false, mode: "live_salesforce", error: "Salesforce Accounts Query Error: " + err.message });
         }
       }
 
@@ -1605,7 +1660,7 @@ const server = http.createServer(async (req, res) => {
             });
           }
         } catch (err) {
-          console.error("Live Salesforce Work Orders query error:", err.message);
+          return sendJSON(res, 500, { success: false, mode: "live_salesforce", error: "Salesforce Work Orders Error: " + err.message });
         }
       }
 
@@ -1660,10 +1715,16 @@ const server = http.createServer(async (req, res) => {
                   recentHistory: jhData.records || []
                 }
               });
+            } else {
+              return sendJSON(res, 404, {
+                success: false,
+                mode: "live_salesforce",
+                error: `Work Order '${woId}' was not found in your Salesforce database.`
+              });
             }
           }
         } catch (err) {
-          console.error("Live Salesforce Work Order detail error:", err.message);
+          return sendJSON(res, 500, { success: false, mode: "live_salesforce", error: "Salesforce Query Error: " + err.message });
         }
       }
 
