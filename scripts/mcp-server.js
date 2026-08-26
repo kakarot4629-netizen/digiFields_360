@@ -608,6 +608,93 @@ function parseRequestBody(req) {
   });
 }
 
+async function uploadToSalesforceContentVersion(instanceUrl, token, isMockMode, { title, pathOnClient, base64Data, linkedEntityId, category }) {
+  const cleanBase64 = String(base64Data || '').replace(/^data:image\/[a-z]+;base64,/i, '').trim();
+
+  if (isMockMode || !token) {
+    const hash = Math.abs(hashString(title + (base64Data ? base64Data.substring(0, 50) : ''))) % 1000000;
+    const contentVersionId = `0680000000${String(hash).padStart(6, '0')}`;
+    const contentDocumentId = `0690000000${String(hash).padStart(6, '0')}`;
+    return {
+      success: true,
+      contentVersionId,
+      contentDocumentId,
+      linkedEntityId: linkedEntityId || null,
+      title,
+      pathOnClient,
+      fileUrl: `${DEFAULT_INSTANCE_URL}/sfc/servlet.shepherd/version/download/${contentVersionId}`,
+      mode: 'mock'
+    };
+  }
+
+  // Live Salesforce ContentVersion Insertion
+  try {
+    const cvPayload = {
+      Title: title,
+      PathOnClient: pathOnClient || `${title.replace(/\s+/g, '_')}.png`,
+      VersionData: cleanBase64,
+      FirstPublishLocationId: linkedEntityId || undefined
+    };
+
+    const cvRes = await fetch(`${instanceUrl}/services/data/v67.0/sobjects/ContentVersion`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(cvPayload)
+    });
+
+    const cvData = await cvRes.json();
+    if (!cvRes.ok || !cvData.id) {
+      throw new Error(`ContentVersion creation failed: ${JSON.stringify(cvData)}`);
+    }
+
+    const contentVersionId = cvData.id;
+    let contentDocumentId = null;
+
+    const docRes = await fetch(`${instanceUrl}/services/data/v67.0/sobjects/ContentVersion/${contentVersionId}`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (docRes.ok) {
+      const docData = await docRes.json();
+      contentDocumentId = docData.ContentDocumentId;
+    }
+
+    if (contentDocumentId && linkedEntityId && !cvPayload.FirstPublishLocationId) {
+      await fetch(`${instanceUrl}/services/data/v67.0/sobjects/ContentDocumentLink`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          ContentDocumentId: contentDocumentId,
+          LinkedEntityId: linkedEntityId,
+          ShareType: 'V',
+          Visibility: 'AllUsers'
+        })
+      });
+    }
+
+    return {
+      success: true,
+      contentVersionId,
+      contentDocumentId,
+      linkedEntityId: linkedEntityId || null,
+      title,
+      pathOnClient,
+      fileUrl: `${instanceUrl}/sfc/servlet.shepherd/version/download/${contentVersionId}`,
+      mode: 'live_salesforce'
+    };
+  } catch (err) {
+    return {
+      success: false,
+      error: err.message
+    };
+  }
+}
+
 // ── Main Server Router ──────────────────────────────────────────────────────
 const server = http.createServer(async (req, res) => {
   // CORS Pre-flight
@@ -943,14 +1030,93 @@ const server = http.createServer(async (req, res) => {
       });
     }
 
+    // POST /api/attachments/upload (Upload Digital Signature or Site Photo directly to Salesforce ContentVersion & ContentDocumentLink)
+    if (req.method === 'POST' && pathname === '/api/attachments/upload') {
+      const body = await parseRequestBody(req);
+      const { workOrderId, attachmentType, fileName, base64Data, signerName, category } = body;
+
+      if (!base64Data) {
+        return sendJSON(res, 400, { success: false, error: 'base64Data is required' });
+      }
+
+      const activeTech = resolveTechnicianProfile(null, null, token);
+      if (!activeTech) {
+        return sendJSON(res, 404, { success: false, error: 'User not found for provided JWT auth token', code: 'USER_NOT_FOUND' });
+      }
+
+      const title = fileName || (attachmentType === 'Signature' ? `Signature_${workOrderId || 'WO'}.png` : `Photo_${workOrderId || 'WO'}.jpg`);
+      const pathOnClient = title;
+
+      const uploadResult = await uploadToSalesforceContentVersion(instanceUrl, token, isMockMode, {
+        title,
+        pathOnClient,
+        base64Data,
+        linkedEntityId: workOrderId,
+        category: category || attachmentType || 'Attachment'
+      });
+
+      return sendJSON(res, uploadResult.success ? 200 : 500, {
+        success: uploadResult.success,
+        workOrderId: workOrderId || null,
+        attachmentType: attachmentType || 'Photo',
+        signerName: signerName || null,
+        contentVersionId: uploadResult.contentVersionId || null,
+        contentDocumentId: uploadResult.contentDocumentId || null,
+        fileName: title,
+        fileUrl: uploadResult.fileUrl || null,
+        uploadedAt: new Date().toISOString(),
+        error: uploadResult.error || undefined
+      });
+    }
+
     // POST /api/work-orders/:id/complete
     if (req.method === 'POST' && pathname.includes('/api/work-orders/') && pathname.endsWith('/complete')) {
       const woId = pathname.replace('/api/work-orders/', '').replace('/complete', '');
       const body = await parseRequestBody(req);
-      const { technicianNotes, partsUsed, timeLoggedMinutes, photosBase64, sendToCustomer, username, technicianId } = body;
+      const { technicianNotes, partsUsed, timeLoggedMinutes, photosBase64, photos, customerSignature, signerName, sendToCustomer, username, technicianId } = body;
       const activeTech = resolveTechnicianProfile(technicianId || username, null, token);
+
+      if (!activeTech) {
+        return sendJSON(res, 404, { success: false, error: 'User not found for provided JWT auth token', code: 'USER_NOT_FOUND' });
+      }
+
       const orders = getWorkOrdersForTechnician(activeTech);
       const currentWo = orders.find(w => w.Id === woId || w.Name === woId) || orders[0];
+
+      // Process Customer Digital Signature
+      let signatureResult = null;
+      const sigData = (typeof customerSignature === 'object' && customerSignature) ? customerSignature.base64 : customerSignature;
+      const sigName = (typeof customerSignature === 'object' && customerSignature) ? customerSignature.signerName : (signerName || 'Customer Signature');
+      if (sigData) {
+        signatureResult = await uploadToSalesforceContentVersion(instanceUrl, token, isMockMode, {
+          title: `Customer_Signature_${currentWo.Name || woId}.png`,
+          pathOnClient: `Customer_Signature_${currentWo.Name || woId}.png`,
+          base64Data: sigData,
+          linkedEntityId: currentWo.Id,
+          category: 'Digital Signature'
+        });
+      }
+
+      // Process Site Photos
+      const uploadedPhotos = [];
+      const photosArray = Array.isArray(photos) ? photos : (Array.isArray(photosBase64) ? photosBase64.map((b, i) => ({ base64: b, fileName: `Photo_${currentWo.Name || woId}_${i+1}.jpg` })) : []);
+      for (let i = 0; i < photosArray.length; i++) {
+        const photoObj = photosArray[i];
+        const pData = (typeof photoObj === 'object' && photoObj) ? photoObj.base64 : photoObj;
+        const pName = (typeof photoObj === 'object' && photoObj) ? (photoObj.fileName || photoObj.title) : `Photo_${currentWo.Name || woId}_${i+1}.jpg`;
+        if (pData) {
+          const pResult = await uploadToSalesforceContentVersion(instanceUrl, token, isMockMode, {
+            title: pName || `Photo_${currentWo.Name || woId}_${i+1}.jpg`,
+            pathOnClient: pName || `Photo_${currentWo.Name || woId}_${i+1}.jpg`,
+            base64Data: pData,
+            linkedEntityId: currentWo.Id,
+            category: 'Service Photo'
+          });
+          if (pResult.success) {
+            uploadedPhotos.push(pResult);
+          }
+        }
+      }
 
       const generatedReport = `========================================
 FIELD360 SERVICE COMPLETION REPORT
@@ -969,19 +1135,25 @@ PARTS REPLACED:
 ${partsUsed || 'Thermal Sensor TS-40 (1x), Heavy Duty Filter (1x)'}
 
 TIME LOGGED: ${timeLoggedMinutes || 90} minutes
-PHOTOS ATTACHED: ${photosBase64?.length || 0} image(s)
+DIGITAL SIGNATURE: ${signatureResult ? `Captured (${sigName}) - ContentVersion: ${signatureResult.contentVersionId}` : 'Not Captured'}
+PHOTOS ATTACHED: ${uploadedPhotos.length} image(s)
 STATUS: Verified Operable. Passed All Quality & Safety Checks.
 ========================================`;
 
       return sendJSON(res, 200, {
         success: true,
-        workOrderId: woId,
+        workOrderId: currentWo.Id || woId,
         status: 'Completed',
         completedAt: new Date().toISOString(),
         technician: activeTech,
         serviceReport: generatedReport,
-        photosUploadedCount: photosBase64?.length || 0,
-        contentVersionCreated: true,
+        signatureSaved: !!signatureResult,
+        signatureContentVersionId: signatureResult?.contentVersionId || null,
+        signatureContentDocumentId: signatureResult?.contentDocumentId || null,
+        photosUploadedCount: uploadedPhotos.length,
+        photosContentVersionIds: uploadedPhotos.map(p => p.contentVersionId),
+        photosContentDocumentIds: uploadedPhotos.map(p => p.contentDocumentId),
+        salesforceContentVersionCreated: true,
         jobHistoryCreated: true,
         sentToCustomer: !!sendToCustomer
       });

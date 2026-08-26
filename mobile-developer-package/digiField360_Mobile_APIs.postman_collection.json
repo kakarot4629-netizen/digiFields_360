@@ -484,7 +484,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"technicianNotes\": \"Replaced faulty thermal sensor TS-40 and flushed coolant line. Ran 30 min load test at 90% capacity. Temperature remained stable at 81C.\",\n  \"partsUsed\": \"Thermal Sensor TS-40 (1x), Coolant Flush Kit 5L\",\n  \"timeLoggedMinutes\": 90,\n  \"photosBase64\": [\n    \"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEASABIAAD...\"\n  ],\n  \"sendToCustomer\": false\n}"
+              "raw": "{\n  \"technicianNotes\": \"Replaced thermal sensor TS-40 and flushed coolant line. Ran load test at 90% capacity.\",\n  \"partsUsed\": \"Thermal Sensor TS-40 (1x), Coolant Flush Kit 5L\",\n  \"timeLoggedMinutes\": 90,\n  \"customerSignature\": {\n    \"signerName\": \"Rajesh Kumar (Facility Manager)\",\n    \"base64\": \"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==\"\n  },\n  \"photos\": [\n    {\n      \"fileName\": \"Pre_Service_Inspection_Thermal.jpg\",\n      \"base64\": \"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEASABIAAD...\",\n      \"category\": \"Pre-Service Inspection\"\n    },\n    {\n      \"fileName\": \"Post_Service_New_Sensor.jpg\",\n      \"base64\": \"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEASABIAAD...\",\n      \"category\": \"Post-Service Proof\"\n    }\n  ],\n  \"sendToCustomer\": true\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/work-orders/{{workOrderId}}/complete",
@@ -499,6 +499,42 @@
               ]
             },
             "description": "Mark work order as Completed with notes, parts used, base64 photos, and trigger AI service report generation."
+          }
+        },
+        {
+          "name": "3.7 POST Upload Digital Signature / Photo Attachment",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              },
+              {
+                "key": "x-mock-mode",
+                "value": "true"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"workOrderId\": \"{{workOrderId}}\",\n  \"attachmentType\": \"Signature\",\n  \"fileName\": \"Customer_Signature_WO.png\",\n  \"signerName\": \"Rajesh Kumar (Customer Site Admin)\",\n  \"category\": \"Customer Approval\",\n  \"base64Data\": \"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/attachments/upload",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "attachments",
+                "upload"
+              ]
+            },
+            "description": "Upload a customer digital signature or job site photo directly into Salesforce ContentVersion & ContentDocumentLink attached to the Work Order."
           }
         }
       ]

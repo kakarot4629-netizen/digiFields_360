@@ -215,19 +215,27 @@ x-mock-mode: true  (Optional: returns rich mock data for offline UI testing)
   ```
 - **Response (200 OK)**: `{ "success": true, "timeLoggedMinutes": 90 }`
 
-### 3.6 Complete Work Order (With Notes, Parts & Base64 Photos)
+### 3.6 Complete Work Order (With Notes, Parts, Customer Signature & Base64 Photos)
 - **Method & Path**: `POST /api/work-orders/:id/complete`
+- **Headers**: `Authorization: Bearer <ACCESS_TOKEN>`
 - **Request Body**:
   ```json
   {
-    "technicianNotes": "Replaced faulty temp sensor and flushed coolant line. Ran 30 min load test at 90% capacity; temperature remained steady at 81C.",
+    "technicianNotes": "Replaced faulty temp sensor TS-40 and flushed coolant line. Ran load test at 90% capacity; temperature remained steady at 81C.",
     "partsUsed": "Temp Sensor TS-40 (1x), Coolant 5L",
     "timeLoggedMinutes": 90,
-    "photosBase64": [
-      "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQE...",
-      "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQE..."
+    "customerSignature": {
+      "signerName": "Rajesh Kumar (Facility Manager)",
+      "base64": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJ..."
+    },
+    "photos": [
+      {
+        "fileName": "Pre_Service_Inspection.jpg",
+        "base64": "data:image/jpeg;base64,/9j/4AAQSkZJRg...",
+        "category": "Pre-Service Inspection"
+      }
     ],
-    "sendToCustomer": false
+    "sendToCustomer": true
   }
   ```
 - **Response (200 OK)**:
@@ -237,9 +245,44 @@ x-mock-mode: true  (Optional: returns rich mock data for offline UI testing)
     "workOrderId": "WO-001001",
     "status": "Completed",
     "serviceReport": "========================================\nFIELD360 SERVICE COMPLETION REPORT\n...",
-    "photosUploadedCount": 2,
-    "contentVersionCreated": true,
+    "signatureSaved": true,
+    "signatureContentVersionId": "0680000000084920",
+    "signatureContentDocumentId": "0690000000084920",
+    "photosUploadedCount": 1,
+    "photosContentVersionIds": ["0680000000572091"],
+    "photosContentDocumentIds": ["0690000000572091"],
+    "salesforceContentVersionCreated": true,
     "jobHistoryCreated": true
+  }
+  ```
+
+### 3.7 Upload Digital Signature & Photo Attachment to Salesforce
+- **Method & Path**: `POST /api/attachments/upload`
+- **Headers**: `Authorization: Bearer <ACCESS_TOKEN>`
+- **Description**: Dedicated endpoint for uploading customer digital signatures or site photos directly into Salesforce `ContentVersion` & `ContentDocumentLink` attached to a Work Order.
+- **Request Body**:
+  ```json
+  {
+    "workOrderId": "WO-001001",
+    "attachmentType": "Signature",
+    "fileName": "Customer_Signature_WO.png",
+    "signerName": "Rajesh Kumar (Facility Manager)",
+    "category": "Customer Approval",
+    "base64Data": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAAB..."
+  }
+  ```
+- **Success Response (200 OK)**:
+  ```json
+  {
+    "success": true,
+    "workOrderId": "WO-001001",
+    "attachmentType": "Signature",
+    "signerName": "Rajesh Kumar (Facility Manager)",
+    "contentVersionId": "0680000000192840",
+    "contentDocumentId": "0690000000192840",
+    "fileName": "Customer_Signature_WO.png",
+    "fileUrl": "https://[your-instance].salesforce.com/sfc/servlet.shepherd/version/download/0680000000192840",
+    "uploadedAt": "2026-08-26T12:35:00.000Z"
   }
   ```
 

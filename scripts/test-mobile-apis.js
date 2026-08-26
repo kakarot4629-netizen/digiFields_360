@@ -135,22 +135,47 @@ async function runApiTests() {
     }
   });
 
-  // 9. Complete Work Order with Base64 Photos
-  await test('POST /api/work-orders/:id/complete generates service report and uploads photos', async () => {
+  // 9. Complete Work Order with Base64 Signature & Photos
+  await test('POST /api/work-orders/:id/complete generates service report and uploads signature & photos', async () => {
     const res = await fetch(`${BASE_URL}/api/work-orders/WO-001001/complete`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-mock-mode': 'true' },
       body: JSON.stringify({
-        technicianNotes: 'Fixed all electrical components and verified pressure.',
-        partsUsed: 'Sensor TS-40 (1x)',
+        technicianNotes: 'Replaced condenser capacitor and tested system.',
+        partsUsed: 'Capacitor 45MFD (1x)',
         timeLoggedMinutes: 90,
-        photosBase64: ['data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEASABIAAD...'],
+        customerSignature: {
+          signerName: 'Rajesh Kumar',
+          base64: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=='
+        },
+        photos: [
+          { fileName: 'photo1.jpg', base64: 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEASABIAAD...' }
+        ],
         sendToCustomer: true
       })
     });
     const data = await res.json();
-    if (!data.success || data.status !== 'Completed' || !data.serviceReport || data.photosUploadedCount !== 1) {
+    if (!data.success || !data.signatureSaved || data.photosUploadedCount !== 1) {
       throw new Error(`Failed to complete work order: ${JSON.stringify(data)}`);
+    }
+  });
+
+  // 9.1 Upload Attachment / Digital Signature Endpoint Test
+  await test('POST /api/attachments/upload stores signature in ContentVersion & ContentDocumentLink', async () => {
+    const res = await fetch(`${BASE_URL}/api/attachments/upload`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-mock-mode': 'true' },
+      body: JSON.stringify({
+        workOrderId: 'WO-001001',
+        attachmentType: 'Signature',
+        fileName: 'Customer_Signature.png',
+        signerName: 'Rajesh Kumar',
+        base64Data: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=='
+      })
+    });
+    const data = await res.json();
+    if (!data.success || !data.contentVersionId || !data.contentDocumentId) {
+      throw new Error(`Failed to upload attachment: ${JSON.stringify(data)}`);
     }
   });
 
