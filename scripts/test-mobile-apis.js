@@ -475,6 +475,167 @@ async function runApiTests() {
     }
   });
 
+  // 18. Generic Salesforce Live CRUD Endpoints
+  await test("GET /api/data/Account returns records list with totalSize", async () => {
+    const res = await fetch(`${BASE_URL}/api/data/Account?limit=5`, {
+      headers: { "x-mock-mode": "true" }
+    });
+    const data = await res.json();
+    if (!res.ok || !data.success || !Array.isArray(data.records) || data.records.length === 0) {
+      throw new Error(`GET /api/data/Account failed: ${JSON.stringify(data)}`);
+    }
+  });
+
+  await test("GET /api/data/Account/:id returns single record by ID", async () => {
+    const res = await fetch(`${BASE_URL}/api/data/Account/0010000001`, {
+      headers: { "x-mock-mode": "true" }
+    });
+    const data = await res.json();
+    if (!res.ok || !data.success || !data.record) {
+      throw new Error(`GET /api/data/Account/:id failed: ${JSON.stringify(data)}`);
+    }
+  });
+
+  await test("POST /api/data/Account creates new record and returns 201 Created", async () => {
+    const res = await fetch(`${BASE_URL}/api/data/Account`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-mock-mode": "true" },
+      body: JSON.stringify({
+        Name: "New Mobile Test Account",
+        Industry: "Technology",
+        BillingCity: "Pune"
+      })
+    });
+    const data = await res.json();
+    if (res.status !== 201 || !data.success || !data.id) {
+      throw new Error(`POST /api/data/Account failed: ${JSON.stringify(data)}`);
+    }
+  });
+
+  await test("PATCH /api/data/Account/:id updates record fields and returns 200 OK", async () => {
+    const res = await fetch(`${BASE_URL}/api/data/Account/0010000001`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", "x-mock-mode": "true" },
+      body: JSON.stringify({
+        Phone: "+91 99999 88888",
+        AnnualRevenue: 95000000
+      })
+    });
+    const data = await res.json();
+    if (!res.ok || !data.success || !data.updatedFields?.includes("Phone")) {
+      throw new Error(`PATCH /api/data/Account/:id failed: ${JSON.stringify(data)}`);
+    }
+  });
+
+  await test("DELETE /api/data/Account/:id deletes record and returns 200 OK", async () => {
+    const res = await fetch(`${BASE_URL}/api/data/Account/0010000001`, {
+      method: "DELETE",
+      headers: { "x-mock-mode": "true" }
+    });
+    const data = await res.json();
+    if (!res.ok || !data.success) {
+      throw new Error(`DELETE /api/data/Account/:id failed: ${JSON.stringify(data)}`);
+    }
+  });
+
+  await test("GET /api/data/Account/:id/Contacts returns child related records", async () => {
+    const res = await fetch(`${BASE_URL}/api/data/Account/0010000001/Contacts`, {
+      headers: { "x-mock-mode": "true" }
+    });
+    const data = await res.json();
+    if (!res.ok || !data.success || !Array.isArray(data.records)) {
+      throw new Error(`GET child relationship failed: ${JSON.stringify(data)}`);
+    }
+  });
+
+  await test("POST /api/data/query executes direct SOQL query", async () => {
+    const res = await fetch(`${BASE_URL}/api/data/query`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-mock-mode": "true" },
+      body: JSON.stringify({ soql: "SELECT Id, Name FROM Account LIMIT 5" })
+    });
+    const data = await res.json();
+    if (!res.ok || !data.success || !Array.isArray(data.records)) {
+      throw new Error(`POST /api/data/query failed: ${JSON.stringify(data)}`);
+    }
+  });
+
+  await test("POST /api/data/search executes SOSL search query", async () => {
+    const res = await fetch(`${BASE_URL}/api/data/search`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-mock-mode": "true" },
+      body: JSON.stringify({ searchTerm: "Generator" })
+    });
+    const data = await res.json();
+    if (!res.ok || !data.success || !data.searchRecords) {
+      throw new Error(`POST /api/data/search failed: ${JSON.stringify(data)}`);
+    }
+  });
+
+  // 19. Additional MCP Tool Calls (sobject_get, sobject_delete, get_related_records)
+  await test("POST /mcp tools/call sobject_get retrieves single record", async () => {
+    const res = await fetch(`${BASE_URL}/mcp`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-mock-mode": "true" },
+      body: JSON.stringify({
+        jsonrpc: "2.0",
+        id: 104,
+        method: "tools/call",
+        params: {
+          name: "sobject_get",
+          arguments: { sobjectName: "Account", recordId: "0010000001" }
+        }
+      })
+    });
+    const data = await res.json();
+    const content = data.result?.content?.[0]?.text || "";
+    if (!content.includes("0010000001")) {
+      throw new Error(`MCP sobject_get failed: ${JSON.stringify(data)}`);
+    }
+  });
+
+  await test("POST /mcp tools/call sobject_delete deletes record", async () => {
+    const res = await fetch(`${BASE_URL}/mcp`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-mock-mode": "true" },
+      body: JSON.stringify({
+        jsonrpc: "2.0",
+        id: 105,
+        method: "tools/call",
+        params: {
+          name: "sobject_delete",
+          arguments: { sobjectName: "Account", recordId: "0010000001" }
+        }
+      })
+    });
+    const data = await res.json();
+    const content = data.result?.content?.[0]?.text || "";
+    if (!content.includes("deleted successfully")) {
+      throw new Error(`MCP sobject_delete failed: ${JSON.stringify(data)}`);
+    }
+  });
+
+  await test("POST /mcp tools/call get_related_records fetches child records", async () => {
+    const res = await fetch(`${BASE_URL}/mcp`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-mock-mode": "true" },
+      body: JSON.stringify({
+        jsonrpc: "2.0",
+        id: 106,
+        method: "tools/call",
+        params: {
+          name: "get_related_records",
+          arguments: { sobjectName: "Account", recordId: "0010000001", relationshipName: "Contacts" }
+        }
+      })
+    });
+    const data = await res.json();
+    const content = data.result?.content?.[0]?.text || "";
+    if (!content.includes("records")) {
+      throw new Error(`MCP get_related_records failed: ${JSON.stringify(data)}`);
+    }
+  });
+
   // Kill server process
   serverProcess.kill("SIGTERM");
 

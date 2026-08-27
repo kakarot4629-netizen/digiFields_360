@@ -924,6 +924,92 @@ const MCP_TOOLS = [
     }
   },
   {
+    name: "sobject_get",
+    description:
+      "Retrieve a single Salesforce record by SObject name and record ID.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        sobjectName: {
+          type: "string",
+          description: "SObject API Name (e.g. Account, Work_Order__c, Technician__c)"
+        },
+        recordId: {
+          type: "string",
+          description: "15 or 18 character Salesforce Record ID"
+        },
+        fields: {
+          type: "string",
+          description: "Optional comma-separated field list to retrieve"
+        }
+      },
+      required: ["sobjectName", "recordId"]
+    }
+  },
+  {
+    name: "sobject_create",
+    description:
+      "Create a record in Salesforce (e.g. Account, Work_Order__c, Job_History__c).",
+    inputSchema: {
+      type: "object",
+      properties: {
+        sobjectName: { type: "string", description: "SObject API Name" },
+        fields: {
+          type: "object",
+          description: "Field values for the new record"
+        }
+      },
+      required: ["sobjectName", "fields"]
+    }
+  },
+  {
+    name: "sobject_update",
+    description:
+      "Update fields on a Salesforce record (e.g. Work_Order__c status, notes).",
+    inputSchema: {
+      type: "object",
+      properties: {
+        sobjectName: { type: "string", description: "SObject API Name" },
+        recordId: { type: "string", description: "Salesforce Record ID" },
+        fields: {
+          type: "object",
+          description: "Key-value map of fields to update"
+        }
+      },
+      required: ["sobjectName", "recordId", "fields"]
+    }
+  },
+  {
+    name: "sobject_delete",
+    description:
+      "Delete a Salesforce record by SObject name and record ID.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        sobjectName: { type: "string", description: "SObject API Name" },
+        recordId: { type: "string", description: "Salesforce Record ID to delete" }
+      },
+      required: ["sobjectName", "recordId"]
+    }
+  },
+  {
+    name: "get_related_records",
+    description:
+      "Retrieve child related records for a given parent record.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        sobjectName: { type: "string", description: "Parent SObject API Name" },
+        recordId: { type: "string", description: "Parent Salesforce Record ID" },
+        relationshipName: {
+          type: "string",
+          description: "Child relationship name (e.g. Contacts, Job_Histories__r)"
+        }
+      },
+      required: ["sobjectName", "recordId", "relationshipName"]
+    }
+  },
+  {
     name: "execute_natural_language_query",
     description:
       "Execute a natural language prompt to dynamically query any Salesforce object (Account, Work_Order__c, Technician__c, Maintenance_Alert__c, etc.) without hardcoding.",
@@ -960,39 +1046,6 @@ const MCP_TOOLS = [
         }
       },
       required: ["searchTerm"]
-    }
-  },
-  {
-    name: "sobject_update",
-    description:
-      "Update fields on a Salesforce record (e.g. Work_Order__c status, notes).",
-    inputSchema: {
-      type: "object",
-      properties: {
-        sobjectName: { type: "string", description: "SObject API Name" },
-        recordId: { type: "string", description: "Salesforce Record ID" },
-        fields: {
-          type: "object",
-          description: "Key-value map of fields to update"
-        }
-      },
-      required: ["sobjectName", "recordId", "fields"]
-    }
-  },
-  {
-    name: "sobject_create",
-    description:
-      "Create a record (e.g. Job_History__c, ContentVersion photo attachment).",
-    inputSchema: {
-      type: "object",
-      properties: {
-        sobjectName: { type: "string", description: "SObject API Name" },
-        fields: {
-          type: "object",
-          description: "Field values for the new record"
-        }
-      },
-      required: ["sobjectName", "fields"]
     }
   },
   {
@@ -1167,6 +1220,57 @@ async function uploadToSalesforceContentVersion(
   }
 }
 
+function parseSalesforceError(errorData, fallbackStatus = 500) {
+  if (Array.isArray(errorData) && errorData.length > 0) {
+    const err = errorData[0];
+    let status = fallbackStatus;
+    if (err.errorCode === "NOT_FOUND") status = 404;
+    else if (
+      err.errorCode === "REQUIRED_FIELD_MISSING" ||
+      err.errorCode === "INVALID_FIELD" ||
+      err.errorCode === "MALFORMED_QUERY" ||
+      err.errorCode === "MALFORMED_SEARCH" ||
+      err.errorCode === "INVALID_OR_NULL_FOR_RESTRICTED_PICKLIST" ||
+      err.errorCode === "FIELD_CUSTOM_VALIDATION_EXCEPTION"
+    )
+      status = 400;
+    else if (
+      err.errorCode === "INSUFFICIENT_ACCESS_ON_CROSS_REFERENCE_ENTITY" ||
+      err.errorCode === "INSUFFICIENT_ACCESS_OR_READONLY" ||
+      err.errorCode === "CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY"
+    )
+      status = 403;
+    else if (
+      err.errorCode === "DUPLICATES_DETECTED" ||
+      err.errorCode === "DUPLICATE_VALUE"
+    )
+      status = 409;
+    else if (err.errorCode === "REQUEST_LIMIT_EXCEEDED") status = 429;
+
+    return {
+      status,
+      error: err.message || "Salesforce API Error",
+      errorCode: err.errorCode || "SALESFORCE_ERROR",
+      fields: err.fields || [],
+      details: errorData
+    };
+  }
+  if (errorData && errorData.message) {
+    return {
+      status: fallbackStatus,
+      error: errorData.message,
+      errorCode: errorData.errorCode || "SALESFORCE_ERROR",
+      details: errorData
+    };
+  }
+  return {
+    status: fallbackStatus,
+    error: "Unknown Salesforce API error",
+    errorCode: "UNKNOWN_ERROR",
+    details: errorData
+  };
+}
+
 // ── Main Server Router ──────────────────────────────────────────────────────
 const server = http.createServer(async (req, res) => {
   // CORS Pre-flight
@@ -1207,17 +1311,27 @@ const server = http.createServer(async (req, res) => {
       return sendJSON(res, 200, {
         status: "online",
         service: "digiField360 Mobile API & MCP Server",
-        version: "1.0.0",
+        version: "2.0.0",
         port: PORT,
         mode: isMockMode ? "mock" : "live_salesforce",
         instanceUrl: instanceUrl,
-        documentation: "/docs/MOBILE_DEVELOPER_API_DOCS.md",
+        documentation: "/docs/SALESFORCE_MCP_API_INTEGRATION_GUIDE.md",
         endpoints: {
           auth: [
             "POST /api/auth/login",
             "POST /api/auth/refresh",
             "GET /api/technician/profile",
             "GET /api/user/details"
+          ],
+          genericSalesforceData: [
+            "GET /api/data/:sobject (List & Filter)",
+            "GET /api/data/:sobject/:id (Get by ID)",
+            "POST /api/data/:sobject (Insert Record)",
+            "PATCH /api/data/:sobject/:id (Update Record)",
+            "DELETE /api/data/:sobject/:id (Delete Record)",
+            "GET /api/data/:sobject/:id/:relationship (Child Records)",
+            "POST /api/data/query (Direct SOQL)",
+            "POST /api/data/search (Direct SOSL)"
           ],
           sync: [
             "GET /api/sync/morning-payload",
@@ -1531,6 +1645,480 @@ const server = http.createServer(async (req, res) => {
         equipmentHistory: MOCK_JOB_HISTORY,
         accounts: MOCK_ACCOUNTS.slice(0, 5),
         aiPreJobBriefing: userWorkOrders[0]?.AI_Pre_Job_Briefing__c || null
+      });
+    }
+
+    // ═════════════════════════════════════════════════════════════════════════
+    // 2.5 GENERIC SALESFORCE LIVE CRUD & DATA APIS
+    // ═════════════════════════════════════════════════════════════════════════
+
+    // POST /api/data/query (Direct SOQL Execution)
+    if (req.method === "POST" && pathname === "/api/data/query") {
+      const body = await parseRequestBody(req);
+      const { soql } = body;
+      if (!soql) {
+        return sendJSON(res, 400, {
+          success: false,
+          error: "Missing required parameter: 'soql'"
+        });
+      }
+      if (!isMockMode) {
+        try {
+          const sfRes = await fetch(
+            `${instanceUrl}/services/data/v67.0/query?q=${encodeURIComponent(soql)}`,
+            { headers: { Authorization: `Bearer ${sfToken}` } }
+          );
+          const sfData = await sfRes.json();
+          if (!sfRes.ok) {
+            const parsed = parseSalesforceError(sfData, sfRes.status);
+            return sendJSON(res, parsed.status, {
+              success: false,
+              mode: "live_salesforce",
+              ...parsed
+            });
+          }
+          return sendJSON(res, 200, {
+            success: true,
+            mode: "live_salesforce",
+            totalSize: sfData.totalSize,
+            done: sfData.done,
+            records: sfData.records || []
+          });
+        } catch (err) {
+          return sendJSON(res, 500, {
+            success: false,
+            mode: "live_salesforce",
+            error: err.message
+          });
+        }
+      }
+      const matchObj = soql.match(/FROM\s+([a-zA-Z0-9_]+)/i);
+      const targetObj = matchObj ? matchObj[1] : "Work_Order__c";
+      const parsed = { targetObject: targetObj, limit: 20 };
+      const records = executeMockQuery(parsed, soql);
+      return sendJSON(res, 200, {
+        success: true,
+        mode: "mock",
+        totalSize: records.length,
+        done: true,
+        records: records
+      });
+    }
+
+    // POST /api/data/search (Direct SOSL Execution)
+    if (req.method === "POST" && pathname === "/api/data/search") {
+      const body = await parseRequestBody(req);
+      const { sosl, searchTerm } = body;
+      const queryStr =
+        sosl ||
+        (searchTerm
+          ? `FIND {${searchTerm}} IN ALL FIELDS RETURNING Account(Id, Name), Work_Order__c(Id, Name)`
+          : "");
+      if (!queryStr) {
+        return sendJSON(res, 400, {
+          success: false,
+          error: "Missing required parameter: 'sosl' or 'searchTerm'"
+        });
+      }
+      if (!isMockMode) {
+        try {
+          const sfRes = await fetch(
+            `${instanceUrl}/services/data/v67.0/search?q=${encodeURIComponent(queryStr)}`,
+            { headers: { Authorization: `Bearer ${sfToken}` } }
+          );
+          const sfData = await sfRes.json();
+          if (!sfRes.ok) {
+            const parsed = parseSalesforceError(sfData, sfRes.status);
+            return sendJSON(res, parsed.status, {
+              success: false,
+              mode: "live_salesforce",
+              ...parsed
+            });
+          }
+          return sendJSON(res, 200, {
+            success: true,
+            mode: "live_salesforce",
+            searchRecords: sfData.searchRecords || sfData
+          });
+        } catch (err) {
+          return sendJSON(res, 500, {
+            success: false,
+            mode: "live_salesforce",
+            error: err.message
+          });
+        }
+      }
+      return sendJSON(res, 200, {
+        success: true,
+        mode: "mock",
+        searchRecords: MOCK_ACCOUNTS.map((a) => ({
+          Id: a.Id,
+          Name: a.Name,
+          sobjectType: "Account"
+        }))
+      });
+    }
+
+    // GET /api/data/:sobject/:id/:relationship (Child Related Records)
+    const relMatch = pathname.match(
+      /^\/api\/data\/([a-zA-Z0-9_]+)\/([a-zA-Z0-9]{15,18}|[a-zA-Z0-9_\-]+)\/([a-zA-Z0-9_]+)$/
+    );
+    if (req.method === "GET" && relMatch) {
+      const [, sobjectName, recordId, relationshipName] = relMatch;
+      if (!isMockMode) {
+        try {
+          const sfRes = await fetch(
+            `${instanceUrl}/services/data/v67.0/sobjects/${sobjectName}/${recordId}/${relationshipName}`,
+            { headers: { Authorization: `Bearer ${sfToken}` } }
+          );
+          const sfData = await sfRes.json();
+          if (!sfRes.ok) {
+            const parsed = parseSalesforceError(sfData, sfRes.status);
+            return sendJSON(res, parsed.status, {
+              success: false,
+              mode: "live_salesforce",
+              ...parsed
+            });
+          }
+          return sendJSON(res, 200, {
+            success: true,
+            mode: "live_salesforce",
+            sobject: sobjectName,
+            recordId: recordId,
+            relationship: relationshipName,
+            totalSize:
+              sfData.totalSize || (sfData.records ? sfData.records.length : 0),
+            records: sfData.records || []
+          });
+        } catch (err) {
+          return sendJSON(res, 500, {
+            success: false,
+            mode: "live_salesforce",
+            error: err.message
+          });
+        }
+      }
+      return sendJSON(res, 200, {
+        success: true,
+        mode: "mock",
+        sobject: sobjectName,
+        recordId: recordId,
+        relationship: relationshipName,
+        totalSize: 2,
+        records: [
+          {
+            Id: `mock_${relationshipName}_1`,
+            Name: `Mock Child 1 for ${recordId}`
+          },
+          {
+            Id: `mock_${relationshipName}_2`,
+            Name: `Mock Child 2 for ${recordId}`
+          }
+        ]
+      });
+    }
+
+    // GET /api/data/:sobject/:id (Get Single Record by ID)
+    const singleRecordMatch = pathname.match(
+      /^\/api\/data\/([a-zA-Z0-9_]+)\/([a-zA-Z0-9]{15,18}|[a-zA-Z0-9_\-]+)$/
+    );
+    if (req.method === "GET" && singleRecordMatch) {
+      const [, sobjectName, recordId] = singleRecordMatch;
+      if (!isMockMode) {
+        try {
+          const fieldQuery = query.fields
+            ? `?fields=${encodeURIComponent(query.fields)}`
+            : "";
+          const sfRes = await fetch(
+            `${instanceUrl}/services/data/v67.0/sobjects/${sobjectName}/${recordId}${fieldQuery}`,
+            { headers: { Authorization: `Bearer ${sfToken}` } }
+          );
+          const sfData = await sfRes.json();
+          if (!sfRes.ok) {
+            const parsed = parseSalesforceError(sfData, sfRes.status);
+            return sendJSON(res, parsed.status, {
+              success: false,
+              mode: "live_salesforce",
+              ...parsed
+            });
+          }
+          return sendJSON(res, 200, {
+            success: true,
+            mode: "live_salesforce",
+            sobject: sobjectName,
+            id: recordId,
+            record: sfData
+          });
+        } catch (err) {
+          return sendJSON(res, 500, {
+            success: false,
+            mode: "live_salesforce",
+            error: err.message
+          });
+        }
+      }
+      return sendJSON(res, 200, {
+        success: true,
+        mode: "mock",
+        sobject: sobjectName,
+        id: recordId,
+        record: {
+          Id: recordId,
+          Name: `Mock ${sobjectName} Record (${recordId})`,
+          CreatedDate: new Date().toISOString()
+        }
+      });
+    }
+
+    // PATCH /api/data/:sobject/:id (Update Record)
+    if (req.method === "PATCH" && singleRecordMatch) {
+      const [, sobjectName, recordId] = singleRecordMatch;
+      const body = await parseRequestBody(req);
+      if (!body || Object.keys(body).length === 0) {
+        return sendJSON(res, 400, {
+          success: false,
+          error: "Request body cannot be empty for update"
+        });
+      }
+      if (!isMockMode) {
+        try {
+          const sfRes = await fetch(
+            `${instanceUrl}/services/data/v67.0/sobjects/${sobjectName}/${recordId}`,
+            {
+              method: "PATCH",
+              headers: {
+                Authorization: `Bearer ${sfToken}`,
+                "Content-Type": "application/json"
+              },
+              body: JSON.stringify(body)
+            }
+          );
+          if (sfRes.ok || sfRes.status === 204) {
+            return sendJSON(res, 200, {
+              success: true,
+              mode: "live_salesforce",
+              sobject: sobjectName,
+              id: recordId,
+              updatedFields: Object.keys(body),
+              updatedAt: new Date().toISOString(),
+              message: `Record ${recordId} in ${sobjectName} updated successfully in Salesforce.`
+            });
+          } else {
+            const sfErr = await sfRes.json().catch(() => null);
+            const parsed = parseSalesforceError(sfErr, sfRes.status);
+            return sendJSON(res, parsed.status, {
+              success: false,
+              mode: "live_salesforce",
+              ...parsed
+            });
+          }
+        } catch (err) {
+          return sendJSON(res, 500, {
+            success: false,
+            mode: "live_salesforce",
+            error: err.message
+          });
+        }
+      }
+      return sendJSON(res, 200, {
+        success: true,
+        mode: "mock",
+        sobject: sobjectName,
+        id: recordId,
+        updatedFields: Object.keys(body),
+        updatedAt: new Date().toISOString(),
+        message: `Record ${recordId} in ${sobjectName} updated successfully (mock).`
+      });
+    }
+
+    // DELETE /api/data/:sobject/:id (Delete Record)
+    if (req.method === "DELETE" && singleRecordMatch) {
+      const [, sobjectName, recordId] = singleRecordMatch;
+      if (!isMockMode) {
+        try {
+          const sfRes = await fetch(
+            `${instanceUrl}/services/data/v67.0/sobjects/${sobjectName}/${recordId}`,
+            {
+              method: "DELETE",
+              headers: { Authorization: `Bearer ${sfToken}` }
+            }
+          );
+          if (sfRes.ok || sfRes.status === 204) {
+            return sendJSON(res, 200, {
+              success: true,
+              mode: "live_salesforce",
+              sobject: sobjectName,
+              id: recordId,
+              deletedAt: new Date().toISOString(),
+              message: `Record ${recordId} in ${sobjectName} deleted successfully from Salesforce.`
+            });
+          } else {
+            const sfErr = await sfRes.json().catch(() => null);
+            const parsed = parseSalesforceError(sfErr, sfRes.status);
+            return sendJSON(res, parsed.status, {
+              success: false,
+              mode: "live_salesforce",
+              ...parsed
+            });
+          }
+        } catch (err) {
+          return sendJSON(res, 500, {
+            success: false,
+            mode: "live_salesforce",
+            error: err.message
+          });
+        }
+      }
+      return sendJSON(res, 200, {
+        success: true,
+        mode: "mock",
+        sobject: sobjectName,
+        id: recordId,
+        deletedAt: new Date().toISOString(),
+        message: `Record ${recordId} in ${sobjectName} deleted successfully (mock).`
+      });
+    }
+
+    // POST /api/data/:sobject (Insert/Create Record)
+    const listMatch = pathname.match(/^\/api\/data\/([a-zA-Z0-9_]+)$/);
+    if (
+      req.method === "POST" &&
+      listMatch &&
+      !pathname.endsWith("/query") &&
+      !pathname.endsWith("/search")
+    ) {
+      const sobjectName = listMatch[1];
+      const body = await parseRequestBody(req);
+      if (!body || Object.keys(body).length === 0) {
+        return sendJSON(res, 400, {
+          success: false,
+          error: "Request body cannot be empty for record creation"
+        });
+      }
+      if (!isMockMode) {
+        try {
+          const sfRes = await fetch(
+            `${instanceUrl}/services/data/v67.0/sobjects/${sobjectName}`,
+            {
+              method: "POST",
+              headers: {
+                Authorization: `Bearer ${sfToken}`,
+                "Content-Type": "application/json"
+              },
+              body: JSON.stringify(body)
+            }
+          );
+          const sfData = await sfRes.json();
+          if (sfRes.ok && sfData.id) {
+            return sendJSON(res, 201, {
+              success: true,
+              mode: "live_salesforce",
+              sobject: sobjectName,
+              id: sfData.id,
+              createdAt: new Date().toISOString(),
+              message: `Record created successfully in ${sobjectName}.`
+            });
+          } else {
+            const parsed = parseSalesforceError(sfData, sfRes.status);
+            return sendJSON(res, parsed.status, {
+              success: false,
+              mode: "live_salesforce",
+              ...parsed
+            });
+          }
+        } catch (err) {
+          return sendJSON(res, 500, {
+            success: false,
+            mode: "live_salesforce",
+            error: err.message
+          });
+        }
+      }
+      const mockId = `a01${Math.random().toString(36).substring(2, 14)}Mock`;
+      return sendJSON(res, 201, {
+        success: true,
+        mode: "mock",
+        sobject: sobjectName,
+        id: mockId,
+        createdAt: new Date().toISOString(),
+        message: `Record created successfully in ${sobjectName} (mock).`
+      });
+    }
+
+    // GET /api/data/:sobject (List & Filter Records)
+    if (
+      req.method === "GET" &&
+      listMatch &&
+      !pathname.endsWith("/query") &&
+      !pathname.endsWith("/search")
+    ) {
+      const sobjectName = listMatch[1];
+      const fields = query.fields || "Id, Name, CreatedDate";
+      const whereClause = query.where ? `WHERE ${query.where}` : "";
+      const orderBy = query.orderBy
+        ? `ORDER BY ${query.orderBy}`
+        : "ORDER BY CreatedDate DESC";
+      const limitVal = parseInt(query.limit, 10) || 20;
+      const offsetClause = query.offset
+        ? `OFFSET ${parseInt(query.offset, 10)}`
+        : "";
+      const soql =
+        `SELECT ${fields} FROM ${sobjectName} ${whereClause} ${orderBy} LIMIT ${limitVal} ${offsetClause}`.trim();
+
+      if (!isMockMode) {
+        try {
+          const sfRes = await fetch(
+            `${instanceUrl}/services/data/v67.0/query?q=${encodeURIComponent(soql)}`,
+            { headers: { Authorization: `Bearer ${sfToken}` } }
+          );
+          const sfData = await sfRes.json();
+          if (!sfRes.ok) {
+            const parsed = parseSalesforceError(sfData, sfRes.status);
+            return sendJSON(res, parsed.status, {
+              success: false,
+              mode: "live_salesforce",
+              ...parsed
+            });
+          }
+          return sendJSON(res, 200, {
+            success: true,
+            mode: "live_salesforce",
+            sobject: sobjectName,
+            soql: soql,
+            count: sfData.records?.length || 0,
+            totalSize: sfData.totalSize || 0,
+            records: sfData.records || []
+          });
+        } catch (err) {
+          return sendJSON(res, 500, {
+            success: false,
+            mode: "live_salesforce",
+            error: err.message
+          });
+        }
+      }
+
+      let mockDataset = [];
+      if (sobjectName.toLowerCase().includes("account"))
+        mockDataset = MOCK_ACCOUNTS;
+      else if (sobjectName.toLowerCase().includes("work_order"))
+        mockDataset = MOCK_WORK_ORDERS;
+      else if (sobjectName.toLowerCase().includes("technician"))
+        mockDataset = MOCK_TECHNICIANS_SOBJECT;
+      else if (sobjectName.toLowerCase().includes("job_history"))
+        mockDataset = MOCK_JOB_HISTORY;
+      else if (sobjectName.toLowerCase().includes("alert"))
+        mockDataset = MOCK_MAINTENANCE_ALERTS;
+      else mockDataset = [{ Id: "mock_001", Name: `Mock ${sobjectName} 1` }];
+
+      return sendJSON(res, 200, {
+        success: true,
+        mode: "mock",
+        sobject: sobjectName,
+        soql: soql,
+        count: Math.min(mockDataset.length, limitVal),
+        totalSize: mockDataset.length,
+        records: mockDataset.slice(0, limitVal)
       });
     }
 
@@ -2555,48 +3143,56 @@ const server = http.createServer(async (req, res) => {
                 const sfData = await sfRes.json();
                 toolOutput = JSON.stringify(sfData, null, 2);
               } catch (e) {
-                toolOutput = JSON.stringify({ totalSize: MOCK_WORK_ORDERS.length, done: true, records: MOCK_WORK_ORDERS }, null, 2);
+                toolOutput = JSON.stringify(
+                  {
+                    totalSize: MOCK_WORK_ORDERS.length,
+                    done: true,
+                    records: MOCK_WORK_ORDERS
+                  },
+                  null,
+                  2
+                );
               }
             } else {
               toolOutput = JSON.stringify(
-                { totalSize: MOCK_WORK_ORDERS.length, done: true, records: MOCK_WORK_ORDERS },
+                {
+                  totalSize: MOCK_WORK_ORDERS.length,
+                  done: true,
+                  records: MOCK_WORK_ORDERS
+                },
                 null,
                 2
               );
             }
-          } else if (toolName === "sobject_search") {
-            toolOutput = JSON.stringify(
-              { searchRecords: MOCK_KNOWLEDGE },
-              null,
-              2
-            );
-          } else if (toolName === "sobject_update") {
-            if (!isMockMode && args.sobjectName && args.recordId && args.fields) {
+          } else if (toolName === "sobject_get") {
+            const { sobjectName, recordId, fields } = args;
+            if (!isMockMode && sobjectName && recordId) {
               try {
-                await fetch(
-                  `${instanceUrl}/services/data/v67.0/sobjects/${args.sobjectName}/${args.recordId}`,
-                  {
-                    method: "PATCH",
-                    headers: {
-                      Authorization: `Bearer ${sfToken}`,
-                      "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify(args.fields)
-                  }
+                const fieldQuery = fields
+                  ? `?fields=${encodeURIComponent(fields)}`
+                  : "";
+                const sfRes = await fetch(
+                  `${instanceUrl}/services/data/v67.0/sobjects/${sobjectName}/${recordId}${fieldQuery}`,
+                  { headers: { Authorization: `Bearer ${sfToken}` } }
                 );
-              } catch (e) {}
+                const sfData = await sfRes.json();
+                toolOutput = JSON.stringify(sfData, null, 2);
+              } catch (e) {
+                toolOutput = JSON.stringify({ error: e.message }, null, 2);
+              }
             }
-            toolOutput = JSON.stringify(
-              {
-                success: true,
-                id: args.recordId,
-                updatedFields: Object.keys(args.fields || {})
-              },
-              null,
-              2
-            );
+            if (!toolOutput) {
+              toolOutput = JSON.stringify(
+                {
+                  Id: recordId || "mock_id_001",
+                  Name: `Mock ${sobjectName || "SObject"} Record`
+                },
+                null,
+                2
+              );
+            }
           } else if (toolName === "sobject_create") {
-            let createdId = "a01000000MockCreatedId";
+            let createdId = `a01${Math.random().toString(36).substring(2, 14)}Mock`;
             if (!isMockMode && args.sobjectName && args.fields) {
               try {
                 const cRes = await fetch(
@@ -2619,11 +3215,116 @@ const server = http.createServer(async (req, res) => {
               null,
               2
             );
+          } else if (toolName === "sobject_update") {
+            let updated = true;
+            if (
+              !isMockMode &&
+              args.sobjectName &&
+              args.recordId &&
+              args.fields
+            ) {
+              try {
+                const pRes = await fetch(
+                  `${instanceUrl}/services/data/v67.0/sobjects/${args.sobjectName}/${args.recordId}`,
+                  {
+                    method: "PATCH",
+                    headers: {
+                      Authorization: `Bearer ${sfToken}`,
+                      "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify(args.fields)
+                  }
+                );
+                updated = pRes.ok || pRes.status === 204;
+              } catch (e) {
+                updated = false;
+              }
+            }
+            toolOutput = JSON.stringify(
+              {
+                success: updated,
+                id: args.recordId,
+                updatedFields: Object.keys(args.fields || {})
+              },
+              null,
+              2
+            );
+          } else if (toolName === "sobject_delete") {
+            let deleted = true;
+            if (!isMockMode && args.sobjectName && args.recordId) {
+              try {
+                const dRes = await fetch(
+                  `${instanceUrl}/services/data/v67.0/sobjects/${args.sobjectName}/${args.recordId}`,
+                  {
+                    method: "DELETE",
+                    headers: { Authorization: `Bearer ${sfToken}` }
+                  }
+                );
+                deleted = dRes.ok || dRes.status === 204;
+              } catch (e) {
+                deleted = false;
+              }
+            }
+            toolOutput = JSON.stringify(
+              {
+                success: deleted,
+                sobjectName: args.sobjectName,
+                recordId: args.recordId,
+                message: "Record deleted successfully."
+              },
+              null,
+              2
+            );
+          } else if (toolName === "get_related_records") {
+            const { sobjectName, recordId, relationshipName } = args;
+            if (!isMockMode && sobjectName && recordId && relationshipName) {
+              try {
+                const sfRes = await fetch(
+                  `${instanceUrl}/services/data/v67.0/sobjects/${sobjectName}/${recordId}/${relationshipName}`,
+                  { headers: { Authorization: `Bearer ${sfToken}` } }
+                );
+                const sfData = await sfRes.json();
+                toolOutput = JSON.stringify(sfData, null, 2);
+              } catch (e) {
+                toolOutput = JSON.stringify(
+                  { totalSize: 0, records: [] },
+                  null,
+                  2
+                );
+              }
+            }
+            if (!toolOutput) {
+              toolOutput = JSON.stringify(
+                {
+                  totalSize: 2,
+                  records: [
+                    {
+                      Id: `mock_${relationshipName}_1`,
+                      Name: `Mock Child 1 for ${recordId}`
+                    },
+                    {
+                      Id: `mock_${relationshipName}_2`,
+                      Name: `Mock Child 2 for ${recordId}`
+                    }
+                  ]
+                },
+                null,
+                2
+              );
+            }
+          } else if (toolName === "sobject_search") {
+            toolOutput = JSON.stringify(
+              { searchRecords: MOCK_KNOWLEDGE },
+              null,
+              2
+            );
           } else if (toolName === "sobject_describe") {
             toolOutput = JSON.stringify(
               {
                 name: args.sobjectName,
-                label: args.sobjectName.replace(/__c$/, "").replace(/_/g, " "),
+                label: (args.sobjectName || "")
+                  .replace(/__c$/, "")
+                  .replace(/_/g, " "),
                 fieldsCount: 15
               },
               null,
@@ -2726,6 +3427,23 @@ const server = http.createServer(async (req, res) => {
       success: false,
       error: error.message
     });
+  }
+});
+
+server.on("error", (err) => {
+  if (err.code === "EADDRINUSE") {
+    console.error(
+      `\n⚠️  Port ${PORT} is already in use by an existing process.`
+    );
+    console.error(
+      `👉 To free the port on Windows PowerShell, run:`
+    );
+    console.error(
+      `   Get-Process -Id (Get-NetTCPConnection -LocalPort ${PORT}).OwningProcess | Stop-Process -Force\n`
+    );
+    process.exit(1);
+  } else {
+    console.error("Server error:", err.message);
   }
 });
 
