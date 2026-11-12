@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Technician__c</fullName>
+    <label>Technician</label>
+    <type>Lookup</type>
+    <required>false</required>
+    <trackHistory>true</trackHistory>
+    <referenceTo>Technician__c</referenceTo><relationshipName>Activities</relationshipName><relationshipLabel>Technicians</relationshipLabel>
+    <deleteConstraint>SetNull</deleteConstraint>
+</CustomField>

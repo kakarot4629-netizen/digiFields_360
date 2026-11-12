@@ -1,0 +1,414 @@
+{
+  "info": {
+    "_postman_id": "df360-oauth-live-token-v2",
+    "name": "digiField360 — Salesforce OAuth & Live Token Generator",
+    "description": "🚀 **Production Salesforce OAuth 2.0 & Token Generator Collection**\n\nUse this collection to:\n1. **Refresh & Generate Live Access Tokens**: Run Request 1 (Refresh Token flow) or Request 2 (Password flow) to automatically capture the live `accessToken`.\n2. **Inspect User Profile**: Query the Salesforce `/services/oauth2/userinfo` endpoint.\n3. **Query Live Salesforce Data**: Test querying `Work_Order__c` and `Service_Job__c` records directly using the auto-captured Bearer Token.\n4. **Share with Mobile Developer**: Send this JSON directly to the developer to import into Postman with 1-click.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "loginUrl",
+      "value": "https://login.salesforce.com",
+      "type": "string"
+    },
+    {
+      "key": "instanceUrl",
+      "value": "https://orgfarm-4036b01401-dev-ed.develop.my.salesforce.com",
+      "type": "string"
+    },
+    {
+      "key": "clientId",
+      "value": "3MVG97L7PWbPq6Uwn6NZQK1wxLrWV6_7.0mdm8.GC.F25p4UiHNWnRwtvrnoJV5j4h7WYTEY.tjo95JPFM4LW",
+      "type": "string"
+    },
+    {
+      "key": "clientSecret",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "refreshToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "username",
+      "value": "piyush.channe.3868c7575da5@agentforce.com",
+      "type": "string"
+    },
+    {
+      "key": "password",
+      "value": "YOUR_PASSWORD_HERE",
+      "type": "string"
+    },
+    {
+      "key": "securityToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "accessToken",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. 🔄 Generate Fresh Access Token (OAuth 2.0 Refresh Token Flow)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200 OK\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "var jsonData = pm.response.json();",
+              "pm.test(\"Access Token successfully returned\", function () {",
+              "    pm.expect(jsonData.access_token).to.be.a('string');",
+              "});",
+              "if (jsonData.access_token) {",
+              "    pm.collectionVariables.set(\"accessToken\", jsonData.access_token);",
+              "    if (pm.environment) { pm.environment.set(\"accessToken\", jsonData.access_token); }",
+              "    console.log(\"✅ Auto-captured new live Access Token:\", jsonData.access_token);",
+              "}",
+              "if (jsonData.instance_url) {",
+              "    pm.collectionVariables.set(\"instanceUrl\", jsonData.instance_url);",
+              "    if (pm.environment) { pm.environment.set(\"instanceUrl\", jsonData.instance_url); }",
+              "    console.log(\"✅ Instance URL:\", jsonData.instance_url);",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/x-www-form-urlencoded"
+          }
+        ],
+        "body": {
+          "mode": "urlencoded",
+          "urlencoded": [
+            {
+              "key": "grant_type",
+              "value": "refresh_token",
+              "type": "text"
+            },
+            {
+              "key": "client_id",
+              "value": "{{clientId}}",
+              "type": "text"
+            },
+            {
+              "key": "client_secret",
+              "value": "{{clientSecret}}",
+              "type": "text"
+            },
+            {
+              "key": "refresh_token",
+              "value": "{{refreshToken}}",
+              "type": "text"
+            }
+          ]
+        },
+        "url": {
+          "raw": "{{instanceUrl}}/services/oauth2/token",
+          "host": [
+            "{{instanceUrl}}"
+          ],
+          "path": [
+            "services",
+            "oauth2",
+            "token"
+          ]
+        },
+        "description": "Exchanges the OAuth 2.0 Refresh Token with Salesforce to obtain a brand new Access Token (Bearer). Automatically captures and saves the token to `{{accessToken}}`."
+      },
+      "response": []
+    },
+    {
+      "name": "2. 🔑 Generate Access Token (Username + Password Flow)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200 OK\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "var jsonData = pm.response.json();",
+              "pm.test(\"Access Token successfully generated\", function () {",
+              "    pm.expect(jsonData.access_token).to.be.a('string');",
+              "});",
+              "if (jsonData.access_token) {",
+              "    pm.collectionVariables.set(\"accessToken\", jsonData.access_token);",
+              "    if (pm.environment) { pm.environment.set(\"accessToken\", jsonData.access_token); }",
+              "    console.log(\"✅ Captured Access Token from Password Flow:\", jsonData.access_token);",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/x-www-form-urlencoded"
+          }
+        ],
+        "body": {
+          "mode": "urlencoded",
+          "urlencoded": [
+            {
+              "key": "grant_type",
+              "value": "password",
+              "type": "text"
+            },
+            {
+              "key": "client_id",
+              "value": "{{clientId}}",
+              "type": "text"
+            },
+            {
+              "key": "client_secret",
+              "value": "{{clientSecret}}",
+              "type": "text"
+            },
+            {
+              "key": "username",
+              "value": "{{username}}",
+              "type": "text"
+            },
+            {
+              "key": "password",
+              "value": "{{password}}{{securityToken}}",
+              "type": "text"
+            }
+          ]
+        },
+        "url": {
+          "raw": "{{loginUrl}}/services/oauth2/token",
+          "host": [
+            "{{loginUrl}}"
+          ],
+          "path": [
+            "services",
+            "oauth2",
+            "token"
+          ]
+        },
+        "description": "Authenticates using username, password, and security token (if required) to generate an Access Token."
+      },
+      "response": []
+    },
+    {
+      "name": "3. 👤 Get User Identity (UserInfo)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200 OK\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "var jsonData = pm.response.json();",
+              "pm.test(\"User identity returned\", function () {",
+              "    pm.expect(jsonData.preferred_username).to.be.a('string');",
+              "    console.log(\"👤 Authenticated as:\", jsonData.name, \"(\" + jsonData.preferred_username + \")\");",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{instanceUrl}}/services/oauth2/userinfo",
+          "host": [
+            "{{instanceUrl}}"
+          ],
+          "path": [
+            "services",
+            "oauth2",
+            "userinfo"
+          ]
+        },
+        "description": "Verifies the current Access Token by fetching user profile identity from Salesforce."
+      },
+      "response": []
+    },
+    {
+      "name": "4. 📋 Query Live Work Orders (SOQL)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200 OK\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "var jsonData = pm.response.json();",
+              "pm.test(\"Work Orders returned\", function () {",
+              "    pm.expect(jsonData.records).to.be.an('array');",
+              "    console.log(\"📋 Total Work Orders:\", jsonData.totalSize);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{instanceUrl}}/services/data/v60.0/query/?q=SELECT Id, Name, Subject__c, Status__c, Priority__c, Account__r.Name FROM Work_Order__c ORDER BY CreatedDate DESC LIMIT 10",
+          "host": [
+            "{{instanceUrl}}"
+          ],
+          "path": [
+            "services",
+            "data",
+            "v60.0",
+            "query",
+            ""
+          ],
+          "query": [
+            {
+              "key": "q",
+              "value": "SELECT Id, Name, Subject__c, Status__c, Priority__c, Account__r.Name FROM Work_Order__c ORDER BY CreatedDate DESC LIMIT 10"
+            }
+          ]
+        },
+        "description": "Queries live Work Orders from Salesforce using the captured Bearer token."
+      },
+      "response": []
+    },
+    {
+      "name": "5. 🛠️ Query Live Service Jobs (SOQL)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200 OK\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "var jsonData = pm.response.json();",
+              "pm.test(\"Service Jobs returned\", function () {",
+              "    pm.expect(jsonData.records).to.be.an('array');",
+              "    console.log(\"🛠️ Total Service Jobs:\", jsonData.totalSize);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{instanceUrl}}/services/data/v60.0/query/?q=SELECT Id, Name, Job_Type__c, Status__c, Priority__c, Account__r.Name, Technician__r.Name FROM Service_Job__c ORDER BY CreatedDate DESC LIMIT 10",
+          "host": [
+            "{{instanceUrl}}"
+          ],
+          "path": [
+            "services",
+            "data",
+            "v60.0",
+            "query",
+            ""
+          ],
+          "query": [
+            {
+              "key": "q",
+              "value": "SELECT Id, Name, Job_Type__c, Status__c, Priority__c, Account__r.Name, Technician__r.Name FROM Service_Job__c ORDER BY CreatedDate DESC LIMIT 10"
+            }
+          ]
+        },
+        "description": "Queries live Service Job records from Salesforce using the captured Bearer token."
+      },
+      "response": []
+    },
+    {
+      "name": "6. 🚀 digiField360 Backend Login (Render)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200 OK\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "var jsonData = pm.response.json();",
+              "pm.test(\"JWT token returned\", function () {",
+              "    pm.expect(jsonData.token).to.be.a('string');",
+              "    console.log(\"🚀 digiField360 App JWT:\", jsonData.token);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": \"{{username}}\",\n  \"password\": \"{{password}}\"\n}"
+        },
+        "url": {
+          "raw": "https://digifields-360.onrender.com/api/auth/login",
+          "protocol": "https",
+          "host": [
+            "digifields-360",
+            "onrender",
+            "com"
+          ],
+          "path": [
+            "api",
+            "auth",
+            "login"
+          ]
+        },
+        "description": "Authenticates against the digiField360 deployed backend on Render and returns a mobile JWT Bearer token."
+      },
+      "response": []
+    }
+  ]
+}

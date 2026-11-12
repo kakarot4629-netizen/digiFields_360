@@ -171,6 +171,49 @@ topics:
           Call this only after the customer explicitly confirms a time slot.
           Send the confirmationMessage text to the customer verbatim.
 
+  - name: Asset Intelligence & Warranty
+    label: Asset 360 & Service History
+    description: >
+      Use this topic when a technician, dispatcher, or manager asks about an
+      equipment's specifications, serial number, warranty status, or previous
+      repair history (e.g. "Tell me about this asset", "Is this generator under warranty",
+      "What repairs were done on serial CUM-QSK60-001?").
+    scope: >
+      Retrieving asset profile, OEM specs, active warranty coverage dates,
+      and prior work order histories.
+    actions:
+      - name: Query Asset 360 & History
+        type: apex
+        apexClass: DF360_AssetHistoryInvocableAction
+        description: >
+          Gathers asset specs, warranty expiration, install date, past work orders,
+          and previous repair records from Salesforce.
+        instructions: >
+          Call this whenever the user asks for asset specifications, warranty status,
+          or past repair logs. Provide the assetId, workOrderId, or serialNumber.
+          Highlight whether the asset is currently under warranty.
+
+  - name: Work Order Blocker & Pause
+    label: Pause & SLA Blocker Management
+    description: >
+      Use this topic when a field technician or dispatcher needs to pause a work order,
+      resume a paused order, or check which work orders are temporarily blocked
+      (e.g. "Pause WO-0042 waiting for part", "Resume WO-0042", "Show paused work orders").
+    scope: >
+      Pausing work orders with mandatory reason codes (Waiting for Part, Approval, Customer,
+      Site Access, Safety, Vendor), creating immutable pause logs, and resuming work orders.
+    actions:
+      - name: Manage Work Order Pause & Resume
+        type: apex
+        apexClass: DF360_WorkOrderPauseInvocableAction
+        description: >
+          Pauses or resumes a Work Order with reason tracking, or returns a summary
+          of all paused orders and SLA aging.
+        instructions: >
+          Call with actionType='PAUSE' when a user requests to put a job on hold.
+          Call with actionType='RESUME' when work can resume.
+          Call with actionType='GET_PAUSED_SUMMARY' when asked for the paused orders dashboard.
+
 guardrails:
   - type: topic_restriction
     description: >

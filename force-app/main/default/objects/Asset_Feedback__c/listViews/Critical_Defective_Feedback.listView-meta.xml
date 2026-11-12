@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ListView xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Critical_Defective_Feedback</fullName>
+    <columns>NAME</columns>
+    <columns>Work_Order__c</columns>
+    <columns>Work_Order_Line_Item__c</columns>
+    <columns>Asset__c</columns>
+    <columns>Technician__c</columns>
+    <columns>Feedback_Type__c</columns>
+    <columns>Operational_Status__c</columns>
+    <columns>Asset_Condition__c</columns>
+    <columns>Rating__c</columns>
+    <columns>Recommended_Action__c</columns>
+    <filterScope>Everything</filterScope>
+    <filters>
+        <field>Operational_Status__c</field>
+        <operation>equals</operation>
+        <value>Not Working / Defective,Partially Working / Sub-optimal</value>
+    </filters>
+    <label>Defective &amp; Sub-optimal Assets</label>
+</ListView>

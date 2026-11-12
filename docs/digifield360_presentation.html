@@ -1,0 +1,1046 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>digiField360.ai — Executive & Technical Presentation</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #0a0f1d;
+      --bg-card: rgba(18, 26, 47, 0.85);
+      --bg-card-border: rgba(56, 189, 248, 0.2);
+      --primary: #38bdf8;
+      --primary-gradient: linear-gradient(135deg, #38bdf8 0%, #6366f1 100%);
+      --accent-green: #10b981;
+      --accent-amber: #f59e0b;
+      --accent-rose: #f43f5e;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --font-main: 'Outfit', sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      font-family: var(--font-main);
+      overflow: hidden;
+      height: 100vh;
+      width: 100vw;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    /* Top Progress Bar */
+    .progress-container {
+      width: 100%;
+      height: 4px;
+      background: rgba(255, 255, 255, 0.08);
+      position: fixed;
+      top: 0;
+      left: 0;
+      z-index: 100;
+    }
+
+    .progress-bar {
+      height: 100%;
+      background: var(--primary-gradient);
+      width: 6.25%;
+      transition: width 0.3s ease;
+    }
+
+    /* Presentation Header */
+    header {
+      padding: 1.2rem 2.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(10, 15, 29, 0.9);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      z-index: 10;
+    }
+
+    .logo-badge {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-weight: 700;
+      font-size: 1.25rem;
+      letter-spacing: -0.5px;
+    }
+
+    .logo-badge .pill {
+      background: var(--primary-gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .logo-badge .tag {
+      font-size: 0.75rem;
+      background: rgba(56, 189, 248, 0.15);
+      color: #38bdf8;
+      padding: 3px 8px;
+      border-radius: 999px;
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      font-family: var(--font-mono);
+    }
+
+    .header-nav {
+      display: flex;
+      align-items: center;
+      gap: 1.2rem;
+      font-size: 0.9rem;
+      color: var(--text-muted);
+    }
+
+    .slide-counter {
+      font-family: var(--font-mono);
+      font-weight: 600;
+      color: #38bdf8;
+    }
+
+    /* Main Deck Stage */
+    .stage {
+      flex: 1;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem 3rem;
+      overflow: hidden;
+    }
+
+    .slide {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0;
+      visibility: hidden;
+      transform: translateX(50px) scale(0.98);
+      transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 2.5rem 4rem;
+      overflow-y: auto;
+    }
+
+    .slide.active {
+      opacity: 1;
+      visibility: visible;
+      transform: translateX(0) scale(1);
+    }
+
+    /* Typography & Core Elements */
+    .slide-eyebrow {
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: #38bdf8;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+    }
+
+    .slide-title {
+      font-size: 2.6rem;
+      font-weight: 800;
+      line-height: 1.15;
+      margin-bottom: 1.5rem;
+      background: linear-gradient(to right, #ffffff, #cbd5e1);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .slide-subtitle {
+      font-size: 1.2rem;
+      color: var(--text-muted);
+      margin-bottom: 2rem;
+      max-width: 900px;
+      line-height: 1.5;
+    }
+
+    /* Grids & Cards */
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1.5rem;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.5rem;
+    }
+
+    .grid-4 {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1.2rem;
+    }
+
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--bg-card-border);
+      border-radius: 14px;
+      padding: 1.6rem;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+      backdrop-filter: blur(8px);
+      transition: transform 0.2s, border-color 0.2s;
+    }
+
+    .card:hover {
+      transform: translateY(-3px);
+      border-color: rgba(56, 189, 248, 0.4);
+    }
+
+    .card-icon {
+      font-size: 2rem;
+      margin-bottom: 0.8rem;
+    }
+
+    .card h3 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      margin-bottom: 0.6rem;
+      color: #ffffff;
+    }
+
+    .card p, .card ul {
+      font-size: 0.95rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    .card ul {
+      padding-left: 1.2rem;
+      margin-top: 0.5rem;
+    }
+
+    .card ul li {
+      margin-bottom: 0.35rem;
+    }
+
+    /* Comparison Table */
+    .table-container {
+      background: var(--bg-card);
+      border: 1px solid var(--bg-card-border);
+      border-radius: 14px;
+      overflow: hidden;
+      width: 100%;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+    }
+
+    th {
+      background: rgba(56, 189, 248, 0.1);
+      padding: 1rem 1.4rem;
+      font-weight: 700;
+      font-size: 0.95rem;
+      color: #38bdf8;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    td {
+      padding: 1rem 1.4rem;
+      font-size: 0.92rem;
+      color: #e2e8f0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    .highlight-win {
+      color: #10b981;
+      font-weight: 700;
+    }
+
+    .highlight-loss {
+      color: #f43f5e;
+      font-weight: 600;
+    }
+
+    /* Hero Big Stat Card */
+    .stat-hero {
+      background: linear-gradient(135deg, rgba(56, 189, 248, 0.1) 0%, rgba(99, 102, 241, 0.1) 100%);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      border-radius: 16px;
+      padding: 2.2rem;
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      margin-bottom: 1.5rem;
+    }
+
+    .stat-block {
+      text-align: center;
+    }
+
+    .stat-value {
+      font-size: 3.2rem;
+      font-weight: 800;
+      background: var(--primary-gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      line-height: 1;
+      margin-bottom: 0.5rem;
+    }
+
+    .stat-label {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      font-weight: 600;
+    }
+
+    /* Flow / Journey Steps */
+    .journey-track {
+      display: flex;
+      gap: 1rem;
+      width: 100%;
+      overflow-x: auto;
+      padding-bottom: 1rem;
+    }
+
+    .journey-step {
+      flex: 1;
+      min-width: 170px;
+      background: var(--bg-card);
+      border: 1px solid var(--bg-card-border);
+      border-radius: 12px;
+      padding: 1.2rem;
+      position: relative;
+    }
+
+    .step-number {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      background: var(--primary-gradient);
+      color: #fff;
+      display: inline-block;
+      padding: 2px 7px;
+      border-radius: 6px;
+      font-weight: 700;
+      margin-bottom: 0.6rem;
+    }
+
+    .journey-step h4 {
+      font-size: 1rem;
+      margin-bottom: 0.4rem;
+      color: #ffffff;
+    }
+
+    .journey-step p {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      line-height: 1.4;
+    }
+
+    /* Footer Controls */
+    footer {
+      padding: 1rem 2.5rem;
+      background: rgba(10, 15, 29, 0.95);
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 10;
+    }
+
+    .footer-hints {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+    }
+
+    .footer-hints kbd {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 4px;
+      padding: 2px 6px;
+      font-family: var(--font-mono);
+      color: #fff;
+    }
+
+    .nav-btns {
+      display: flex;
+      gap: 10px;
+    }
+
+    .btn {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #fff;
+      padding: 8px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.9rem;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+
+    .btn:hover:not(:disabled) {
+      background: rgba(56, 189, 248, 0.2);
+      border-color: #38bdf8;
+    }
+
+    .btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    .btn-primary {
+      background: var(--primary-gradient);
+      border: none;
+    }
+
+    .btn-primary:hover {
+      box-shadow: 0 0 15px rgba(56, 189, 248, 0.5);
+    }
+
+    /* Print styling for direct PDF generation */
+    @media print {
+      body {
+        overflow: visible;
+        height: auto;
+      }
+      header, footer, .progress-container {
+        display: none !important;
+      }
+      .slide {
+        position: relative !important;
+        opacity: 1 !important;
+        visibility: visible !important;
+        transform: none !important;
+        page-break-after: always;
+        height: 100vh;
+        padding: 3rem;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Progress Bar -->
+  <div class="progress-container">
+    <div class="progress-bar" id="progressBar"></div>
+  </div>
+
+  <!-- Header -->
+  <header>
+    <div class="logo-badge">
+      <span>⚡</span>
+      <span class="pill">digiField360.ai</span>
+      <span class="tag">Salesforce + Agentforce</span>
+    </div>
+    <div class="header-nav">
+      <span class="slide-counter" id="slideCounter">Slide 01 / 16</span>
+      <button class="btn" id="fsBtn" title="Toggle Fullscreen">⛶ Fullscreen</button>
+    </div>
+  </header>
+
+  <!-- Stage -->
+  <main class="stage">
+
+    <!-- Slide 1: Title Slide -->
+    <div class="slide active" data-slide="1">
+      <div class="slide-eyebrow">Enterprise Field Service Automation</div>
+      <h1 class="slide-title" style="font-size: 3.4rem;">Next-Gen AI-Native<br>Field Service Operations</h1>
+      <p class="slide-subtitle">
+        Empowering 50–5,000 technician fleets with 85% lower licensing costs, 60-second autonomous dispatch, and frictionless WhatsApp customer engagement.
+      </p>
+      <div class="stat-hero">
+        <div class="stat-block">
+          <div class="stat-value">85%</div>
+          <div class="stat-label">License Cost Savings vs FSL</div>
+        </div>
+        <div class="stat-block">
+          <div class="stat-value">&lt; 60s</div>
+          <div class="stat-label">Autonomous Dispatch Speed</div>
+        </div>
+        <div class="stat-block">
+          <div class="stat-value">96.4%</div>
+          <div class="stat-label">Proactive SLA Compliance</div>
+        </div>
+        <div class="stat-block">
+          <div class="stat-value">0 App</div>
+          <div class="stat-label">Customer WhatsApp Portal</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Slide 2: Industry Problem -->
+    <div class="slide" data-slide="2">
+      <div class="slide-eyebrow">The Operational Reality</div>
+      <h2 class="slide-title">Field Operations in Chaos</h2>
+      <p class="slide-subtitle">Why field service organizations across India & SE Asia struggle with scale and profitability.</p>
+      <div class="grid-3">
+        <div class="card">
+          <div class="card-icon">⚠️</div>
+          <h3>Blind SLA Breaches</h3>
+          <p>Supervisors only discover SLA violations when customers complain. No proactive early-warning threshold exists.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">🗺️</div>
+          <h3>Parts Chase & Low FTFR</h3>
+          <p>Technicians arrive without the necessary parts or knowledge, causing First-Time Fix Rates (FTFR) to plummet below 65%.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">💸</div>
+          <h3>Prohibitive FSL Cost</h3>
+          <p>Standard Salesforce FSL licenses cost <strong>$175/user/month</strong>, costing a 500-tech organization over $1,050,000 annually in licenses alone.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">📱</div>
+          <h3>Disconnected WhatsApp Chaos</h3>
+          <p>Coordination happens across unmonitored WhatsApp groups and manual phone calls with zero audit trails.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">📶</div>
+          <h3>Offline Blindspots</h3>
+          <p>Technicians working in basements or rural towers lose all access, causing data loss and paperwork delays.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">📉</div>
+          <h3>Delayed CSAT Feedback</h3>
+          <p>Monthly surveys get <10% responses, hiding technician dissatisfaction until it's too late to save the account.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Slide 3: What is digiField360? -->
+    <div class="slide" data-slide="3">
+      <div class="slide-eyebrow">Product Overview</div>
+      <h2 class="slide-title">What is digiField360.ai?</h2>
+      <p class="slide-subtitle">A native, AI-powered field service management ecosystem built directly on the Salesforce platform.</p>
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-icon">☁️</div>
+          <h3>Salesforce Lightning Native</h3>
+          <p>Runs natively on standard Salesforce Enterprise Platform licenses ($25/user/month). 18 custom objects, 12 LWCs, and 25 Apex controllers without any external database.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">🤖</div>
+          <h3>Agentforce Multi-Agent AI</h3>
+          <p>5 autonomous agents performing dispatching, SLA monitoring, parts expediting, executive reporting, and on-site troubleshooting.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">📱</div>
+          <h3>Offline-First Mobile App</h3>
+          <p>Cross-platform mobile application with a local SQLite database and FIFO mutation queue. Guaranteed zero data loss in zero-signal zones.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">💬</div>
+          <h3>Zero-App WhatsApp Experience</h3>
+          <p>Customers track technician arrivals, receive digital service reports, and submit 1-click CSAT ratings directly on WhatsApp.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Slide 4: Why digiField360? (ROI & Comparison) -->
+    <div class="slide" data-slide="4">
+      <div class="slide-eyebrow">Business Case & ROI</div>
+      <h2 class="slide-title">Why digiField360.ai?</h2>
+      <p class="slide-subtitle">Comparing traditional enterprise FSM solutions with digiField360.</p>
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Dimension</th>
+              <th>Traditional FSM / Salesforce FSL</th>
+              <th>digiField360.ai Platform</th>
+              <th>Business Impact</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Software License</strong></td>
+              <td class="highlight-loss">$175 / user / month</td>
+              <td class="highlight-win">$25 / user / month</td>
+              <td><strong>85% Reduction in TCO</strong></td>
+            </tr>
+            <tr>
+              <td><strong>Dispatch Mechanism</strong></td>
+              <td>Manual dispatcher phone calls (30–60 min)</td>
+              <td class="highlight-win">60-second AI Autonomous Dispatch</td>
+              <td>Immediate response & reduced dispatchers</td>
+            </tr>
+            <tr>
+              <td><strong>SLA Management</strong></td>
+              <td>Reactive (post-breach escalations)</td>
+              <td class="highlight-win">Proactive (80% Amber Alert + Auto-reassign)</td>
+              <td>Contractual penalty avoidance</td>
+            </tr>
+            <tr>
+              <td><strong>Mobile Offline</strong></td>
+              <td>Fragile sync / requires active internet</td>
+              <td class="highlight-win">Full SQLite Local Store + FIFO Queue</td>
+              <td>100% field uptime in dead zones</td>
+            </tr>
+            <tr>
+              <td><strong>Customer Interface</strong></td>
+              <td>Forced proprietary app download (&lt;15% adoption)</td>
+              <td class="highlight-win">Zero-App WhatsApp Business Integration</td>
+              <td>68%+ instant customer feedback</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Slide 5: System Architecture -->
+    <div class="slide" data-slide="5">
+      <div class="slide-eyebrow">Engineering Blueprint</div>
+      <h2 class="slide-title">End-to-End System Architecture</h2>
+      <p class="slide-subtitle">A high-performance, 4-tier topology connecting field technicians, AI agents, and customers.</p>
+      <div class="grid-4">
+        <div class="card">
+          <div class="card-icon">📱</div>
+          <h3>1. Mobile Client</h3>
+          <ul>
+            <li>Flutter / React Native</li>
+            <li>Local SQLite Database</li>
+            <li>FIFO Mutation Queue</li>
+            <li>Biometric & GPS Telemetry</li>
+          </ul>
+        </div>
+        <div class="card">
+          <div class="card-icon">⚙️</div>
+          <h3>2. MCP Gateway</h3>
+          <ul>
+            <li>Node.js (Port 3000 / Cloud)</li>
+            <li>OAuth2 PKCE / JWT Relay</li>
+            <li>Offline Replay Sync Engine</li>
+            <li>JSON-RPC 2.0 MCP Tools</li>
+          </ul>
+        </div>
+        <div class="card">
+          <div class="card-icon">🌐</div>
+          <h3>3. External Bridge</h3>
+          <ul>
+            <li>Meta WhatsApp Cloud API</li>
+            <li>Google Maps Geocoding API</li>
+            <li>Firebase Cloud Messaging</li>
+            <li>Razorpay Payment Bridge</li>
+          </ul>
+        </div>
+        <div class="card">
+          <div class="card-icon">⚡</div>
+          <h3>4. Salesforce Cloud</h3>
+          <ul>
+            <li>18 Custom Objects</li>
+            <li>5 Agentforce AI Agents</li>
+            <li>12 Lightning Web Components</li>
+            <li>Platform Event Bus</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- Slide 6: Core Features Matrix -->
+    <div class="slide" data-slide="6">
+      <div class="slide-eyebrow">Capabilities</div>
+      <h2 class="slide-title">Comprehensive Features Matrix</h2>
+      <p class="slide-subtitle">8 core operational modules engineered for end-to-end service execution.</p>
+      <div class="grid-4">
+        <div class="card">
+          <h3>🎯 Dispatch AI</h3>
+          <p>60-second heuristic scoring: skills, distance, workload, and SLA priority.</p>
+        </div>
+        <div class="card">
+          <h3>⏱️ SLA Engine</h3>
+          <p>Dynamic contract tracking with 80% amber alerts and chronic repeat RCA.</p>
+        </div>
+        <div class="card">
+          <h3>📦 Parts Management</h3>
+          <p>Multi-depot stock visibility, threshold approvals, and reorder triggers.</p>
+        </div>
+        <div class="card">
+          <h3>🧠 GuruAI Copilot</h3>
+          <p>GenAI technical assistant offering troubleshooting, error codes, and multilingual guides.</p>
+        </div>
+        <div class="card">
+          <h3>💬 WhatsApp Comms</h3>
+          <p>Zero-app customer milestone notifications, tracking links, and 1-click CSAT.</p>
+        </div>
+        <div class="card">
+          <h3>📴 Offline Mobile</h3>
+          <p>24-screen workflow with SQLite caching, digital sign-off, and camera capture.</p>
+        </div>
+        <div class="card">
+          <h3>📍 GPS & Attendance</h3>
+          <p>Geofenced shift punch-in, 500m job validation, and telemetry breadcrumbs.</p>
+        </div>
+        <div class="card">
+          <h3>📊 Executive Cockpit</h3>
+          <p>Real-time manager dashboard, live technician map, and FTFR scorecards.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Slide 7: Feature Deep-Dive 1: AI Dispatch -->
+    <div class="slide" data-slide="7">
+      <div class="slide-eyebrow">Feature Deep Dive</div>
+      <h2 class="slide-title">1. Autonomous AI Dispatching</h2>
+      <p class="slide-subtitle">Eliminating dispatch delays through multi-variable heuristic scoring.</p>
+      <div class="grid-2">
+        <div class="card">
+          <h3>Multi-Variable Scoring Algorithm</h3>
+          <p>Every incoming ticket evaluates available technicians using weighted mathematical scoring:</p>
+          <ul style="margin-top: 1rem;">
+            <li><strong>35% Skills & Certification:</strong> Matches required OEM certs in <code>Technician_Skill__c</code>.</li>
+            <li><strong>30% Proximity:</strong> Live GPS calculation to customer site.</li>
+            <li><strong>20% Workload Balancing:</strong> Prevents shift burnout by analyzing active job queues.</li>
+            <li><strong>15% Customer Tier & CSAT:</strong> Prioritizes top-rated technicians for VIP clients.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>Supervisor Drag-and-Drop Console</h3>
+          <p>Built as a modern Lightning Web Component (<code>df360DispatchBoard</code>):</p>
+          <ul style="margin-top: 1rem;">
+            <li>Live Kanban columns by technician status (Available, On Job, Travelling).</li>
+            <li>Instant visual drag-and-drop reassignment with supervisor override.</li>
+            <li>Automatic publication to <code>DF360_Job_Assigned__e</code> platform event bus.</li>
+            <li>Zero-latency dispatch notification to technician mobile within 60 seconds.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- Slide 8: Feature Deep-Dive 2: Offline Mobile -->
+    <div class="slide" data-slide="8">
+      <div class="slide-eyebrow">Feature Deep Dive</div>
+      <h2 class="slide-title">2. Offline-First Mobile Application</h2>
+      <p class="slide-subtitle">Guaranteed field execution in basements, industrial plants, and zero-connectivity zones.</p>
+      <div class="grid-3">
+        <div class="card">
+          <div class="card-icon">🌅</div>
+          <h3>Morning Pre-Load</h3>
+          <p>At shift start, the app downloads today's work orders, asset histories, troubleshooting guides, and parts catalogs into local storage.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">💾</div>
+          <h3>Local SQLite Cache</h3>
+          <p>Technicians execute full status updates, complete checklists, log labor minutes, and capture photo attachments completely offline.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">🔄</div>
+          <h3>FIFO Mutation Queue</h3>
+          <p>Mutations are stamped with client UUIDs. The moment cellular or WiFi returns, <code>OfflineMCPGateway.js</code> replays actions seamlessly.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Slide 9: Feature Deep-Dive 3: SLA Engine -->
+    <div class="slide" data-slide="9">
+      <div class="slide-eyebrow">Feature Deep Dive</div>
+      <h2 class="slide-title">3. Real-Time SLA Engine & Escalation</h2>
+      <p class="slide-subtitle">Proactively protecting contractual margins and customer trust.</p>
+      <div class="grid-3">
+        <div class="card" style="border-top: 4px solid var(--accent-amber);">
+          <div class="card-icon">⚠️</div>
+          <h3>80% Yellow Alert</h3>
+          <p>When 80% of allowed resolution time passes on an open job, an alert fires on <code>DF360_SLA_Alert__e</code>. Supervisor is alerted, and GuruAI recommends immediate intervention.</p>
+        </div>
+        <div class="card" style="border-top: 4px solid var(--accent-rose);">
+          <div class="card-icon">🚨</div>
+          <h3>100% Breach Red Alert</h3>
+          <p>If SLA breaches, the job status switches to Breached. A proactive apology WhatsApp message is dispatched to the customer with an updated ETA.</p>
+        </div>
+        <div class="card" style="border-top: 4px solid var(--primary);">
+          <div class="card-icon">🔄</div>
+          <h3>Repeat-Visit RCA</h3>
+          <p>If an asset experiences $\ge 3$ service jobs in 30 days, it is automatically escalated to a Senior Engineer for Root Cause Analysis (RCA).</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Slide 10: Feature Deep-Dive 4: Spare Parts -->
+    <div class="slide" data-slide="10">
+      <div class="slide-eyebrow">Feature Deep Dive</div>
+      <h2 class="slide-title">4. Multi-Depot Spare Parts Management</h2>
+      <p class="slide-subtitle">Eliminating parts chase and boosting First-Time Fix Rates (FTFR).</p>
+      <div class="grid-2">
+        <div class="card">
+          <h3>Field Requisitions & Mobile Catalog</h3>
+          <p>Technicians search the live catalog on mobile, checking stock across regional warehouses (<code>Depot__c</code>) and raising requisitions on-site.</p>
+          <ul style="margin-top: 1rem;">
+            <li><strong>Auto-Approval (&le; ₹5,000):</strong> Instant automated stock reservation at the nearest depot.</li>
+            <li><strong>Supervisor Approval (&gt; ₹5,000):</strong> Routed to the <code>df360PartsApproval</code> desk queue.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>Ledger & Replenishment Automation</h3>
+          <p>Integrated inventory ledger tracking:</p>
+          <ul style="margin-top: 1rem;">
+            <li>Tracks <code>Quantity_Available__c</code> and <code>Quantity_Reserved__c</code>.</li>
+            <li>Separates warranty coverage (₹0 charge) from billable consumer parts.</li>
+            <li>Automated procurement alerts when depot inventory drops below <code>Reorder_Level__c</code>.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- Slide 11: Feature Deep-Dive 5: GuruAI Copilot -->
+    <div class="slide" data-slide="11">
+      <div class="slide-eyebrow">Feature Deep Dive</div>
+      <h2 class="slide-title">5. GuruAI Technical Troubleshooting Copilot</h2>
+      <p class="slide-subtitle">Empowering every technician with senior engineering expertise in their pocket.</p>
+      <div class="grid-2">
+        <div class="card">
+          <h3>GenAI Diagnostic Engine</h3>
+          <p>Powered by Agentforce (<code>DF360_GuruAIController</code> and <code>F360_TroubleshootingAction</code>):</p>
+          <ul style="margin-top: 1rem;">
+            <li>Technicians dictate error codes or symptoms (e.g. <em>"compressor buzzing, fault E4"</em>).</li>
+            <li>GuruAI evaluates asset service history and technical documentation.</li>
+            <li>Delivers actionable troubleshooting steps, wiring diagrams, and required parts.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>Multilingual & Offline Capabilities</h3>
+          <p>Engineered for diverse field technician workforces:</p>
+          <ul style="margin-top: 1rem;">
+            <li>Real-time responses in <strong>English, Hindi, Marathi, Tamil, and Telugu</strong>.</li>
+            <li>Online: Real-time LLM reasoning via Salesforce Agentforce.</li>
+            <li>Offline: Instant search across cached OEM troubleshooting decision trees.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- Slide 12: Feature Deep-Dive 6: WhatsApp Customer Experience -->
+    <div class="slide" data-slide="12">
+      <div class="slide-eyebrow">Feature Deep Dive</div>
+      <h2 class="slide-title">6. WhatsApp-First Customer Experience</h2>
+      <p class="slide-subtitle">Zero-app downloads. Complete transparency at every milestone.</p>
+      <div class="grid-3">
+        <div class="card">
+          <div class="card-icon">1️⃣</div>
+          <h3>Job Confirmed</h3>
+          <p>Instant WhatsApp message with Job ID, technician name, photo, and scheduled arrival window.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">2️⃣</div>
+          <h3>En Route & Arrival</h3>
+          <p>Live GPS map link so customers can see the technician approaching; arrival confirmation when checked in.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">3️⃣</div>
+          <h3>1-Click CSAT Rating</h3>
+          <p>Post-service PDF report sent with 1-click star rating. Ratings &le; 2 stars trigger an immediate supervisor callback.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Slide 13: Feature Deep-Dive 7: Safety & Telemetry -->
+    <div class="slide" data-slide="13">
+      <div class="slide-eyebrow">Feature Deep Dive</div>
+      <h2 class="slide-title">7. Workforce, Telemetry & Safety</h2>
+      <p class="slide-subtitle">Eliminating timecard fraud and enforcing rigorous field safety protocols.</p>
+      <div class="grid-3">
+        <div class="card">
+          <div class="card-icon">📍</div>
+          <h3>Geofenced Attendance</h3>
+          <p>Shift punch-in validates technician coordinates against depot coordinates. Check-in is rejected if outside the 500m geofence.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">🦺</div>
+          <h3>Mandatory Safety Check</h3>
+          <p>Technicians must complete the pre-job hazard check (PPE, power lockout) before job status progression is unlocked.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">📡</div>
+          <h3>Fleet Telemetry Map</h3>
+          <p>Periodic background GPS breadcrumbs displayed on <code>df360GPSMap</code>. Data older than 30 days is auto-purged to save storage.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Slide 14: Customer Journey -->
+    <div class="slide" data-slide="14">
+      <div class="slide-eyebrow">End-to-End Lifecycle</div>
+      <h2 class="slide-title">Complete Customer & Technician Journey</h2>
+      <p class="slide-subtitle">From customer breakdown to 5-star resolution in under 90 minutes.</p>
+      <div class="journey-track">
+        <div class="journey-step">
+          <span class="step-number">STEP 01</span>
+          <h4>Booking</h4>
+          <p>Customer reports issue via WhatsApp or portal; ticket created.</p>
+        </div>
+        <div class="journey-step">
+          <span class="step-number">STEP 02</span>
+          <h4>AI Dispatch</h4>
+          <p>Agentforce scores & assigns best technician in 60 seconds.</p>
+        </div>
+        <div class="journey-step">
+          <span class="step-number">STEP 03</span>
+          <h4>En Route</h4>
+          <p>Technician starts journey; customer receives live tracking link.</p>
+        </div>
+        <div class="journey-step">
+          <span class="step-number">STEP 04</span>
+          <h4>Arrival & Safety</h4>
+          <p>Geofenced check-in verified; mandatory safety checklist completed.</p>
+        </div>
+        <div class="journey-step">
+          <span class="step-number">STEP 05</span>
+          <h4>Diagnosis & Fix</h4>
+          <p>GuruAI guides fix; auto-approved parts installed on-site.</p>
+        </div>
+        <div class="journey-step">
+          <span class="step-number">STEP 06</span>
+          <h4>Sign-Off & CSAT</h4>
+          <p>Customer signs on mobile glass; submits 5-star rating on WhatsApp.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Slide 15: Schema & Data Model Highlights -->
+    <div class="slide" data-slide="15">
+      <div class="slide-eyebrow">Enterprise Data Model</div>
+      <h2 class="slide-title">Schema Architecture & Event Streams</h2>
+      <p class="slide-subtitle">18 custom objects and 3 high-speed platform events engineered for scale.</p>
+      <div class="grid-3">
+        <div class="card">
+          <h3>Core Operations</h3>
+          <ul>
+            <li><code>Service_Job__c</code> / <code>Work_Order__c</code></li>
+            <li><code>Technician__c</code></li>
+            <li><code>Service_Zone__c</code></li>
+            <li><code>Skill__c</code> & <code>Technician_Skill__c</code></li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>Assets & Inventory</h3>
+          <ul>
+            <li><code>Asset__c</code> & <code>Equipment__c</code></li>
+            <li><code>Service_Contract__c</code> (AMC / Warranty)</li>
+            <li><code>Depot__c</code> & <code>Part__c</code></li>
+            <li><code>Parts_Stock__c</code> & <code>Parts_Request__c</code></li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>Telemetry & Events</h3>
+          <ul>
+            <li><code>Attendance__c</code> & <code>GPS_Log__c</code></li>
+            <li><code>SLA_Config__c</code> & <code>SLA_Event__c</code></li>
+            <li><code>CSAT__c</code> & <code>WhatsApp_Message__c</code></li>
+            <li>Events: <code>DF360_Job_Assigned__e</code>, <code>DF360_SLA_Alert__e</code></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- Slide 16: Summary & Roadmap -->
+    <div class="slide" data-slide="16">
+      <div class="slide-eyebrow">Summary & Next Steps</div>
+      <h2 class="slide-title">Transform Your Field Operations</h2>
+      <p class="slide-subtitle">Measurable enterprise ROI delivered on your existing Salesforce platform.</p>
+      <div class="grid-3">
+        <div class="card" style="border-color: #10b981;">
+          <div class="card-icon">💰</div>
+          <h3>85% Lower TCO</h3>
+          <p>Standard Salesforce Platform licensing cuts annual software expenditure from $1M+ to under $150K for 500 technicians.</p>
+        </div>
+        <div class="card" style="border-color: #38bdf8;">
+          <div class="card-icon">⚡</div>
+          <h3>Instant AI Velocity</h3>
+          <p>60-second autonomous dispatch combined with GuruAI copilot drives First-Time Fix Rates above 84%.</p>
+        </div>
+        <div class="card" style="border-color: #f59e0b;">
+          <div class="card-icon">🏆</div>
+          <h3>Customer Delight</h3>
+          <p>WhatsApp-native communication yields 68%+ CSAT response rates and zero app download friction.</p>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Footer Navigation -->
+  <footer>
+    <div class="footer-hints">
+      Press <kbd>→</kbd> or <kbd>Space</kbd> for next, <kbd>←</kbd> for previous. Press <kbd>Ctrl+P</kbd> to print/save as PDF.
+    </div>
+    <div class="nav-btns">
+      <button class="btn" id="prevBtn" disabled>◀ Previous</button>
+      <button class="btn btn-primary" id="nextBtn">Next ▶</button>
+    </div>
+  </footer>
+
+  <script>
+    const slides = document.querySelectorAll('.slide');
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    const slideCounter = document.getElementById('slideCounter');
+    const progressBar = document.getElementById('progressBar');
+    const fsBtn = document.getElementById('fsBtn');
+
+    let currentSlide = 1;
+    const totalSlides = slides.length;
+
+    function updateSlide(newIndex) {
+      if (newIndex < 1 || newIndex > totalSlides) return;
+      
+      slides.forEach(slide => slide.classList.remove('active'));
+      const activeSlide = document.querySelector(`.slide[data-slide="${newIndex}"]`);
+      if (activeSlide) {
+        activeSlide.classList.add('active');
+      }
+
+      currentSlide = newIndex;
+      slideCounter.textContent = `Slide ${String(currentSlide).padStart(2, '0')} / ${String(totalSlides).padStart(2, '0')}`;
+      progressBar.style.width = `${(currentSlide / totalSlides) * 100}%`;
+
+      prevBtn.disabled = currentSlide === 1;
+      nextBtn.disabled = currentSlide === totalSlides;
+    }
+
+    prevBtn.addEventListener('click', () => updateSlide(currentSlide - 1));
+    nextBtn.addEventListener('click', () => updateSlide(currentSlide + 1));
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') {
+        e.preventDefault();
+        updateSlide(currentSlide + 1);
+      } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+        e.preventDefault();
+        updateSlide(currentSlide - 1);
+      } else if (e.key === 'Home') {
+        updateSlide(1);
+      } else if (e.key === 'End') {
+        updateSlide(totalSlides);
+      }
+    });
+
+    fsBtn.addEventListener('click', () => {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(() => {});
+      } else {
+        document.exitFullscreen().catch(() => {});
+      }
+    });
+  </script>
+</body>
+</html>

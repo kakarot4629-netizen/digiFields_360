@@ -1,0 +1,418 @@
+{
+  "info": {
+    "_postman_id": "df360-new-photo-and-360-apis",
+    "name": "DigiField 360 - New 360 Details, Photo & Incomplete APIs",
+    "description": "Standalone collection containing only the newly created Service Appointment 360 Details, Before/After Photo Evidence, and Mark Incomplete APIs.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "instance_url",
+      "value": "https://orgfarm-4036b01401-dev-ed.develop.my.salesforce.com",
+      "type": "string"
+    },
+    {
+      "key": "client_id",
+      "value": "3MVG97L7PWbPq6Uwn6NZQK1wxLkVSvXOdMLVbbhzid3miLmx9zhjZmuly4UrojOanINkPK2o0UPD8oXpw742j",
+      "type": "string"
+    },
+    {
+      "key": "client_secret",
+      "value": "10E1BF442D1A8E91AC52210B41FC292E518A60C322FF72038F460B50EEB5683D",
+      "type": "string"
+    },
+    {
+      "key": "access_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "service_appointment_id",
+      "value": "a0Ig5000002Kfc9EAC",
+      "type": "string"
+    },
+    {
+      "key": "technician_id",
+      "value": "a02g500000Bvf9mAAB",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. OAuth 2.0 Token (Auto-Sets Access Token)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "var jsonData = pm.response.json();",
+              "if (jsonData.access_token) {",
+              "    pm.collectionVariables.set('access_token', jsonData.access_token);",
+              "    console.log('✅ Access Token automatically set to collection variables!');",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "urlencoded",
+          "urlencoded": [
+            {
+              "key": "grant_type",
+              "value": "client_credentials",
+              "type": "text"
+            },
+            {
+              "key": "client_id",
+              "value": "{{client_id}}",
+              "type": "text"
+            },
+            {
+              "key": "client_secret",
+              "value": "{{client_secret}}",
+              "type": "text"
+            }
+          ]
+        },
+        "url": {
+          "raw": "{{instance_url}}/services/oauth2/token",
+          "host": [
+            "{{instance_url}}"
+          ],
+          "path": [
+            "services",
+            "oauth2",
+            "token"
+          ]
+        },
+        "description": "Authenticates and automatically sets the access_token variable for all other requests."
+      },
+      "response": []
+    },
+    {
+      "name": "2. Get Service Appointment 360 Details (Multi-Assets, Parts, Crew & Address)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 200 OK', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "var jsonData = pm.response.json();",
+              "pm.test('Returns valid 360 Service Appointment', function () {",
+              "    pm.expect(jsonData.success).to.be.true;",
+              "    pm.expect(jsonData.serviceAppointment).to.be.an('object');",
+              "});",
+              "",
+              "var sa = jsonData.serviceAppointment;",
+              "console.log('📱 Service Appointment:', sa.name, '| Status:', sa.status);",
+              "console.log('👤 Piyush Channe Unique Match: isAssignedToMe =', sa.isAssignedToMe, '| Type =', sa.assignmentType);",
+              "if (sa.myCrewAssignment) {",
+              "    console.log('👥 Tagged Crew:', sa.myCrewAssignment.crewName, '| Role:', sa.myCrewAssignment.role);",
+              "}",
+              "console.log('📦 Multi-Assets Count:', sa.multiAssetLineItemsCount);",
+              "console.log('🔩 Parts Requests Count:', sa.partsRequestsCount);",
+              "if (sa.beforePhoto) console.log('📷 Before Photo:', sa.beforePhoto.url);",
+              "if (sa.afterPhoto) console.log('📸 After Photo:', sa.afterPhoto.url);",
+              "if (sa.reason) console.log('🏷️ Reason:', sa.reason);",
+              "if (sa.description) console.log('📝 Description:', sa.description);"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{access_token}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{instance_url}}/services/apexrest/df360/v1/service-appointments/{{service_appointment_id}}?technicianId={{technician_id}}",
+          "host": [
+            "{{instance_url}}"
+          ],
+          "path": [
+            "services",
+            "apexrest",
+            "df360",
+            "v1",
+            "service-appointments",
+            "{{service_appointment_id}}"
+          ],
+          "query": [
+            {
+              "key": "technicianId",
+              "value": "{{technician_id}}",
+              "description": "Technician ID. Auto-resolves isAssignedToMe and crew match flags."
+            }
+          ]
+        },
+        "description": "Returns complete 360-degree operational details for a Service Appointment including multi-asset checklists, requested parts, assigned crew roster, customer address, and Piyush Channe identifier flags."
+      },
+      "response": []
+    },
+    {
+      "name": "3a. Upload BEFORE Photo (Base64 Camera Evidence)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 200 OK', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "var jsonData = pm.response.json();",
+              "pm.test('Photo uploaded successfully', function () {",
+              "    pm.expect(jsonData.success).to.be.true;",
+              "    pm.expect(jsonData.photo).to.be.an('object');",
+              "    pm.expect(jsonData.photo.photoUrl).to.be.a('string').and.not.empty;",
+              "});",
+              "",
+              "console.log('📸 BEFORE Photo Saved:');",
+              "console.log('   🔗 URL:', jsonData.photo.photoUrl);",
+              "if (jsonData.photo.contentVersionId) {",
+              "    console.log('   📁 Salesforce File ID:', jsonData.photo.contentVersionId);",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{access_token}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"photoType\": \"Before\",\n  \"imageBase64\": \"iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==\",\n  \"fileName\": \"before_inspection.jpg\",\n  \"notes\": \"Pre-service visual inspection: slight oil seepage on bushing seal before overhaul.\"\n}"
+        },
+        "url": {
+          "raw": "{{instance_url}}/services/apexrest/df360/v1/service-appointments/{{service_appointment_id}}/photos",
+          "host": [
+            "{{instance_url}}"
+          ],
+          "path": [
+            "services",
+            "apexrest",
+            "df360",
+            "v1",
+            "service-appointments",
+            "{{service_appointment_id}}",
+            "photos"
+          ]
+        },
+        "description": "Uploads Before photo evidence from mobile camera (base64) or hosted URL. Automatically creates Salesforce ContentVersion and stamps Before_Photo_URL__c on the Service Appointment."
+      },
+      "response": []
+    },
+    {
+      "name": "3b. Upload AFTER Photo (Base64 Camera Evidence)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 200 OK', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "var jsonData = pm.response.json();",
+              "pm.test('Photo uploaded successfully', function () {",
+              "    pm.expect(jsonData.success).to.be.true;",
+              "    pm.expect(jsonData.photo).to.be.an('object');",
+              "    pm.expect(jsonData.photo.photoUrl).to.be.a('string').and.not.empty;",
+              "});",
+              "",
+              "console.log('📸 AFTER Photo Saved:');",
+              "console.log('   🔗 URL:', jsonData.photo.photoUrl);",
+              "if (jsonData.photo.contentVersionId) {",
+              "    console.log('   📁 Salesforce File ID:', jsonData.photo.contentVersionId);",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{access_token}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"photoType\": \"After\",\n  \"imageBase64\": \"iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==\",\n  \"fileName\": \"after_repair.jpg\",\n  \"notes\": \"Post-service verification: bushing seal replaced, oil pressure restored to nominal specifications.\"\n}"
+        },
+        "url": {
+          "raw": "{{instance_url}}/services/apexrest/df360/v1/service-appointments/{{service_appointment_id}}/photos",
+          "host": [
+            "{{instance_url}}"
+          ],
+          "path": [
+            "services",
+            "apexrest",
+            "df360",
+            "v1",
+            "service-appointments",
+            "{{service_appointment_id}}",
+            "photos"
+          ]
+        },
+        "description": "Uploads After photo evidence from mobile camera (base64) or hosted URL. Automatically creates Salesforce ContentVersion and stamps After_Photo_URL__c on the Service Appointment."
+      },
+      "response": []
+    },
+    {
+      "name": "4. Get Service Appointment Photos & Evidence Gallery",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 200 OK', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "var jsonData = pm.response.json();",
+              "pm.test('Returns appointment photos', function () {",
+              "    pm.expect(jsonData.success).to.be.true;",
+              "});",
+              "",
+              "console.log('🖼️ Service Appointment Photo Evidence:');",
+              "if (jsonData.beforePhoto) {",
+              "    console.log('   📷 Before Photo:', jsonData.beforePhoto.url);",
+              "}",
+              "if (jsonData.afterPhoto) {",
+              "    console.log('   📸 After Photo:', jsonData.afterPhoto.url);",
+              "}",
+              "console.log('   📂 Attached Gallery Count:', jsonData.evidenceGalleryCount);"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{access_token}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{instance_url}}/services/apexrest/df360/v1/service-appointments/{{service_appointment_id}}/photos",
+          "host": [
+            "{{instance_url}}"
+          ],
+          "path": [
+            "services",
+            "apexrest",
+            "df360",
+            "v1",
+            "service-appointments",
+            "{{service_appointment_id}}",
+            "photos"
+          ]
+        },
+        "description": "Retrieves all Before and After photos, timestamps, and attached Salesforce files for a Service Appointment."
+      },
+      "response": []
+    },
+    {
+      "name": "5. Mark Service Appointment Incomplete (with Description & Reason)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 200 OK', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "var jsonData = pm.response.json();",
+              "pm.test('Appointment marked incomplete successfully', function () {",
+              "    pm.expect(jsonData.success).to.be.true;",
+              "    pm.expect(jsonData.serviceAppointment.status).to.eql('Incomplete');",
+              "    pm.expect(jsonData.serviceAppointment.description).to.not.be.empty;",
+              "});",
+              "",
+              "console.log('⚠️ Appointment Status:', jsonData.serviceAppointment.status);",
+              "console.log('📝 Description:', jsonData.serviceAppointment.description);",
+              "console.log('🏷️ Reason:', jsonData.serviceAppointment.reason);",
+              "if (jsonData.serviceAppointment.parentWorkOrder) {",
+              "    console.log('⏸️ Parent Work Order Status:', jsonData.serviceAppointment.parentWorkOrder.status);",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{access_token}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"description\": \"Technician could not complete calibration due to unexpected power shutdown by facility management. Requires reschedule.\",\n  \"reason\": \"Customer Unavailable\",\n  \"notes\": \"Spoke with facility manager Mr. Sharma; facility power will be restored tomorrow morning.\",\n  \"latitude\": 19.1136,\n  \"longitude\": 72.8697\n}"
+        },
+        "url": {
+          "raw": "{{instance_url}}/services/apexrest/df360/v1/service-appointments/{{service_appointment_id}}/incomplete",
+          "host": [
+            "{{instance_url}}"
+          ],
+          "path": [
+            "services",
+            "apexrest",
+            "df360",
+            "v1",
+            "service-appointments",
+            "{{service_appointment_id}}",
+            "incomplete"
+          ]
+        },
+        "description": "Marks a Service Appointment as Incomplete with mandatory description and optional reason picklist. Automatically logs a Job Activity, SLA event, and pauses the parent Work Order."
+      },
+      "response": []
+    }
+  ]
+}

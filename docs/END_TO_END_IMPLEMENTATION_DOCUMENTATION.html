@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>digiField360 — End-to-End Implementation Documentation</title>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <style>
+    :root {
+      --primary: #0070d2;
+      --primary-dark: #005fb2;
+      --secondary: #16325c;
+      --bg: #f4f6f9;
+      --card-bg: #ffffff;
+      --text: #181818;
+      --text-muted: #54698d;
+      --border: #dddbda;
+      --accent: #4bca81;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      margin: 0;
+      padding: 0;
+    }
+    .header-banner {
+      background: linear-gradient(135deg, #0b2265 0%, #0070d2 100%);
+      color: white;
+      padding: 40px 20px;
+      text-align: center;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    .header-banner h1 {
+      margin: 0 0 10px 0;
+      font-size: 2.2rem;
+      letter-spacing: -0.5px;
+    }
+    .header-banner p {
+      margin: 0;
+      font-size: 1.1rem;
+      opacity: 0.9;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 30px auto;
+      padding: 0 20px;
+    }
+    .card {
+      background: var(--card-bg);
+      border-radius: 8px;
+      padding: 30px;
+      margin-bottom: 30px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+      border: 1px solid var(--border);
+    }
+    h2 {
+      color: var(--secondary);
+      border-bottom: 2px solid #eef1f6;
+      padding-bottom: 10px;
+      margin-top: 0;
+    }
+    h3 {
+      color: var(--primary-dark);
+      margin-top: 25px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 20px 0;
+      font-size: 0.95rem;
+    }
+    th, td {
+      border: 1px solid var(--border);
+      padding: 10px 12px;
+      text-align: left;
+    }
+    th {
+      background-color: #f8f9fb;
+      color: var(--secondary);
+      font-weight: 600;
+    }
+    tr:nth-child(even) {
+      background-color: #fafbfc;
+    }
+    pre {
+      background: #1e1e1e;
+      color: #d4d4d4;
+      padding: 16px;
+      border-radius: 6px;
+      overflow-x: auto;
+      font-size: 0.9rem;
+      font-family: Consolas, Monaco, "Courier New", monospace;
+    }
+    .ascii-box {
+      background: #0f172a;
+      color: #38bdf8;
+      border-left: 4px solid #0284c7;
+      padding: 16px;
+      border-radius: 6px;
+      overflow-x: auto;
+      font-family: Consolas, monospace;
+      font-size: 0.85rem;
+      line-height: 1.35;
+      margin: 15px 0;
+    }
+    .diagram-container {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 20px;
+      margin: 20px 0;
+      text-align: center;
+      overflow-x: auto;
+      box-shadow: inset 0 0 8px rgba(0,0,0,0.02);
+    }
+    .badge {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      font-weight: bold;
+      text-transform: uppercase;
+    }
+    .badge-primary { background: #e0f2fe; color: #0369a1; }
+    .badge-success { background: #dcfce7; color: #15803d; }
+    .badge-warning { background: #fef3c7; color: #b45309; }
+    .badge-info { background: #f3e8ff; color: #6b21a8; }
+  </style>
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      mermaid.initialize({
+        startOnLoad: true,
+        theme: 'neutral',
+        flowchart: { useMaxWidth: true, htmlLabels: true, curve: 'basis' },
+        securityLevel: 'loose'
+      });
+    });
+  </script>
+</head>
+<body>
+
+  <div class="header-banner">
+    <h1>digiField360 — Master Implementation Specification</h1>
+    <p>Complete End-to-End Implementation covering All 34 Salesforce Objects, APIs, and Workflows</p>
+  </div>
+
+  <div class="container">
+
+    <!-- Section 1 -->
+    <div class="card">
+      <h2>1. Document Overview & Executive Summary</h2>
+      <p><strong>digiField360.ai</strong> is an enterprise AI-native Field Service Management (FSM) platform operating directly on <strong>Salesforce Lightning Enterprise Edition using Standard Platform Licenses ($25/user/month)</strong> combined with <strong>Agentforce AI</strong> and an <strong>Offline-First Node.js MCP Gateway Server</strong>. This achieves an <strong>85% reduction in licensing overhead</strong> compared to traditional Salesforce Field Service (FSL at $175/user/month) while delivering autonomous 60-second dispatch, geofenced mobile safety checks, and zero-app customer communication via Meta WhatsApp.</p>
+    </div>
+
+    <!-- Section 2 -->
+    <div class="card">
+      <h2>2. Business Process Overview</h2>
+      <h3>2.1 The 5 Operational Phases</h3>
+      <div class="diagram-container">
+        <div class="mermaid">
+flowchart LR
+    A["Phase 1:<br/>Case Creation & Intake"] --> B["Phase 2:<br/>Work Order & AI Dispatch"]
+    B --> C["Phase 3:<br/>Mobile Sync & Travel"]
+    C --> D["Phase 4:<br/>On-Site Execution & Safety"]
+    D --> E["Phase 5:<br/>Closure & CSAT Ingestion"]
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 3 -->
+    <div class="card">
+      <h2>3. End-to-End System Architecture</h2>
+      <div class="diagram-container">
+        <div class="mermaid">
+flowchart TD
+    subgraph T1["1. Mobile Client Tier (Offline-First)"]
+        MOB["Mobile UI (24 Screens)"]
+        SQLITE[("Local SQLite Database")]
+        QUEUE["FIFO Mutation Queue"]
+        CLIENT["OfflineMCPGateway.js Client"]
+        
+        MOB --- SQLITE
+        MOB --> QUEUE
+        QUEUE --> CLIENT
+        SQLITE --- CLIENT
+    end
+
+    subgraph T2["2. Backend Integration Gateway Tier (Node.js)"]
+        MCP["Node.js MCP Gateway (scripts/mcp-server.js)"]
+        AUTH["JWT & OAuth2 PKCE Service"]
+        REST["REST API Router (/api/work-orders)"]
+        TOOLS["JSON-RPC 2.0 MCP Tools"]
+        
+        CLIENT -->|HTTPS / JSON-RPC| MCP
+        MCP --> AUTH
+        MCP --> REST
+        MCP --> TOOLS
+    end
+
+    subgraph T3["3. External Channels"]
+        WA["Meta WhatsApp API"]
+        MAPS["Google Maps API"]
+        FCM["Firebase Cloud Messaging"]
+        
+        MCP --- WA
+        MCP --- MAPS
+        MCP --> FCM
+    end
+
+    subgraph T4["4. Salesforce Enterprise Platform"]
+        SF_REST["Salesforce REST API"]
+        APEX["Apex Controllers & Invocables"]
+        STORE[("Salesforce Database: Case, Work_Order__c, Technician__c")]
+        AGENT["Agentforce AI Engine"]
+        BUS["Platform Event Bus"]
+        
+        MCP -->|OAuth Bearer| SF_REST
+        SF_REST --> APEX
+        APEX --- STORE
+        APEX --- AGENT
+        APEX --- BUS
+    end
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 4 -->
+    <div class="card">
+      <h2>4. Salesforce Internal Processing Architecture</h2>
+      <div class="diagram-container">
+        <div class="mermaid">
+flowchart TD
+    TRG["Case / Work Order Created"] --> SLA["SLA Engine Matches SLA_Config__c"]
+    TRG --> ASSIGN["F360_SmartAssignmentAction Scores Techs"]
+    ASSIGN --> ASSIGNED["Status Set to Assigned"]
+    ASSIGNED --> PE["Fire DF360_Job_Assigned__e"]
+    ASSIGNED --> FLOW["Record-Triggered Flow: Generate Briefing"]
+    FLOW --> GENAI["Agentforce AI Synthesizes Equipment History"]
+    GENAI --> BRIEF["AI_Pre_Job_Briefing__c Stamped"]
+    
+    BATCH["DF360_SLAMonitorBatch (Every 5-15 mins)"] -->|80% Elapsed| AMBER["DF360_SLA_Alert__e (Warning)"]
+    BATCH -->|100% Breached| RED["Create SLA_Event__c & Auto Apology"]
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 5 -->
+    <div class="card">
+      <h2>5. Mobile Offline Synchronization Engine</h2>
+      <div class="diagram-container">
+        <div class="mermaid">
+flowchart TD
+    UI["Mobile Views (24 Screens)"]
+    STATE["App State Manager"]
+    SQLITE[("Local SQLite Database")]
+    QUEUE[("FIFO Mutation Queue")]
+    NET["Network Listener"]
+    REPLAY["Replay Worker"]
+    GATEWAY["Remote Gateway (Node.js)"]
+    
+    UI <--> STATE
+    STATE <--> SQLITE
+    STATE -->|Offline Action| QUEUE
+    NET -->|Connection Restored| REPLAY
+    QUEUE -->|Read Pending| REPLAY
+    REPLAY -->|POST /api/sync/offline-queue| GATEWAY
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 6: ALL OBJECTS -->
+    <div class="card">
+      <h2>6. Salesforce Object Model & Architecture (Simplified Modular View)</h2>
+      <p>To make the object relationships intuitive, the data model is divided into a <strong>30-second Core Backbone diagram</strong> followed by <strong>four functional modules</strong>:</p>
+      
+      <h3>1. The 30-Second Core Backbone (The Essential Journey)</h3>
+      <p>Every field service job connects 6 fundamental concepts: <em>Who is the customer? What broke down? What is the ticket? Who fixes it? What work was done? How was it rated?</em></p>
+      <div class="diagram-container">
+        <div class="mermaid">
+flowchart LR
+    A["1. Customer<br/>(Account)"] --> B["2. Machine<br/>(Asset__c)"]
+    B --> C["3. Service Ticket<br/>(Work_Order__c)"]
+    C --> D["4. Assigned Engineer<br/>(Technician__c)"]
+    D --> E["5. Work Completed<br/>(Job_Activity__c)"]
+    E --> F["6. Customer Rating<br/>(CSAT__c)"]
+        </div>
+      </div>
+
+      <h3>Module A: Workforce, Skills & Attendance</h3>
+      <p>How engineers authenticate via standard <code>User</code>, map to their <code>Technician__c</code> profile, certify in <code>Skill__c</code>, and report shifts.</p>
+      <div class="diagram-container">
+        <div class="mermaid">
+flowchart TD
+    USER["User (Salesforce Login)"] ---|1:1 Link| TECH["Technician__c (Profile & KPIs)"]
+    TECH --> ATTEND["Attendance__c (Shift Punch-In)"]
+    TECH --> GPS["GPS_Log__c (5-min Telemetry)"]
+    TECH --> TECH_SKILL["Technician_Skill__c (Junction)"]
+    TECH_SKILL --> SKILL["Skill__c (Certified Skills)"]
+    TECH --> ZONE["Service_Zone__c (Territory)"]
+        </div>
+      </div>
+
+      <h3>Module B: Customer, Machine & Warranty</h3>
+      <p>How customer <code>Account</code> records own <code>Asset__c</code> machines, equipment details, and AMC agreements.</p>
+      <div class="diagram-container">
+        <div class="mermaid">
+flowchart TD
+    ACCT["Account (Customer)"] --> CONTACT["Contact (Site Contact Person)"]
+    ACCT --> ASSET["Asset__c (Serial #, Warranty Expiry)"]
+    ASSET --> EQUIP["Equipment__c (Model & Specs)"]
+    ACCT --> CONTRACT["Service_Contract__c (AMC Terms & SLA Tier)"]
+        </div>
+      </div>
+
+      <h3>Module C: Work Orders, Scheduling & Execution</h3>
+      <p>How customer complaints become actionable jobs, scheduled calendar slots, and audit logs.</p>
+      <div class="diagram-container">
+        <div class="mermaid">
+flowchart TD
+    CASE["Case (Intake Ticket)"] --> WO["Work_Order__c (Mobile Execution)"]
+    WO <--> JOB["Service_Job__c (Dispatch & SLA)"]
+    WO --> SCHED["Job_Schedule__c (Calendar Time Slot)"]
+    JOB --> ACT["Job_Activity__c (Labor, Notes, Photos)"]
+    JOB --> PAUSE["Work_Order_Pause_Log__c (Clock Paused)"]
+    JOB --> HIST["Job_History__c (Archive for AI RAG)"]
+    SLA_CFG["SLA_Config__c (Rules)"] --> JOB
+    JOB --> SLA_EVT["SLA_Event__c (Milestone Audit Log)"]
+        </div>
+      </div>
+
+      <h3>Module D: Spare Parts, Depots & Technician Van Stock</h3>
+      <p>How physical warehouse stock is requested from the field, approved, and carried in mobile vans.</p>
+      <div class="diagram-container">
+        <div class="mermaid">
+flowchart TD
+    DEPOT["Depot__c (Warehouse)"] --- STOCK["Parts_Stock__c (Warehouse Stock)"]
+    PART["Part__c (Master Catalogue SKU)"] --- STOCK
+    STOCK --> REQ["Parts_Request__c (Field Request > ₹5,000)"]
+    REQ --> JOB_ACT["Job_Activity__c (Part Consumed in Repair)"]
+    PART --> VAN["Parts_Inventory__c (Technician Van Stock)"]
+        </div>
+      </div>
+
+      <h3>Master Object Inventory Table</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Object Name</th>
+            <th>API Name</th>
+            <th>Type</th>
+            <th>Core Purpose & Key Relationships</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>1</td><td><strong>User</strong></td><td><code>User</code></td><td><span class="badge badge-primary">Standard</span></td><td>Salesforce login with custom fields: <code>Skills__c</code>, <code>First_Time_Fix_Rate__c</code>, <code>Current_Latitude__c</code>, <code>Current_Longitude__c</code>, <code>Jobs_Completed_Total__c</code>, <code>Preferred_Language__c</code>.</td></tr>
+          <tr><td>2</td><td><strong>Technician</strong></td><td><code>Technician__c</code></td><td><span class="badge badge-success">Custom Master</span></td><td>Master profile linked 1:1 to User; tracks active jobs, CSAT, FTFR, zone, and real-time coordinates.</td></tr>
+          <tr><td>3</td><td><strong>Skill</strong></td><td><code>Skill__c</code></td><td><span class="badge badge-info">Custom Config</span></td><td>Master skills catalogue (e.g., 5G Fiber Splicing, Generator Repair) with certificate flags.</td></tr>
+          <tr><td>4</td><td><strong>Technician Skill</strong></td><td><code>Technician_Skill__c</code></td><td><span class="badge badge-warning">Junction (M-D)</span></td><td>Maps technician capabilities, proficiency levels (Beginner, Intermediate, Expert), and certificate expiry dates.</td></tr>
+          <tr><td>5</td><td><strong>Service Zone</strong></td><td><code>Service_Zone__c</code></td><td><span class="badge badge-info">Custom Territory</span></td><td>Territory boundaries, pin codes, and zone manager assignments.</td></tr>
+          <tr><td>6</td><td><strong>Attendance</strong></td><td><code>Attendance__c</code></td><td><span class="badge badge-info">Workforce Shift</span></td><td>Daily shift check-in/out records with geofenced GPS verification.</td></tr>
+          <tr><td>7</td><td><strong>GPS Log</strong></td><td><code>GPS_Log__c</code></td><td><span class="badge badge-info">Telemetry Log</span></td><td>5-minute periodic technician GPS snapshots (retained for 365 days).</td></tr>
+          <tr><td>8</td><td><strong>Case</strong></td><td><code>Case</code></td><td><span class="badge badge-primary">Standard</span></td><td>Customer breakdown intake ticket from Phone, Web, Portal, or WhatsApp.</td></tr>
+          <tr><td>9</td><td><strong>Account</strong></td><td><code>Account</code></td><td><span class="badge badge-primary">Standard</span></td><td>Customer company, billing city, and site location.</td></tr>
+          <tr><td>10</td><td><strong>Contact</strong></td><td><code>Contact</code></td><td><span class="badge badge-primary">Standard</span></td><td>Customer on-site facility contact person and phone number.</td></tr>
+          <tr><td>11</td><td><strong>Asset</strong></td><td><code>Asset__c</code></td><td><span class="badge badge-success">Custom Master</span></td><td>Master equipment registry, serial numbers, warranty, and 30-day visit counter.</td></tr>
+          <tr><td>12</td><td><strong>Equipment</strong></td><td><code>Equipment__c</code></td><td><span class="badge badge-info">Custom Master</span></td><td>Equipment model, manufacturer, and geolocation.</td></tr>
+          <tr><td>13</td><td><strong>Service Contract</strong></td><td><code>Service_Contract__c</code></td><td><span class="badge badge-info">Contract Master</span></td><td>Warranty and AMC agreements governing customer SLA obligations and visit caps.</td></tr>
+          <tr><td>14</td><td><strong>SLA Config</strong></td><td><code>SLA_Config__c</code></td><td><span class="badge badge-info">SLA Matrix</span></td><td>SLA tier matrix defining acknowledgment, response, and resolution limits.</td></tr>
+          <tr><td>15</td><td><strong>SLA Event</strong></td><td><code>SLA_Event__c</code></td><td><span class="badge badge-warning">Audit Log</span></td><td>Immutable milestone audit trail for SLA forensics and compliance reporting.</td></tr>
+          <tr><td>16</td><td><strong>Work Order</strong></td><td><code>Work_Order__c</code></td><td><span class="badge badge-success">Custom Master</span></td><td>Primary operational work order for mobile app execution and Agentforce AI.</td></tr>
+          <tr><td>17</td><td><strong>Service Job</strong></td><td><code>Service_Job__c</code></td><td><span class="badge badge-success">Custom Master</span></td><td>Enterprise dispatch job ticket for Kanban boards and automated SLA monitoring.</td></tr>
+          <tr><td>18</td><td><strong>Job Schedule</strong></td><td><code>Job_Schedule__c</code></td><td><span class="badge badge-info">Custom Scheduling</span></td><td>Scheduled appointment time slots linking technician to a work order.</td></tr>
+          <tr><td>19</td><td><strong>Job Activity</strong></td><td><code>Job_Activity__c</code></td><td><span class="badge badge-warning">Master-Detail</span></td><td>Chronological tasks, labor hours, parts consumed, and activity photos.</td></tr>
+          <tr><td>20</td><td><strong>Job History</strong></td><td><code>Job_History__c</code></td><td><span class="badge badge-info">Knowledge RAG</span></td><td>Historical repair archives used by Agentforce RAG for diagnostic guidance.</td></tr>
+          <tr><td>21</td><td><strong>Pause Log</strong></td><td><code>Work_Order_Pause_Log__c</code></td><td><span class="badge badge-warning">Audit Log</span></td><td>Tracks work order pause durations, reason codes, and team ownership.</td></tr>
+          <tr><td>22</td><td><strong>Depot</strong></td><td><code>Depot__c</code></td><td><span class="badge badge-info">Warehouse</span></td><td>Regional warehouse facility storing physical spare parts.</td></tr>
+          <tr><td>23</td><td><strong>Part</strong></td><td><code>Part__c</code></td><td><span class="badge badge-info">Catalogue</span></td><td>Master catalogue of replacement parts, SKUs, costs, and compatibility.</td></tr>
+          <tr><td>24</td><td><strong>Parts Stock</strong></td><td><code>Parts_Stock__c</code></td><td><span class="badge badge-warning">Junction (M-D)</span></td><td>Live ledger of on-hand and reserved parts per depot warehouse.</td></tr>
+          <tr><td>25</td><td><strong>Parts Request</strong></td><td><code>Parts_Request__c</code></td><td><span class="badge badge-info">Requisition</span></td><td>Field parts requisitions with automated and supervisory approval thresholds.</td></tr>
+          <tr><td>26</td><td><strong>Parts Inventory</strong></td><td><code>Parts_Inventory__c</code></td><td><span class="badge badge-info">Van Stock</span></td><td>Mobile truck/van inventory assigned directly to an individual technician.</td></tr>
+          <tr><td>27</td><td><strong>Maintenance Alert</strong></td><td><code>Maintenance_Alert__c</code></td><td><span class="badge badge-info">AI Telemetry</span></td><td>AI predictive maintenance alerts generated from equipment performance patterns.</td></tr>
+          <tr><td>28</td><td><strong>Recommendation</strong></td><td><code>Maintenance_Recommendation__c</code></td><td><span class="badge badge-info">AI Advisory</span></td><td>AI-recommended preventive service actions and scheduling advice.</td></tr>
+          <tr><td>29</td><td><strong>CSAT</strong></td><td><code>CSAT__c</code></td><td><span class="badge badge-info">Survey</span></td><td>Customer satisfaction feedback (1–5 stars) captured via WhatsApp.</td></tr>
+          <tr><td>30</td><td><strong>WhatsApp Message</strong></td><td><code>WhatsApp_Message__c</code></td><td><span class="badge badge-info">Comms Log</span></td><td>Outbound and inbound WhatsApp message ledger with delivery statuses.</td></tr>
+          <tr><td>31</td><td><strong>ContentVersion</strong></td><td><code>ContentVersion</code></td><td><span class="badge badge-primary">Standard</span></td><td>Storage of customer digital signatures and proof-of-work photos.</td></tr>
+          <tr><td>32</td><td><strong>Job Assigned Event</strong></td><td><code>DF360_Job_Assigned__e</code></td><td><span class="badge badge-warning">Platform Event</span></td><td>Real-time push alert broadcasting new job assignments to mobile devices.</td></tr>
+          <tr><td>33</td><td><strong>Parts Approved</strong></td><td><code>DF360_Parts_Approved__e</code></td><td><span class="badge badge-warning">Platform Event</span></td><td>Broadcasts notification to technician when requested parts are ready.</td></tr>
+          <tr><td>34</td><td><strong>SLA Alert Event</strong></td><td><code>DF360_SLA_Alert__e</code></td><td><span class="badge badge-warning">Platform Event</span></td><td>Streaming amber/red SLA breach warnings to supervisor command centers.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Section 7 -->
+    <div class="card">
+      <h2>7. API Inventory Matrix</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Endpoint</th>
+            <th>Method</th>
+            <th>Caller</th>
+            <th>Purpose</th>
+            <th>Trigger Point</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td><code>/api/auth/login</code></td><td>POST</td><td>Mobile</td><td>JWT Authentication & User Profile</td><td>App Launch</td></tr>
+          <tr><td><code>/api/sync/morning-payload</code></td><td>GET</td><td>Mobile</td><td>Downloads Jobs, Assets & Guides for SQLite</td><td>Shift Start</td></tr>
+          <tr><td><code>/api/work-orders</code></td><td>GET</td><td>Mobile</td><td>Assigned Work Orders for Technician</td><td>Job List Screen</td></tr>
+          <tr><td><code>/api/work-orders/:id/status</code></td><td>PATCH</td><td>Mobile</td><td>Updates Lifecycle Status</td><td>Status Transition</td></tr>
+          <tr><td><code>/api/work-orders/:id/safety-check</code></td><td>POST</td><td>Mobile</td><td>Submits Mandatory PPE/LOTO Declaration</td><td>Pre-Service Inspection</td></tr>
+          <tr><td><code>/api/work-orders/:id/checklist/submit</code></td><td>POST</td><td>Mobile</td><td>Submits Batch Diagnostic Telemetry</td><td>Checklist Completion</td></tr>
+          <tr><td><code>/api/work-orders/:id/pause</code></td><td>POST</td><td>Mobile</td><td>Pauses Order & Freezes SLA Clock</td><td>Waiting for Part</td></tr>
+          <tr><td><code>/api/work-orders/:id/resume</code></td><td>POST</td><td>Mobile</td><td>Resumes Order & Restarts SLA Clock</td><td>Part Arrived</td></tr>
+          <tr><td><code>/api/work-orders/:id/complete</code></td><td>POST</td><td>Mobile</td><td>Uploads Signature, Photos & Marks Completed</td><td>Customer Sign-Off</td></tr>
+          <tr><td><code>/api/sync/offline-queue</code></td><td>POST</td><td>Mobile</td><td>Replays Queued Mutations Chronologically</td><td>Reconnection to Network</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Section 8 -->
+    <div class="card">
+      <h2>8. End-to-End Sequence Diagram</h2>
+      <div class="diagram-container">
+        <div class="mermaid">
+sequenceDiagram
+    autonumber
+    actor Customer as Customer (B2B/B2C)
+    participant SF as Salesforce Core (Case/WO)
+    participant Agentforce as Agentforce Dispatch AI
+    participant Gateway as MCP API Gateway
+    participant Mobile as Mobile App (Technician)
+    participant WhatsApp as Meta WhatsApp API
+
+    Customer->>SF: Reports Fault (Call/Web/WhatsApp)
+    SF->>SF: Creates Case & Work_Order__c
+    SF->>Agentforce: Invocable: F360_SmartAssignmentAction
+    Agentforce->>Agentforce: Scores Skill (40%) + Proximity (30%) + FTFR (20%) + Load (10%)
+    Agentforce->>SF: Assigns Technician__c & sets Status='Assigned'
+    SF->>WhatsApp: Sends 'job_confirmation' Template
+    WhatsApp-->>Customer: WhatsApp: Job Confirmed + Scheduled ETA
+    SF->>Gateway: Fires DF360_Job_Assigned__e Platform Event
+    Gateway->>Mobile: FCM Push Notification: New Job Assigned
+
+    Note over Mobile: Shift Start & Morning Pre-load
+    Mobile->>Gateway: GET /api/sync/morning-payload
+    Gateway->>SF: Queries Work_Order__c, Asset__c, Job_History__c
+    SF-->>Gateway: Returns Open Records
+    Gateway-->>Mobile: Syncs Data to Local SQLite
+
+    Note over Mobile: Journey & Service Execution
+    Mobile->>Gateway: PATCH /api/work-orders/:id/status ('En Route')
+    Gateway->>SF: Updates Status='En Route'
+    SF->>WhatsApp: Sends 'tech_enroute' Template (Live Tracking)
+    WhatsApp-->>Customer: WhatsApp: Technician is on the way!
+
+    Mobile->>Gateway: POST /api/work-orders/:id/safety-check
+    Gateway->>SF: Logs Safety Declaration & Geofence GPS Check-In
+    Mobile->>Gateway: PATCH /api/work-orders/:id/status ('In Progress')
+    
+    opt Offline Execution
+        Note over Mobile: Network drops in basement
+        Mobile->>Mobile: Executes Checklist in SQLite
+        Mobile->>Mobile: Captures Signature & Photos in SQLite Queue
+        Mobile->>Mobile: Reconnects to 4G / Wi-Fi
+        Mobile->>Gateway: POST /api/sync/offline-queue (FIFO Replay)
+        Gateway->>SF: Replays Status, Activities, Signatures
+    end
+
+    Mobile->>Gateway: POST /api/work-orders/:id/complete
+    Gateway->>SF: Creates ContentVersions, updates Status='Completed'
+    SF->>WhatsApp: Sends 'job_completed' Template + CSAT Rating Link
+    WhatsApp-->>Customer: WhatsApp: Service Complete. Rate 1-5 Stars!
+    Customer->>WhatsApp: Replies '5' (Excellent work!)
+    WhatsApp->>SF: Webhook updates CSAT__c record
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 9 -->
+    <div class="card">
+      <h2>9. Real-World Example Scenario: Generator Repair</h2>
+      <p>Breakdown at <strong>Serum BioTech Campus, Pune</strong> on a <strong>Cummins Diesel Generator 250kVA</strong> with thermal alarm <strong>E-402</strong>.</p>
+      <div class="diagram-container">
+        <div class="mermaid">
+flowchart TD
+    T0830["08:30 AM: Breakdown Reported via WhatsApp<br/>Case Created & SLA Clock Starts (4h)"] --> T0831["08:31 AM: Agentforce Scores & Dispatches<br/>Assigned to Vikram Sharma"]
+    T0831 --> T0835["08:35 AM: Shift Start & Morning Sync<br/>Pre-loads Jobs & AI Pre-Job Briefing"]
+    T0835 --> T0900["09:00 AM: Vikram Marks En Route<br/>WhatsApp Tracking Link Sent to Customer"]
+    T0900 --> T0925["09:25 AM: Arrives On Site<br/>GPS Check-In (45m) & Safety LOTO Cleared"]
+    T0925 --> T0940["09:40 AM: Diagnostics & GuruAI Guidance<br/>Replaces Water Pump Gasket Kit"]
+    T0940 --> T1005["10:05 AM: Calibrates Output to 415V RMS<br/>Dynamic Telemetry Checklist Completed"]
+    T1005 --> T1030["10:30 AM: Customer Signs Signature Pad<br/>Proof Photos Uploaded & Job Completed"]
+    T1030 --> T1045["10:45 AM: WhatsApp CSAT Survey<br/>Customer Rates 5 Stars with Review"]
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</body>
+</html>

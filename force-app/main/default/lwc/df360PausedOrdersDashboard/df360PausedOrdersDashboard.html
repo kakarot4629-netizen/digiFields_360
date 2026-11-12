@@ -1,0 +1,86 @@
+<template>
+    <lightning-card title="Paused Work Orders Command Center" icon-name="standard:service_appointment">
+        <div class="slds-p-around_medium">
+            <template if:true={isLoading}>
+                <lightning-spinner alternative-text="Loading dashboard..." size="medium"></lightning-spinner>
+            </template>
+
+            <!-- Metrics Bar -->
+            <div class="slds-grid slds-gutters slds-m-bottom_medium">
+                <div class="slds-col slds-size_3-of-12">
+                    <div class="kpi-card total-card">
+                        <span class="kpi-label">Total Paused Work Orders</span>
+                        <span class="kpi-value">{totalPaused}</span>
+                    </div>
+                </div>
+                <div class="slds-col slds-size_3-of-12">
+                    <div class="kpi-card overdue-card">
+                        <span class="kpi-label">SLA Overdue / Breached</span>
+                        <span class="kpi-value">{overdueCount}</span>
+                    </div>
+                </div>
+                <div class="slds-col slds-size_3-of-12">
+                    <div class="kpi-card parts-card">
+                        <span class="kpi-label">Waiting for Parts</span>
+                        <span class="kpi-value">{partsCount}</span>
+                    </div>
+                </div>
+                <div class="slds-col slds-size_3-of-12">
+                    <div class="kpi-card access-card">
+                        <span class="kpi-label">Customer / Access Dependency</span>
+                        <span class="kpi-value">{accessCount}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Toolbar & Actions -->
+            <div class="slds-grid slds-grid_vertical-align-center slds-m-bottom_small">
+                <div class="slds-col slds-size_6-of-12">
+                    <lightning-input type="search" placeholder="Filter by Work Order #, Subject, Reason, or Team..." onchange={handleFilterInput}></lightning-input>
+                </div>
+                <div class="slds-col slds-size_6-of-12 slds-text-align_right">
+                    <lightning-button label="Refresh Dashboard" icon-name="utility:refresh" onclick={loadDashboard}></lightning-button>
+                </div>
+            </div>
+
+            <!-- Paused Records Table -->
+            <table class="slds-table slds-table_cell-buffer slds-table_bordered">
+                <thead>
+                    <tr>
+                        <th>Work Order</th>
+                        <th>Account / Asset</th>
+                        <th>Technician</th>
+                        <th>Pause Reason</th>
+                        <th>Responsible Team</th>
+                        <th>Aging (Hours)</th>
+                        <th>Expected Resume</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <template for:each={filteredRecords} for:item="r">
+                        <tr key={r.id}>
+                            <td><strong>{r.name}</strong><br/><span class="subtext">{r.subject}</span></td>
+                            <td>{r.accountName}<br/><span class="subtext">{r.assetName}</span></td>
+                            <td>{r.techName}</td>
+                            <td>
+                                <span class="slds-badge">{r.reason}</span>
+                            </td>
+                            <td>{r.team}</td>
+                            <td><strong>{r.agingHours} hrs</strong></td>
+                            <td>{r.expectedResume}</td>
+                            <td>
+                                <template if:true={r.isOverdue}>
+                                    <span class="slds-badge slds-theme_error">OVERDUE</span>
+                                </template>
+                                <template if:false={r.isOverdue}>
+                                    <span class="slds-badge slds-theme_success">ON TRACK</span>
+                                </template>
+                            </td>
+                        </tr>
+                    </template>
+                </tbody>
+            </table>
+        </div>
+    </lightning-card>
+</template>

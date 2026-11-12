@@ -5,4 +5,5 @@
     <type>Lookup</type>
     <referenceTo>Work_Order__c</referenceTo><relationshipName
   >Job_Schedules</relationshipName>
+    <deleteConstraint>SetNull</deleteConstraint>
 </CustomField>

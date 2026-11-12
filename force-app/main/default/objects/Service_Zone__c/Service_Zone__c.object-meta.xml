@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
+    <label>Service Zone</label>
+    <pluralLabel>Service Zones</pluralLabel>
+    <nameField>
+        <label>Service Zone Name</label>
+        <type>AutoNumber</type>
+        <displayFormat>SZ-{00000}</displayFormat>
+    </nameField>
+    <deploymentStatus>Deployed</deploymentStatus>
+    <sharingModel>ReadWrite</sharingModel>
+    <description>Geographic service territory. Technicians and depots belong to a zone.</description>
+    <enableActivities>true</enableActivities>
+    <enableHistory>true</enableHistory>
+    <enableReports>true</enableReports>
+    <enableSearch>true</enableSearch>
+    <enableBulkApi>true</enableBulkApi>
+    <enableStreamingApi>true</enableStreamingApi>
+    <searchLayouts>
+        <customTabListAdditionalFields>Zone_Name__c</customTabListAdditionalFields>
+        <customTabListAdditionalFields>Manager__c</customTabListAdditionalFields>
+        <customTabListAdditionalFields>Pin_Codes__c</customTabListAdditionalFields>
+        <customTabListAdditionalFields>Technician_Count__c</customTabListAdditionalFields>
+        <customTabListAdditionalFields>Is_Active__c</customTabListAdditionalFields>
+        <searchResultsAdditionalFields>Zone_Name__c</searchResultsAdditionalFields>
+        <searchResultsAdditionalFields>Manager__c</searchResultsAdditionalFields>
+        <searchResultsAdditionalFields>Pin_Codes__c</searchResultsAdditionalFields>
+        <searchResultsAdditionalFields>Technician_Count__c</searchResultsAdditionalFields>
+        <searchResultsAdditionalFields>Is_Active__c</searchResultsAdditionalFields>
+        <lookupDialogsAdditionalFields>Zone_Name__c</lookupDialogsAdditionalFields>
+        <lookupDialogsAdditionalFields>Manager__c</lookupDialogsAdditionalFields>
+    </searchLayouts>
+</CustomObject>

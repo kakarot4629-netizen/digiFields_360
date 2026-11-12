@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Leave_Type__c</fullName>
+    <label>Leave Type</label>
+    <type>Picklist</type>
+    <required>false</required>
+    <trackHistory>true</trackHistory>
+    <valueSet><valueSetDefinition><sorted>false</sorted><value><fullName>Casual</fullName><default>true</default><label>Casual</label></value><value><fullName>Sick</fullName><default>false</default><label>Sick</label></value><value><fullName>Earned</fullName><default>false</default><label>Earned</label></value><value><fullName>LOP</fullName><default>false</default><label>LOP</label></value><value><fullName>Comp Off</fullName><default>false</default><label>Comp Off</label></value></valueSetDefinition></valueSet>
+</CustomField>

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ListView xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>All</fullName>
+    <columns>NAME</columns>
+    <columns>Customer_Tier__c</columns>
+    <columns>Product_Category__c</columns>
+    <columns>Priority__c</columns>
+    <columns>Ack_SLA_Mins__c</columns>
+    <columns>Response_SLA_Hrs__c</columns>
+    <columns>Resolution_SLA_Hrs__c</columns>
+    <columns>Is_Active__c</columns>
+    <filterScope>Everything</filterScope>
+    <label>All SLA Configurations</label>
+</ListView>

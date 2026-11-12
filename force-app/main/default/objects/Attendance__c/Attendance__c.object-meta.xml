@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
+    <label>Attendance</label>
+    <pluralLabel>Attendance Records</pluralLabel>
+    <nameField>
+        <label>Attendance Name</label>
+        <type>AutoNumber</type>
+        <displayFormat>ATT-{0000000}</displayFormat>
+    </nameField>
+    <deploymentStatus>Deployed</deploymentStatus>
+    <sharingModel>ReadWrite</sharingModel>
+    <description>Technician daily attendance with GPS check-in.</description>
+    <enableActivities>true</enableActivities>
+    <enableHistory>true</enableHistory>
+    <enableReports>true</enableReports>
+    <enableSearch>true</enableSearch>
+    <enableBulkApi>true</enableBulkApi>
+    <enableStreamingApi>true</enableStreamingApi>
+    <searchLayouts>
+        <customTabListAdditionalFields>Technician__c</customTabListAdditionalFields>
+        <customTabListAdditionalFields>Attendance_Date__c</customTabListAdditionalFields>
+        <customTabListAdditionalFields>Status__c</customTabListAdditionalFields>
+        <customTabListAdditionalFields>Check_In_Time__c</customTabListAdditionalFields>
+        <customTabListAdditionalFields>Check_Out_Time__c</customTabListAdditionalFields>
+        <customTabListAdditionalFields>Hours_Worked__c</customTabListAdditionalFields>
+        <searchResultsAdditionalFields>Technician__c</searchResultsAdditionalFields>
+        <searchResultsAdditionalFields>Attendance_Date__c</searchResultsAdditionalFields>
+        <searchResultsAdditionalFields>Status__c</searchResultsAdditionalFields>
+        <searchResultsAdditionalFields>Check_In_Time__c</searchResultsAdditionalFields>
+        <searchResultsAdditionalFields>Check_Out_Time__c</searchResultsAdditionalFields>
+        <searchResultsAdditionalFields>Hours_Worked__c</searchResultsAdditionalFields>
+        <lookupDialogsAdditionalFields>Technician__c</lookupDialogsAdditionalFields>
+        <lookupDialogsAdditionalFields>Attendance_Date__c</lookupDialogsAdditionalFields>
+    </searchLayouts>
+</CustomObject>

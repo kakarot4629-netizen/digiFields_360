@@ -41,7 +41,7 @@ x-mock-mode: true  (Optional: returns rich mock data for offline UI testing)
 #### Available Mock Accounts for Testing:
 | Email / Username | Technician Name | Password | Skills |
 | :--- | :--- | :--- | :--- |
-| `piyush.channe.3868c7575da5@agentforce.com` | Piyush Channe | `ImIronMan@3000` / `Password123` | Generator, HVAC, Compressor, Electrical |
+| `piyush.channe.3868c7575da5@agentforce.com` | Piyush Channe | `YOUR_PASSWORD_HERE` / `Password123` | Generator, HVAC, Compressor, Electrical |
 | `piyush.channe@digifield360.com` | Piyush Channe | `Password123` | Generator, HVAC, Compressor, Electrical |
 | `vikram.sharma@digifield360.com` | Vikram Sharma | `Password123` | Generator, HVAC, Compressor, Electrical |
 | `ananya.roy@digifield360.com` | Ananya Roy | `Password123` | HVAC, Solar Inverter, Substation, PLCs |
@@ -213,16 +213,93 @@ x-mock-mode: true  (Optional: returns rich mock data for offline UI testing)
   }
   ```
 
-### 3.2 List Work Orders
+### 3.2 List Work Orders (Includes Case & Multi-Asset WOLIs)
 
 - **Method & Path**: `GET /api/work-orders`
-- **Query Params**: `?status=Assigned` (Optional filter: `Assigned`, `In Progress`, `Completed`)
-- **Response (200 OK)**: `{ "success": true, "count": 2, "workOrders": [...] }`
+- **Query Params**: `?status=Assigned` (Optional filter: `Assigned`, `In Progress`, `Completed`, `limit=20`)
+- **Response (200 OK)**:
+  ```json
+  {
+    "success": true,
+    "count": 3,
+    "workOrders": [
+      {
+        "Id": "a03g500000m95w5AAA",
+        "Name": "WO-0009021",
+        "Subject__c": "Emergency Thermal & Vibration Overhaul — Cummins 750kVA Generator",
+        "Status__c": "In Progress",
+        "Priority__c": "Critical",
+        "caseNumber": "00001027",
+        "caseSubject": "Critical Overheat (104°C) & Excessive Vibration",
+        "workOrderLineItems": [
+          {
+            "Id": "a0Qg5000009DYWYEA4",
+            "Name": "WOLI-000005",
+            "Sequence__c": 1,
+            "Status__c": "Completed",
+            "Description__c": "Primary Generator Scope: De-lint radiator core, flush coolant circuit"
+          }
+        ],
+        "serviceAppointment": {
+          "Id": "a0Ig5000002KLwnEAG",
+          "Name": "SA-0000015",
+          "Status__c": "On Site"
+        }
+      }
+    ]
+  }
+  ```
 
 ### 3.3 Get Work Order Details
 
 - **Method & Path**: `GET /api/work-orders/:id`
-- **Response (200 OK)**: Returns detailed work order object with recent equipment job history.
+- **Response (200 OK)**: Returns detailed work order object with parent Case info, child Multi-Asset Line Items, linked Service Appointment, and recent equipment job history.
+
+### 3.3.1 Get Work Order Line Items (Multi-Asset Scope)
+
+- **Method & Path**: `GET /api/work-orders/:id/line-items`
+- **Response (200 OK)**:
+  ```json
+  {
+    "success": true,
+    "workOrderId": "a03g500000m95w5AAA",
+    "count": 2,
+    "lineItems": [
+      {
+        "Id": "a0Qg5000009DYWYEA4",
+        "Name": "WOLI-000005",
+        "Asset__c": "a0Cg500000dWXaJEAW",
+        "Sequence__c": 1,
+        "Status__c": "Completed",
+        "Description__c": "Primary Generator Scope: De-lint radiator core and replace thermostat valve",
+        "Is_First_Time_Fix__c": true,
+        "Parts_Used__c": "PRT-00010 (1x)",
+        "Resolution_Notes__c": "Thermostat valve replaced and load test verified."
+      }
+    ]
+  }
+  ```
+
+### 3.3.2 Update Work Order Line Item
+
+- **Method & Path**: `PATCH /api/line-items/:id`
+- **Request Body**:
+  ```json
+  {
+    "status": "Completed",
+    "isFirstTimeFix": true,
+    "partsUsed": "PRT-00010 (1x), CLNT-CONC-5L (2x)",
+    "resolutionNotes": "Replaced valve and verified temperature stabilization."
+  }
+  ```
+- **Response (200 OK)**:
+  ```json
+  {
+    "success": true,
+    "lineItemId": "a0Qg5000009DYWYEA4",
+    "message": "Work Order Line Item updated in Salesforce."
+  }
+  ```
 
 ### 3.4 Update Work Order Status
 
@@ -320,6 +397,153 @@ x-mock-mode: true  (Optional: returns rich mock data for offline UI testing)
     "fileName": "Customer_Signature_WO.png",
     "fileUrl": "https://[your-instance].salesforce.com/sfc/servlet.shepherd/version/download/0680000000192840",
     "uploadedAt": "2026-08-26T12:35:00.000Z"
+  }
+  ```
+
+### 3.8 Pre-Job Safety Check & Hazard Mitigation (Screens 06, 08)
+
+#### 3.8.1 Fetch Safety Protocols & Required PPE
+- **Method & Path**: `GET /api/work-orders/:id/safety-check`
+- **Headers**: `Authorization: Bearer <ACCESS_TOKEN>`
+- **Success Response (200 OK)**:
+  ```json
+  {
+    "success": true,
+    "workOrderId": "WO-001001",
+    "equipmentType": "Generator",
+    "siteRiskLevel": "HIGH",
+    "safetyWarning": "WARNING: High voltage arc flash and rotating mechanical components present. Always discharge capacitors before touching control boards.",
+    "requiredPPE": [
+      { "id": "ppe_1", "name": "Dielectric Insulated Gloves (Class 0, 1000V)", "required": true },
+      { "id": "ppe_2", "name": "Safety Goggles / Impact Shield", "required": true },
+      { "id": "ppe_3", "name": "Steel-Toe Safety Boots (EH Rated)", "required": true },
+      { "id": "ppe_4", "name": "Hard Hat (ANSI Z89.1)", "required": true }
+    ],
+    "hazardChecks": [
+      { "id": "haz_1", "hazardCode": "LOTO_APPLIED", "description": "Lockout/Tagout applied to main supply breaker", "required": true },
+      { "id": "haz_2", "hazardCode": "ZERO_ENERGY_STATE", "description": "Verified zero electrical potential across alternator terminals", "required": true }
+    ],
+    "isSafetyCleared": false
+  }
+  ```
+
+#### 3.8.2 Submit Technician Safety Verification
+- **Method & Path**: `POST /api/work-orders/:id/safety-check`
+- **Request Body**:
+  ```json
+  {
+    "technicianId": "TECH-001",
+    "siteRiskLevel": "HIGH",
+    "ppeVerified": { "dielectricGloves": true, "safetyGoggles": true, "steelToeBoots": true, "hardHat": true },
+    "hazardChecks": [{ "hazardCode": "LOTO_APPLIED", "verified": true }, { "hazardCode": "ZERO_ENERGY_STATE", "verified": true }],
+    "technicianDeclaration": "I confirm that all safety protocols and Lockout/Tagout measures have been verified before servicing.",
+    "latitude": 18.52043,
+    "longitude": 73.856743
+  }
+  ```
+- **Success Response (200 OK)**:
+  ```json
+  {
+    "success": true,
+    "message": "Pre-job safety inspection cleared successfully. Work authorization granted.",
+    "assessment": {
+      "safetyCheckId": "SAF-849201",
+      "workOrderId": "WO-001001",
+      "status": "CLEARED",
+      "clearedAt": "2026-08-26T10:15:00.000Z"
+    }
+  }
+  ```
+
+#### 3.8.3 Emergency Safety Escalation & Hazard Alert
+- **Method & Path**: `POST /api/work-orders/:id/safety-escalation`
+- **Request Body**:
+  ```json
+  {
+    "hazardType": "ELECTRICAL_ARCING",
+    "severity": "CRITICAL",
+    "hazardDetails": "Active electrical arcing detected at main 415V distribution busbar.",
+    "immediateActionTaken": "Tripped upstream substation breaker and cordoned off perimeter.",
+    "evacuatedSite": true,
+    "technicianId": "TECH-001"
+  }
+  ```
+- **Success Response (201 Created)**:
+  ```json
+  {
+    "success": true,
+    "message": "SAFETY ALERT: Work order halted. Emergency hazard escalation dispatched to field supervisors.",
+    "escalation": {
+      "escalationId": "ESC-401928",
+      "workOrderId": "WO-001001",
+      "status": "ESCALATED",
+      "workHalted": true
+    }
+  }
+  ```
+
+### 3.9 Dynamic Work Order Checklist & Sensor Telemetry (Screen 17)
+
+#### 3.9.1 Get Dynamic Work Order Checklist
+- **Method & Path**: `GET /api/work-orders/:id/checklist`
+- **Headers**: `Authorization: Bearer <ACCESS_TOKEN>`
+- **Success Response (200 OK)**:
+  ```json
+  {
+    "success": true,
+    "workOrderId": "WO-001001",
+    "equipmentType": "Generator",
+    "totalItemsCount": 18,
+    "completedCount": 12,
+    "progressPercentage": 67,
+    "sections": [
+      {
+        "section": "1. Pre-Service & Visual Inspection",
+        "items": [
+          { "id": "chk_1", "task": "Perform visual site safety inspection and lockout", "isCompleted": true, "required": true, "type": "CHECKBOX" },
+          { "id": "chk_2", "task": "Inspect oil level on dipstick and check for discoloration", "isCompleted": true, "required": true, "type": "SELECTION", "options": ["NORMAL", "LOW", "DEGRADED"], "selected": "NORMAL" }
+        ]
+      },
+      {
+        "section": "2. Diagnostic Telemetry & Measurements",
+        "items": [
+          { "id": "chk_5", "task": "Measure 3-phase output voltage across L1-L2-L3 (Target: 415V ± 5%)", "isCompleted": true, "required": true, "type": "MEASUREMENT", "unit": "VAC", "minValue": 395, "maxValue": 435, "measuredValue": 415.2 }
+        ]
+      }
+    ]
+  }
+  ```
+
+#### 3.9.2 Update Single Checklist Item & Measurement
+- **Method & Path**: `PATCH /api/work-orders/:id/checklist/:itemId`
+- **Request Body**:
+  ```json
+  {
+    "status": "PASSED",
+    "measuredValue": 415.2,
+    "comments": "Phase-to-phase output voltage calibrated at 415.2V RMS within target tolerances."
+  }
+  ```
+
+#### 3.9.3 Submit Completed Checklist Batch
+- **Method & Path**: `POST /api/work-orders/:id/checklist/submit`
+- **Request Body**:
+  ```json
+  {
+    "items": [
+      { "id": "chk_1", "isCompleted": true, "status": "PASSED" },
+      { "id": "chk_5", "isCompleted": true, "status": "PASSED", "measuredValue": 415.2 }
+    ]
+  }
+  ```
+- **Success Response (200 OK)**:
+  ```json
+  {
+    "success": true,
+    "workOrderId": "WO-001001",
+    "status": "PASSED",
+    "allMandatoryCompleted": true,
+    "message": "All mandatory service & safety checklist tasks completed. Job ready for final signature."
   }
   ```
 

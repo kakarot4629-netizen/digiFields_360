@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
+    <label>Parts Request</label>
+    <pluralLabel>Parts Requests</pluralLabel>
+    <nameField>
+        <label>Parts Request Name</label>
+        <type>AutoNumber</type>
+        <displayFormat>PR-{0000000}</displayFormat>
+    </nameField>
+    <deploymentStatus>Deployed</deploymentStatus>
+    <sharingModel>ReadWrite</sharingModel>
+    <description>Technician request for spare parts against a job.</description>
+    <enableActivities>true</enableActivities>
+    <enableHistory>true</enableHistory>
+    <enableReports>true</enableReports>
+    <enableSearch>true</enableSearch>
+    <enableBulkApi>true</enableBulkApi>
+    <enableStreamingApi>true</enableStreamingApi>
+    <searchLayouts>
+        <customTabListAdditionalFields>Part__c</customTabListAdditionalFields>
+        <customTabListAdditionalFields>Quantity__c</customTabListAdditionalFields>
+        <customTabListAdditionalFields>Status__c</customTabListAdditionalFields>
+        <customTabListAdditionalFields>Technician__c</customTabListAdditionalFields>
+        <customTabListAdditionalFields>Depot__c</customTabListAdditionalFields>
+        <customTabListAdditionalFields>Work_Order__c</customTabListAdditionalFields>
+        <customTabListAdditionalFields>Service_Job__c</customTabListAdditionalFields>
+        <customTabListAdditionalFields>Approved_By__c</customTabListAdditionalFields>
+        <searchResultsAdditionalFields>Part__c</searchResultsAdditionalFields>
+        <searchResultsAdditionalFields>Quantity__c</searchResultsAdditionalFields>
+        <searchResultsAdditionalFields>Status__c</searchResultsAdditionalFields>
+        <searchResultsAdditionalFields>Technician__c</searchResultsAdditionalFields>
+        <searchResultsAdditionalFields>Depot__c</searchResultsAdditionalFields>
+        <searchResultsAdditionalFields>Work_Order__c</searchResultsAdditionalFields>
+        <lookupDialogsAdditionalFields>Part__c</lookupDialogsAdditionalFields>
+        <lookupDialogsAdditionalFields>Status__c</lookupDialogsAdditionalFields>
+    </searchLayouts>
+</CustomObject>

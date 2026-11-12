@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
+    <label>DF360 Parts Approved</label>
+    <pluralLabel>DF360 Parts Approved Events</pluralLabel>
+    <deploymentStatus>Deployed</deploymentStatus>
+    <eventType>HighVolume</eventType>
+    <description>Platform event: DF360 Parts Approved</description>
+</CustomObject>

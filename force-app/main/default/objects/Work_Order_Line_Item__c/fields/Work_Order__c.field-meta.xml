@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Work_Order__c</fullName>
+    <label>Work Order</label>
+    <type>Lookup</type>
+    <referenceTo>Work_Order__c</referenceTo>
+    <relationshipLabel>Work Order Line Items</relationshipLabel>
+    <relationshipName>Work_Order_Line_Items</relationshipName>
+    <deleteConstraint>Cascade</deleteConstraint>
+    <description>Parent Work Order for this line item.</description>
+</CustomField>

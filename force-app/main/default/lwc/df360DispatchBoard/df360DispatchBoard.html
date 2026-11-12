@@ -1,0 +1,76 @@
+<template>
+    <lightning-card title="digiField360 — Intelligent Dispatch Board" icon-name="standard:service_appointment">
+        <div class="slds-p-around_medium dispatch-container">
+            <div class="slds-grid slds-gutters slds-m-bottom_medium slds-grid_vertical-align-center">
+                <div class="slds-col slds-size_1-of-3">
+                    <lightning-combobox name="statusFilter" label="Status Filter" value={statusFilter}
+                        options={statusOptions} onchange={handleStatusFilterChange}></lightning-combobox>
+                </div>
+                <div class="slds-col slds-size_2-of-3 slds-text-align_right slds-m-top_large">
+                    <lightning-button-group>
+                        <lightning-button label="Refresh" icon-name="utility:refresh" onclick={handleRefresh}></lightning-button>
+                        <lightning-button variant="brand" label="Auto-Dispatch All" icon-name="utility:routing_offline" onclick={handleAutoDispatch}></lightning-button>
+                    </lightning-button-group>
+                </div>
+            </div>
+
+            <template if:true={isLoading}>
+                <lightning-spinner alternative-text="Loading jobs..." size="medium"></lightning-spinner>
+            </template>
+
+            <div class="slds-grid slds-gutters">
+                <div class="slds-col slds-size_7-of-12">
+                    <h3 class="slds-text-heading_small slds-m-bottom_small">Open Service Jobs ({jobCount})</h3>
+                    <div class="job-list-scroll">
+                        <template for:each={jobs} for:item="job">
+                            <div key={job.id} class={job.cardClass} onclick={handleSelectJob} data-id={job.id}>
+                                <div class="slds-grid slds-grid_align-spread">
+                                    <div>
+                                        <span class="slds-badge slds-badge_inverse slds-m-right_x-small">{job.priority}</span>
+                                        <strong>{job.name}</strong> — {job.customerName}
+                                    </div>
+                                    <span class={job.slaBadgeClass}>{job.slaStatus} ({job.slaRemainingHrs}h)</span>
+                                </div>
+                                <div class="slds-m-top_x-small slds-text-color_weak slds-text-body_small">
+                                    <span>Asset: {job.assetName}</span> | <span>Type: {job.jobType}</span> | <span>Tech: {job.technicianName}</span>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+
+                <div class="slds-col slds-size_5-of-12">
+                    <template if:true={selectedJob}>
+                        <div class="matching-panel slds-box slds-theme_shade">
+                            <h3 class="slds-text-heading_small slds-m-bottom_small">AI Recommended Technicians</h3>
+                            <p class="slds-m-bottom_medium slds-text-color_weak">Optimized for: {selectedJob.name}</p>
+                            
+                            <template for:each={matchedTechs} for:item="tech">
+                                <div key={tech.technicianId} class="tech-card slds-box slds-m-bottom_x-small slds-theme_default">
+                                    <div class="slds-grid slds-grid_align-spread">
+                                        <div>
+                                            <strong>{tech.technicianName}</strong>
+                                            <div class="slds-text-body_small slds-text-color_weak">
+                                                ★ {tech.csat} | FTFR: {tech.ftfr}% | {tech.distanceKm} km away
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <span class="match-score">{tech.score}% Match</span>
+                                            <lightning-button class="slds-m-top_x-small" variant="brand" label="Assign" size="small"
+                                                onclick={handleAssign} data-techid={tech.technicianId}></lightning-button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                    </template>
+                    <template if:false={selectedJob}>
+                        <div class="slds-illustration slds-illustration_small slds-text-align_center slds-p-around_large">
+                            <p class="slds-text-color_weak">Select a service job on the left to match optimal field technicians.</p>
+                        </div>
+                    </template>
+                </div>
+            </div>
+        </div>
+    </lightning-card>
+</template>

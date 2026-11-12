@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Event_Type__c</fullName>
+    <label>Event Type</label>
+    <type>Picklist</type>
+    <required>true</required>
+    <trackHistory>true</trackHistory>
+    <valueSet><valueSetDefinition><sorted>false</sorted><value><fullName>Created</fullName><default>true</default><label>Created</label></value><value><fullName>Acknowledged</fullName><default>false</default><label>Acknowledged</label></value><value><fullName>Tech Assigned</fullName><default>false</default><label>Tech Assigned</label></value><value><fullName>On Site</fullName><default>false</default><label>On Site</label></value><value><fullName>Parts Awaited</fullName><default>false</default><label>Parts Awaited</label></value><value><fullName>Resolved</fullName><default>false</default><label>Resolved</label></value><value><fullName>Breached</fullName><default>false</default><label>Breached</label></value><value><fullName>Escalated</fullName><default>false</default><label>Escalated</label></value></valueSetDefinition></valueSet>
+</CustomField>

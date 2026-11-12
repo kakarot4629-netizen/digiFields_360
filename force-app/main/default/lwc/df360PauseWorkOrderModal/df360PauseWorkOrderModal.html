@@ -1,0 +1,134 @@
+<template>
+    <lightning-card title="Work Order Status Controls" icon-name="utility:pause">
+        <div class="slds-p-around_medium">
+            <template if:true={isLoading}>
+                <lightning-spinner alternative-text="Processing..." size="small"></lightning-spinner>
+            </template>
+
+            <!-- Current State Banner -->
+            <div class="status-banner slds-grid slds-grid_vertical-align-center slds-m-bottom_medium">
+                <div class="slds-col slds-size_8-of-12">
+                    <span class="status-label">Current Work Order Status:</span>
+                    <strong class="status-value slds-m-left_x-small">{currentStatus}</strong>
+                </div>
+                <div class="slds-col slds-size_4-of-12 slds-text-align_right">
+                    <template if:true={isPaused}>
+                        <lightning-button label="Resume Work Order" variant="success" icon-name="utility:play" onclick={openResumeModal}></lightning-button>
+                    </template>
+                    <template if:false={isPaused}>
+                        <lightning-button label="Pause Work Order" variant="neutral" icon-name="utility:pause" onclick={openPauseModal}></lightning-button>
+                    </template>
+                </div>
+            </div>
+
+            <!-- Details if currently paused -->
+            <template if:true={isPaused}>
+                <div class="paused-details-card slds-p-around_small">
+                    <div class="slds-grid slds-gutters">
+                        <div class="slds-col slds-size_6-of-12">
+                            <p><strong>Reason:</strong> {pauseReason}</p>
+                            <p><strong>Dependency:</strong> {pauseDependency}</p>
+                            <p><strong>Responsible Team:</strong> {responsibleTeam}</p>
+                        </div>
+                        <div class="slds-col slds-size_6-of-12">
+                            <p><strong>Paused Since:</strong> {pausedDateTime}</p>
+                            <p><strong>Expected Resume:</strong> {expectedResumeDate}</p>
+                        </div>
+                    </div>
+                    <template if:true={pauseDescription}>
+                        <div class="slds-m-top_x-small">
+                            <p><strong>Description:</strong> {pauseDescription}</p>
+                        </div>
+                    </template>
+                </div>
+            </template>
+        </div>
+    </lightning-card>
+
+    <!-- Pause Modal -->
+    <template if:true={showPauseModal}>
+        <section role="dialog" class="slds-modal slds-fade-in-open">
+            <div class="slds-modal__container">
+                <header class="slds-modal__header">
+                    <h2 class="slds-modal__title">Temporarily Pause Work Order</h2>
+                    <p class="slds-m-top_x-small slds-text-color_weak">Capture reason and dependencies before halting work on site.</p>
+                </header>
+                <div class="slds-modal__content slds-p-around_medium">
+                    <lightning-combobox
+                        name="reason"
+                        label="Pause Reason"
+                        value={selectedReason}
+                        options={reasonOptions}
+                        onchange={handleReasonChange}
+                        required
+                    ></lightning-combobox>
+
+                    <lightning-combobox
+                        name="team"
+                        label="Responsible Team / Owner"
+                        value={selectedTeam}
+                        options={teamOptions}
+                        onchange={handleTeamChange}
+                        class="slds-m-top_small"
+                    ></lightning-combobox>
+
+                    <lightning-input
+                        type="text"
+                        label="Dependency (e.g. Part SKU, Gate Permit, Ticket #)"
+                        value={selectedDependency}
+                        onchange={handleDependencyChange}
+                        class="slds-m-top_small"
+                    ></lightning-input>
+
+                    <lightning-input
+                        type="datetime"
+                        label="Expected Resume Date & Time"
+                        value={selectedExpectedDate}
+                        onchange={handleExpectedDateChange}
+                        class="slds-m-top_small"
+                    ></lightning-input>
+
+                    <lightning-textarea
+                        label="Pause Description / Explanation"
+                        value={selectedDescription}
+                        onchange={handleDescriptionChange}
+                        rows="3"
+                        class="slds-m-top_small"
+                    ></lightning-textarea>
+                </div>
+                <footer class="slds-modal__footer">
+                    <lightning-button label="Cancel" onclick={closePauseModal} class="slds-m-right_x-small"></lightning-button>
+                    <lightning-button label="Confirm Pause" variant="destructive" onclick={handleConfirmPause}></lightning-button>
+                </footer>
+            </div>
+        </section>
+        <div class="slds-backdrop slds-backdrop_open"></div>
+    </template>
+
+    <!-- Resume Modal -->
+    <template if:true={showResumeModal}>
+        <section role="dialog" class="slds-modal slds-fade-in-open">
+            <div class="slds-modal__container">
+                <header class="slds-modal__header">
+                    <h2 class="slds-modal__title">Resume Work Order</h2>
+                </header>
+                <div class="slds-modal__content slds-p-around_medium">
+                    <p class="slds-m-bottom_small">Provide comments explaining how the blockage/dependency was resolved:</p>
+                    <lightning-textarea
+                        label="Resume Comments"
+                        value={resumeComments}
+                        onchange={handleResumeCommentsChange}
+                        placeholder="e.g. Part received on site from depot. Safety clearance granted."
+                        rows="3"
+                        required
+                    ></lightning-textarea>
+                </div>
+                <footer class="slds-modal__footer">
+                    <lightning-button label="Cancel" onclick={closeResumeModal} class="slds-m-right_x-small"></lightning-button>
+                    <lightning-button label="Resume Work Order" variant="success" onclick={handleConfirmResume}></lightning-button>
+                </footer>
+            </div>
+        </section>
+        <div class="slds-backdrop slds-backdrop_open"></div>
+    </template>
+</template>

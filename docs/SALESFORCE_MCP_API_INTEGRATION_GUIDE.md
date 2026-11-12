@@ -109,7 +109,7 @@ Authenticates technician credentials or exchanges OAuth authorization codes.
   ```json
   {
     "username": "piyush.channe.3868c7575da5@agentforce.com",
-    "password": "ImIronMan@3000"
+    "password": "YOUR_PASSWORD_HERE"
   }
   ```
 * **Success Response (200 OK)**:

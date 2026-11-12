@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Technician__c</fullName>
+    <label>Technician</label>
+    <type>Lookup</type>
+    <referenceTo>Technician__c</referenceTo>
+    <relationshipLabel>Asset Feedbacks</relationshipLabel>
+    <relationshipName>Asset_Feedbacks</relationshipName>
+    <deleteConstraint>SetNull</deleteConstraint>
+    <description>Field technician who conducted the inspection or feedback assessment.</description>
+</CustomField>

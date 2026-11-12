@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomTab xmlns="http://soap.sforce.com/2006/04/metadata">
+    <description>Dedicated dashboard to track and manage all temporarily paused Work Orders, reasons, aging, and SLA risks</description>
+    <flexiPage>DF360_Paused_Work_Orders</flexiPage>
+    <label>Paused Work Orders</label>
+    <motif>Custom44: Clock</motif>
+</CustomTab>

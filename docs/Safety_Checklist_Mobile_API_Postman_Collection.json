@@ -1,0 +1,1106 @@
+{
+  "info": {
+    "_postman_id": "f8a9b0c1-d2e3-4f56-8790-123456789abc",
+    "name": "Work Order Safety & Checklist Mobile API",
+    "description": "Comprehensive REST API collection for Mobile App Developers (React Native / Flutter / iOS / Android / Field Service) to fetch safety templates, view work order checklists, submit safety inspections with GPS & digital signature, upload photo evidence, and update inspection statuses.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "https://yourinstance.my.salesforce.com",
+      "type": "string"
+    },
+    {
+      "key": "accessToken",
+      "value": "YOUR_BEARER_ACCESS_TOKEN_HERE",
+      "type": "string"
+    },
+    {
+      "key": "clientId",
+      "value": "YOUR_CONNECTED_APP_CLIENT_ID",
+      "type": "string"
+    },
+    {
+      "key": "clientSecret",
+      "value": "YOUR_CONNECTED_APP_CLIENT_SECRET",
+      "type": "string"
+    },
+    {
+      "key": "username",
+      "value": "admin@yourcompany.com",
+      "type": "string"
+    },
+    {
+      "key": "password",
+      "value": "YourPasswordAndSecurityToken",
+      "type": "string"
+    },
+    {
+      "key": "workOrderId",
+      "value": "WO-100482",
+      "type": "string"
+    },
+    {
+      "key": "checklistId",
+      "value": "a0X5g000000AbCdEAI",
+      "type": "string"
+    },
+    {
+      "key": "checklistItemId",
+      "value": "a0Y5g000000Xyz2EAA",
+      "type": "string"
+    },
+    {
+      "key": "safetyCheckId",
+      "value": "SAF-849201",
+      "type": "string"
+    },
+    {
+      "key": "technicianId",
+      "value": "TECH-5021",
+      "type": "string"
+    },
+    {
+      "key": "currentLat",
+      "value": "18.520430",
+      "type": "string"
+    },
+    {
+      "key": "currentLng",
+      "value": "73.856743",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Authenticate - Get OAuth2 Access Token",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "var jsonData = pm.response.json();",
+              "if (jsonData.access_token) {",
+              "    pm.collectionVariables.set('accessToken', jsonData.access_token);",
+              "    if (jsonData.instance_url) {",
+              "        pm.collectionVariables.set('baseUrl', jsonData.instance_url);",
+              "    }",
+              "    console.log('Access token saved successfully.');",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/x-www-form-urlencoded"
+          }
+        ],
+        "body": {
+          "mode": "urlencoded",
+          "urlencoded": [
+            {
+              "key": "grant_type",
+              "value": "password",
+              "type": "text"
+            },
+            {
+              "key": "client_id",
+              "value": "{{clientId}}",
+              "type": "text"
+            },
+            {
+              "key": "client_secret",
+              "value": "{{clientSecret}}",
+              "type": "text"
+            },
+            {
+              "key": "username",
+              "value": "{{username}}",
+              "type": "text"
+            },
+            {
+              "key": "password",
+              "value": "{{password}}",
+              "type": "text"
+            }
+          ]
+        },
+        "url": {
+          "raw": "https://login.salesforce.com/services/oauth2/token",
+          "protocol": "https",
+          "host": [
+            "login",
+            "salesforce",
+            "com"
+          ],
+          "path": [
+            "services",
+            "oauth2",
+            "token"
+          ]
+        },
+        "description": "Authenticates against Salesforce OAuth endpoint using Username-Password or Client Credentials flow and saves the access token in collection variables."
+      },
+      "response": [
+        {
+          "name": "200 Success - OAuth Token",
+          "originalRequest": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "grant_type",
+                  "value": "password",
+                  "type": "text"
+                },
+                {
+                  "key": "client_id",
+                  "value": "{{clientId}}",
+                  "type": "text"
+                },
+                {
+                  "key": "client_secret",
+                  "value": "{{clientSecret}}",
+                  "type": "text"
+                },
+                {
+                  "key": "username",
+                  "value": "{{username}}",
+                  "type": "text"
+                },
+                {
+                  "key": "password",
+                  "value": "{{password}}",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "https://login.salesforce.com/services/oauth2/token",
+              "protocol": "https",
+              "host": [
+                "login",
+                "salesforce",
+                "com"
+              ],
+              "path": [
+                "services",
+                "oauth2",
+                "token"
+              ]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "cookie": [],
+          "body": "{\n  \"access_token\": \"00D5g000000TEST!AR0AQNx_ExampleAccessToken_...\",\n  \"instance_url\": \"https://yourinstance.my.salesforce.com\",\n  \"id\": \"https://login.salesforce.com/id/00D5g000000TEST/0055g000000USER\",\n  \"token_type\": \"Bearer\",\n  \"issued_at\": \"1727076400000\",\n  \"signature\": \"AbCdEfGhIjKlMnOpQrStUvWxYz==\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "2. Get Checklist Templates & Questions (Offline Cache)",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/services/apexrest/api/safety-checklist/templates",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "services",
+            "apexrest",
+            "api",
+            "safety-checklist",
+            "templates"
+          ]
+        },
+        "description": "Fetches standard checklist categories and predefined questions (PPE, Electrical Lockout, Site Clearance, Fire Safety) to store in mobile local storage (SQLite/WatermelonDB/AsyncStorage) for offline forms."
+      },
+      "response": [
+        {
+          "name": "200 Success - Checklist Templates",
+          "originalRequest": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/services/apexrest/api/safety-checklist/templates",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "services",
+                "apexrest",
+                "api",
+                "safety-checklist",
+                "templates"
+              ]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "cookie": [],
+          "body": "{\n  \"success\": true,\n  \"totalCategories\": 3,\n  \"data\": [\n    {\n      \"category\": \"Personal Protective Equipment (PPE)\",\n      \"items\": [\n        {\n          \"orderIndex\": 1,\n          \"itemName\": \"PPE - Helmet & Steel-Toe Boots\",\n          \"question\": \"Is certified hard hat and safety shoes worn by all team members?\",\n          \"severity\": \"High\",\n          \"defaultStatus\": \"Pass\"\n        },\n        {\n          \"orderIndex\": 2,\n          \"itemName\": \"Eye & Face Shield Protection\",\n          \"question\": \"Are safety goggles/shields worn near cutting or grinding equipment?\",\n          \"severity\": \"Medium\",\n          \"defaultStatus\": \"Pass\"\n        }\n      ]\n    },\n    {\n      \"category\": \"Electrical Safety & Lockout\",\n      \"items\": [\n        {\n          \"orderIndex\": 3,\n          \"itemName\": \"Lockout / Tagout (LOTO)\",\n          \"question\": \"Is LOTO applied and verified zero-energy state on main switchboard?\",\n          \"severity\": \"Critical\",\n          \"defaultStatus\": \"Pass\"\n        }\n      ]\n    },\n    {\n      \"category\": \"Site & Environmental Clearance\",\n      \"items\": [\n        {\n          \"orderIndex\": 4,\n          \"itemName\": \"Fire Extinguisher Availability\",\n          \"question\": \"Is a tested ABC fire extinguisher available within 10 meters?\",\n          \"severity\": \"Critical\",\n          \"defaultStatus\": \"Pass\"\n        }\n      ]\n    }\n  ]\n}"
+        }
+      ]
+    },
+    {
+      "name": "3. Get Safety Checklists by Work Order ID",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/services/apexrest/api/safety-checklist/work-order/{{workOrderId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "services",
+            "apexrest",
+            "api",
+            "safety-checklist",
+            "work-order",
+            "{{workOrderId}}"
+          ]
+        },
+        "description": "Retrieves all safety inspections linked to a specific Work Order, including pass/fail rates, dates, technician details, and item answers."
+      },
+      "response": [
+        {
+          "name": "200 Success - Checklists by Work Order",
+          "originalRequest": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/services/apexrest/api/safety-checklist/work-order/{{workOrderId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "services",
+                "apexrest",
+                "api",
+                "safety-checklist",
+                "work-order",
+                "{{workOrderId}}"
+              ]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "cookie": [],
+          "body": "{\n  \"success\": true,\n  \"workOrderId\": \"WO-100482\",\n  \"totalChecklists\": 1,\n  \"data\": [\n    {\n      \"id\": \"a0X5g000000AbCdEAI\",\n      \"name\": \"CHK-00042\",\n      \"workOrderId\": \"WO-100482\",\n      \"technicianName\": \"Vikram Sharma\",\n      \"status\": \"Passed\",\n      \"inspectionDate\": \"2026-09-23T11:45:00.000Z\",\n      \"siteLocation\": \"Solar Power Plant Site #3, Pune\",\n      \"latitude\": 18.52043,\n      \"longitude\": 73.856744,\n      \"totalItems\": 4,\n      \"passedItems\": 4,\n      \"failedItems\": 0,\n      \"signatureCaptured\": true\n    }\n  ]\n}"
+        }
+      ]
+    },
+    {
+      "name": "4. Get Single Checklist Detail with Items",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/services/apexrest/api/safety-checklist/{{checklistId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "services",
+            "apexrest",
+            "api",
+            "safety-checklist",
+            "{{checklistId}}"
+          ]
+        },
+        "description": "Fetches a full safety checklist report by record ID, including all items, remarks, severity, status, and verification flags."
+      },
+      "response": [
+        {
+          "name": "200 Success - Checklist Detail",
+          "originalRequest": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/services/apexrest/api/safety-checklist/{{checklistId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "services",
+                "apexrest",
+                "api",
+                "safety-checklist",
+                "{{checklistId}}"
+              ]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "cookie": [],
+          "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": \"a0X5g000000AbCdEAI\",\n    \"name\": \"CHK-00042\",\n    \"workOrderId\": \"WO-100482\",\n    \"assetId\": \"AST-SOLAR-09\",\n    \"technicianName\": \"Vikram Sharma\",\n    \"technicianId\": \"TECH-5021\",\n    \"status\": \"Passed\",\n    \"inspectionDate\": \"2026-09-23T11:45:00.000Z\",\n    \"latitude\": 18.52043,\n    \"longitude\": 73.856744,\n    \"overallComments\": \"Site clearance completed. High voltage panels locked.\",\n    \"totalItems\": 4,\n    \"passedItems\": 4,\n    \"failedItems\": 0,\n    \"signatureCaptured\": true,\n    \"items\": [\n      {\n        \"id\": \"a0Y5g000000Xyz1EAA\",\n        \"orderIndex\": 1,\n        \"itemName\": \"PPE - Helmet & Steel-Toe Boots\",\n        \"category\": \"Personal Protective Equipment (PPE)\",\n        \"question\": \"Is certified hard hat and safety shoes worn by all team members?\",\n        \"status\": \"Pass\",\n        \"severity\": \"High\",\n        \"remarks\": \"Verified on entry\",\n        \"hasEvidencePhoto\": false\n      },\n      {\n        \"id\": \"a0Y5g000000Xyz2EAA\",\n        \"orderIndex\": 2,\n        \"itemName\": \"Lockout / Tagout (LOTO)\",\n        \"category\": \"Electrical Safety & Lockout\",\n        \"question\": \"Is LOTO applied and verified zero-energy state on main switchboard?\",\n        \"status\": \"Pass\",\n        \"severity\": \"Critical\",\n        \"remarks\": \"Padlock #401 applied with technician key.\",\n        \"hasEvidencePhoto\": true\n      }\n    ]\n  }\n}"
+        }
+      ]
+    },
+    {
+      "name": "5. Submit Complete Safety Checklist (Items + GPS + Signature)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "var jsonData = pm.response.json();",
+              "if (jsonData.success && jsonData.data && jsonData.data.checklistId) {",
+              "    pm.collectionVariables.set('checklistId', jsonData.data.checklistId);",
+              "    console.log('Saved newly created checklistId: ' + jsonData.data.checklistId);",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"workOrderId\": \"WO-100482\",\n  \"assetId\": \"AST-SOLAR-09\",\n  \"technicianName\": \"Vikram Sharma\",\n  \"technicianId\": \"TECH-5021\",\n  \"siteLocation\": \"Solar Power Plant Site #3, Pune\",\n  \"latitude\": 18.520430,\n  \"longitude\": 73.856744,\n  \"inspectionDate\": \"2026-09-23T11:45:00Z\",\n  \"overallComments\": \"Site clearance completed. All high voltage panels isolated and locked before beginning inverter maintenance.\",\n  \"signatureBase64\": \"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==\",\n  \"items\": [\n    {\n      \"itemName\": \"PPE - Helmet & Steel-Toe Boots\",\n      \"category\": \"Personal Protective Equipment (PPE)\",\n      \"question\": \"Is certified hard hat and safety shoes worn by all team members?\",\n      \"status\": \"Pass\",\n      \"severity\": \"High\",\n      \"remarks\": \"Verified on entry\",\n      \"orderIndex\": 1\n    },\n    {\n      \"itemName\": \"Eye & Face Shield Protection\",\n      \"category\": \"Personal Protective Equipment (PPE)\",\n      \"question\": \"Are safety goggles/shields worn near cutting or grinding equipment?\",\n      \"status\": \"Pass\",\n      \"severity\": \"Medium\",\n      \"remarks\": \"Equipped on technician\",\n      \"orderIndex\": 2\n    },\n    {\n      \"itemName\": \"Lockout / Tagout (LOTO)\",\n      \"category\": \"Electrical Safety & Lockout\",\n      \"question\": \"Is LOTO applied and verified zero-energy state on main switchboard?\",\n      \"status\": \"Pass\",\n      \"severity\": \"Critical\",\n      \"remarks\": \"Padlock #401 applied with technician key.\",\n      \"orderIndex\": 3\n    },\n    {\n      \"itemName\": \"Fire Extinguisher Availability\",\n      \"category\": \"Site & Environmental Clearance\",\n      \"question\": \"Is a tested ABC fire extinguisher available within 10 meters?\",\n      \"status\": \"Pass\",\n      \"severity\": \"Critical\",\n      \"remarks\": \"Cylinder pressure gauge verified green.\",\n      \"orderIndex\": 4\n    }\n  ]\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/services/apexrest/api/safety-checklist/submit",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "services",
+            "apexrest",
+            "api",
+            "safety-checklist",
+            "submit"
+          ]
+        },
+        "description": "Submits a full safety inspection report with child checklist items, GPS location, technician comments, and digital signature attachment."
+      },
+      "response": [
+        {
+          "name": "201 Created - Submission Success",
+          "originalRequest": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"workOrderId\": \"WO-100482\",\n  \"assetId\": \"AST-SOLAR-09\",\n  \"technicianName\": \"Vikram Sharma\",\n  \"technicianId\": \"TECH-5021\",\n  \"siteLocation\": \"Solar Power Plant Site #3, Pune\",\n  \"latitude\": 18.520430,\n  \"longitude\": 73.856744,\n  \"inspectionDate\": \"2026-09-23T11:45:00Z\",\n  \"overallComments\": \"Site clearance completed. All high voltage panels isolated and locked before beginning inverter maintenance.\",\n  \"signatureBase64\": \"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==\",\n  \"items\": [\n    {\n      \"itemName\": \"PPE - Helmet & Steel-Toe Boots\",\n      \"category\": \"Personal Protective Equipment (PPE)\",\n      \"question\": \"Is certified hard hat and safety shoes worn by all team members?\",\n      \"status\": \"Pass\",\n      \"severity\": \"High\",\n      \"remarks\": \"Verified on entry\",\n      \"orderIndex\": 1\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/services/apexrest/api/safety-checklist/submit",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "services",
+                "apexrest",
+                "api",
+                "safety-checklist",
+                "submit"
+              ]
+            }
+          },
+          "status": "Created",
+          "code": 201,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "cookie": [],
+          "body": "{\n  \"success\": true,\n  \"message\": \"Safety checklist submitted successfully.\",\n  \"data\": {\n    \"checklistId\": \"a0X5g000000AbCdEAI\",\n    \"name\": \"CHK-00042\",\n    \"workOrderId\": \"WO-100482\",\n    \"status\": \"Passed\",\n    \"totalItems\": 4,\n    \"passedItems\": 4,\n    \"failedItems\": 0,\n    \"signatureAttached\": true\n  }\n}"
+        },
+        {
+          "name": "400 Error - Validation Failure",
+          "originalRequest": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"assetId\": \"AST-SOLAR-09\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/services/apexrest/api/safety-checklist/submit",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "services",
+                "apexrest",
+                "api",
+                "safety-checklist",
+                "submit"
+              ]
+            }
+          },
+          "status": "Bad Request",
+          "code": 400,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "cookie": [],
+          "body": "{\n  \"success\": false,\n  \"errorCode\": \"INVALID_REQUEST\",\n  \"message\": \"workOrderId is required for checklist submission.\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "6. Upload Checklist Item Photo Evidence (Base64)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"checklistItemId\": \"{{checklistItemId}}\",\n  \"checklistId\": \"{{checklistId}}\",\n  \"fileName\": \"site_safety_lockout_proof.jpg\",\n  \"contentType\": \"image/jpeg\",\n  \"base64Data\": \"iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/services/apexrest/api/safety-checklist/evidence",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "services",
+            "apexrest",
+            "api",
+            "safety-checklist",
+            "evidence"
+          ]
+        },
+        "description": "Uploads photo evidence or inspection media attached directly to the checklist item and stores it as a Salesforce ContentDocument / File."
+      },
+      "response": [
+        {
+          "name": "201 Created - Photo Upload Success",
+          "originalRequest": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"checklistItemId\": \"{{checklistItemId}}\",\n  \"checklistId\": \"{{checklistId}}\",\n  \"fileName\": \"site_safety_lockout_proof.jpg\",\n  \"contentType\": \"image/jpeg\",\n  \"base64Data\": \"iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/services/apexrest/api/safety-checklist/evidence",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "services",
+                "apexrest",
+                "api",
+                "safety-checklist",
+                "evidence"
+              ]
+            }
+          },
+          "status": "Created",
+          "code": 201,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "cookie": [],
+          "body": "{\n  \"success\": true,\n  \"message\": \"Evidence photo uploaded successfully.\",\n  \"data\": {\n    \"contentDocumentId\": \"0695g000000TuvwAAC\",\n    \"contentVersionId\": \"0685g000000XyzaAAC\",\n    \"fileName\": \"site_safety_lockout_proof.jpg\",\n    \"linkedToRecordId\": \"a0Y5g000000Xyz2EAA\"\n  }\n}"
+        }
+      ]
+    },
+    {
+      "name": "7. Update Checklist Status / Supervisor Sign-off",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"status\": \"Passed\",\n  \"overallComments\": \"Reviewed by Site Safety Officer: Approved for maintenance work.\",\n  \"siteLocation\": \"Solar Plant Station #3\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/services/apexrest/api/safety-checklist/{{checklistId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "services",
+            "apexrest",
+            "api",
+            "safety-checklist",
+            "{{checklistId}}"
+          ]
+        },
+        "description": "Updates status (e.g. 'Passed', 'Requires Review', 'Failed') or supervisor notes on an existing checklist."
+      },
+      "response": [
+        {
+          "name": "200 Success - Checklist Updated",
+          "originalRequest": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"Passed\",\n  \"overallComments\": \"Reviewed by Site Safety Officer: Approved for maintenance work.\",\n  \"siteLocation\": \"Solar Plant Station #3\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/services/apexrest/api/safety-checklist/{{checklistId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "services",
+                "apexrest",
+                "api",
+                "safety-checklist",
+                "{{checklistId}}"
+              ]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "cookie": [],
+          "body": "{\n  \"success\": true,\n  \"message\": \"Safety checklist updated successfully.\",\n  \"data\": {\n    \"checklistId\": \"a0X5g000000AbCdEAI\",\n    \"status\": \"Passed\",\n    \"overallComments\": \"Reviewed by Site Safety Officer: Approved for maintenance work.\"\n  }\n}"
+        }
+      ],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status is 200 OK\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "var json = pm.response.json();",
+              "pm.test(\"Checklist status updated\", function () {",
+              "    pm.expect(json.success).to.be.true;",
+              "    pm.expect(json.data.status).to.eql(\"Passed\");",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "8. Delete / Cancel Draft Checklist",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/services/apexrest/api/safety-checklist/{{checklistId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "services",
+            "apexrest",
+            "api",
+            "safety-checklist",
+            "{{checklistId}}"
+          ]
+        },
+        "description": "Deletes a draft checklist record and its associated child items."
+      },
+      "response": [
+        {
+          "name": "200 Success - Checklist Deleted",
+          "originalRequest": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/services/apexrest/api/safety-checklist/{{checklistId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "services",
+                "apexrest",
+                "api",
+                "safety-checklist",
+                "{{checklistId}}"
+              ]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "cookie": [],
+          "body": "{\n  \"success\": true,\n  \"message\": \"Safety checklist and its items were deleted successfully.\",\n  \"checklistId\": \"a0X5g000000AbCdEAI\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "9. Get Attachments & Photos by Work Order ID",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          },
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/attachments?workOrderId={{workOrderId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "attachments"
+          ],
+          "query": [
+            {
+              "key": "workOrderId",
+              "value": "{{workOrderId}}"
+            }
+          ]
+        },
+        "description": "Fetches all photo attachments, safety proofs, and signatures uploaded to Salesforce ContentVersion linked to this Work Order."
+      },
+      "response": [
+        {
+          "name": "200 Success - List Work Order Attachments",
+          "originalRequest": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/attachments?workOrderId={{workOrderId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "attachments"
+              ],
+              "query": [
+                {
+                  "key": "workOrderId",
+                  "value": "{{workOrderId}}"
+                }
+              ]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "cookie": [],
+          "body": "{\n  \"success\": true,\n  \"workOrderId\": \"a03g500000fYquEAAS\",\n  \"totalCount\": 3,\n  \"attachments\": [\n    {\n      \"id\": \"068g5000000XyzaAAC\",\n      \"contentDocumentId\": \"069g5000000TuvwAAC\",\n      \"title\": \"Site_Pre_Inspection_Photo_1.jpg\",\n      \"fileName\": \"Site_Pre_Inspection_Photo_1.jpg\",\n      \"fileType\": \"JPG\",\n      \"fileExtension\": \"jpg\",\n      \"fileSizeBytes\": 245820,\n      \"category\": \"Photo\",\n      \"attachmentType\": \"Photo\",\n      \"downloadUrl\": \"http://localhost:3000/sfc/servlet.shepherd/version/download/068g5000000XyzaAAC\",\n      \"salesforceUrl\": \"https://orgfarm-4036b01401-dev-ed.develop.my.salesforce.com/sfc/servlet.shepherd/version/download/068g5000000XyzaAAC\",\n      \"createdDate\": \"2026-09-23T08:15:30.000Z\",\n      \"createdByName\": \"Piyush Channe\"\n    },\n    {\n      \"id\": \"068g5000000XyzbAAC\",\n      \"contentDocumentId\": \"069g5000000TuvxAAC\",\n      \"title\": \"Electrical_Lockout_Tagout_Proof.jpg\",\n      \"fileName\": \"Electrical_Lockout_Tagout_Proof.jpg\",\n      \"fileType\": \"JPG\",\n      \"fileExtension\": \"jpg\",\n      \"fileSizeBytes\": 189420,\n      \"category\": \"Safety Proof\",\n      \"attachmentType\": \"Safety Proof\",\n      \"downloadUrl\": \"http://localhost:3000/sfc/servlet.shepherd/version/download/068g5000000XyzbAAC\",\n      \"salesforceUrl\": \"https://orgfarm-4036b01401-dev-ed.develop.my.salesforce.com/sfc/servlet.shepherd/version/download/068g5000000XyzbAAC\",\n      \"createdDate\": \"2026-09-23T08:22:15.000Z\",\n      \"createdByName\": \"Piyush Channe\"\n    },\n    {\n      \"id\": \"068g5000000XyzcAAC\",\n      \"contentDocumentId\": \"069g5000000TuvyAAC\",\n      \"title\": \"Customer_Signoff_Signature.png\",\n      \"fileName\": \"Customer_Signoff_Signature.png\",\n      \"fileType\": \"PNG\",\n      \"fileExtension\": \"png\",\n      \"fileSizeBytes\": 45210,\n      \"category\": \"Signature\",\n      \"attachmentType\": \"Signature\",\n      \"downloadUrl\": \"http://localhost:3000/sfc/servlet.shepherd/version/download/068g5000000XyzcAAC\",\n      \"salesforceUrl\": \"https://orgfarm-4036b01401-dev-ed.develop.my.salesforce.com/sfc/servlet.shepherd/version/download/068g5000000XyzcAAC\",\n      \"createdDate\": \"2026-09-23T08:45:00.000Z\",\n      \"createdByName\": \"Piyush Channe\"\n    }\n  ]\n}"
+        }
+      ]
+    },
+    {
+      "name": "10. Pre-Job Safety Protocols & Hazard Checklist (Screen 06)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status is 200 OK\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "var json = pm.response.json();",
+              "pm.test(\"Safety protocols returned successfully\", function () {",
+              "    pm.expect(json.success).to.be.true;",
+              "    pm.expect(json.requiredPPE).to.be.an('array');",
+              "    pm.expect(json.hazardChecks).to.be.an('array');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/work-orders/{{workOrderId}}/safety-check",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "work-orders",
+            "{{workOrderId}}",
+            "safety-check"
+          ]
+        },
+        "description": "Fetches required PPE checklist, site hazard clearance protocols, risk level assessment, and safety warnings tailored to the equipment type."
+      },
+      "response": []
+    },
+    {
+      "name": "11. Submit Technician Safety Verification (Screen 08)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status is 200 OK\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "var json = pm.response.json();",
+              "pm.test(\"Safety verification cleared\", function () {",
+              "    pm.expect(json.success).to.be.true;",
+              "    pm.expect(json.assessment.status).to.eql(\"CLEARED\");",
+              "});",
+              "if (json.assessment && json.assessment.safetyCheckId) {",
+              "    pm.collectionVariables.set(\"safetyCheckId\", json.assessment.safetyCheckId);",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"technicianId\": \"{{technicianId}}\",\n  \"siteRiskLevel\": \"HIGH\",\n  \"ppeVerified\": {\n    \"dielectricGloves\": true,\n    \"safetyGoggles\": true,\n    \"steelToeBoots\": true,\n    \"hardHat\": true,\n    \"hearingProtection\": true\n  },\n  \"hazardChecks\": [\n    {\n      \"hazardCode\": \"LOTO_APPLIED\",\n      \"verified\": true\n    },\n    {\n      \"hazardCode\": \"ZERO_ENERGY_STATE\",\n      \"verified\": true\n    },\n    {\n      \"hazardCode\": \"BATTERY_ISOLATION\",\n      \"verified\": true\n    },\n    {\n      \"hazardCode\": \"FUEL_GAS_CLEAR\",\n      \"verified\": true\n    },\n    {\n      \"hazardCode\": \"EXHAUST_VENTILATION\",\n      \"verified\": true\n    }\n  ],\n  \"technicianDeclaration\": \"I confirm that all safety protocols and Lockout/Tagout measures have been verified before servicing this equipment.\",\n  \"latitude\": 18.52043,\n  \"longitude\": 73.856743\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/work-orders/{{workOrderId}}/safety-check",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "work-orders",
+            "{{workOrderId}}",
+            "safety-check"
+          ]
+        },
+        "description": "Submits technician pre-job safety sign-off, PPE verification, and hazard checks. Inserts safety audit activity into Salesforce."
+      },
+      "response": []
+    },
+    {
+      "name": "12. Emergency Safety Escalation & Hazard Alert",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status is 201 Created\", function () {",
+              "    pm.response.to.have.status(201);",
+              "});",
+              "var json = pm.response.json();",
+              "pm.test(\"Hazard escalated and job halted\", function () {",
+              "    pm.expect(json.success).to.be.true;",
+              "    pm.expect(json.escalation.workHalted).to.be.true;",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"hazardType\": \"ELECTRICAL_ARCING\",\n  \"severity\": \"CRITICAL\",\n  \"hazardDetails\": \"Active electrical arcing detected at main 415V distribution busbar with visible insulation scorch.\",\n  \"immediateActionTaken\": \"Tripped upstream substation breaker and cordoned off 10-meter perimeter.\",\n  \"evacuatedSite\": true,\n  \"technicianId\": \"{{technicianId}}\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/work-orders/{{workOrderId}}/safety-escalation",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "work-orders",
+            "{{workOrderId}}",
+            "safety-escalation"
+          ]
+        },
+        "description": "Immediately halts work on the Work Order and triggers critical safety hazard escalation to dispatch and supervisors."
+      },
+      "response": []
+    },
+    {
+      "name": "13. Get Equipment Safety Audit History",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status is 200 OK\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "var json = pm.response.json();",
+              "pm.test(\"Safety history returned\", function () {",
+              "    pm.expect(json.success).to.be.true;",
+              "    pm.expect(json.workOrderId).to.be.ok;",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/work-orders/{{workOrderId}}/safety-history",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "work-orders",
+            "{{workOrderId}}",
+            "safety-history"
+          ]
+        },
+        "description": "Fetches past safety audits, PPE compliance records, and hazard escalation history for the work order."
+      },
+      "response": []
+    }
+  ]
+}

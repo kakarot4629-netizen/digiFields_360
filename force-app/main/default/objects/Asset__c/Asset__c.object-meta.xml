@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
+    <label>Asset</label>
+    <pluralLabel>Assets</pluralLabel>
+    <nameField>
+        <label>Asset Name</label>
+        <type>AutoNumber</type>
+        <displayFormat>AST-{0000000}</displayFormat>
+    </nameField>
+    <deploymentStatus>Deployed</deploymentStatus>
+    <sharingModel>ReadWrite</sharingModel>
+    <description>Customer equipment installed at a site.</description>
+    <enableActivities>true</enableActivities>
+    <enableHistory>true</enableHistory>
+    <enableReports>true</enableReports>
+    <enableSearch>true</enableSearch>
+    <enableBulkApi>true</enableBulkApi>
+    <enableStreamingApi>true</enableStreamingApi>
+    <searchLayouts>
+        <customTabListAdditionalFields>Product_Name__c</customTabListAdditionalFields>
+        <customTabListAdditionalFields>Serial_Number__c</customTabListAdditionalFields>
+        <customTabListAdditionalFields>Account__c</customTabListAdditionalFields>
+        <customTabListAdditionalFields>Product_Category__c</customTabListAdditionalFields>
+        <customTabListAdditionalFields>Status__c</customTabListAdditionalFields>
+        <customTabListAdditionalFields>Is_Under_Warranty__c</customTabListAdditionalFields>
+        <customTabListAdditionalFields>Warranty_Expiry__c</customTabListAdditionalFields>
+        <customTabListAdditionalFields>Zone__c</customTabListAdditionalFields>
+        <searchResultsAdditionalFields>Product_Name__c</searchResultsAdditionalFields>
+        <searchResultsAdditionalFields>Serial_Number__c</searchResultsAdditionalFields>
+        <searchResultsAdditionalFields>Account__c</searchResultsAdditionalFields>
+        <searchResultsAdditionalFields>Product_Category__c</searchResultsAdditionalFields>
+        <searchResultsAdditionalFields>Status__c</searchResultsAdditionalFields>
+        <searchResultsAdditionalFields>Is_Under_Warranty__c</searchResultsAdditionalFields>
+        <searchResultsAdditionalFields>Warranty_Expiry__c</searchResultsAdditionalFields>
+        <lookupDialogsAdditionalFields>Product_Name__c</lookupDialogsAdditionalFields>
+        <lookupDialogsAdditionalFields>Serial_Number__c</lookupDialogsAdditionalFields>
+        <lookupDialogsAdditionalFields>Account__c</lookupDialogsAdditionalFields>
+    </searchLayouts>
+</CustomObject>

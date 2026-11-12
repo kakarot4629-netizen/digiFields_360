@@ -1,13 +1,36 @@
-<?xml version="1.0" encoding="UTF-8" ?>
+<?xml version="1.0" encoding="UTF-8"?>
 <CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
     <fullName>Status__c</fullName>
     <label>Status</label>
     <type>Picklist</type>
-    <required>true</required><valueSet><valueSetDefinition><sorted
-      >false</sorted><value><fullName>New</fullName><default
-        >true</default></value><value><fullName
-        >Assigned</fullName></value><value><fullName
-        >In Progress</fullName></value><value><fullName
-        >Completed</fullName></value><value><fullName
-        >Cancelled</fullName></value></valueSetDefinition></valueSet>
+    <required>true</required>
+    <valueSet>
+        <valueSetDefinition>
+            <sorted>false</sorted>
+            <value>
+                <fullName>New</fullName>
+                <default>true</default>
+            </value>
+            <value>
+                <fullName>Assigned</fullName>
+                <default>false</default>
+            </value>
+            <value>
+                <fullName>In Progress</fullName>
+                <default>false</default>
+            </value>
+            <value>
+                <fullName>Temporarily Paused</fullName>
+                <default>false</default>
+            </value>
+            <value>
+                <fullName>Completed</fullName>
+                <default>false</default>
+            </value>
+            <value>
+                <fullName>Cancelled</fullName>
+                <default>false</default>
+            </value>
+        </valueSetDefinition>
+    </valueSet>
 </CustomField>

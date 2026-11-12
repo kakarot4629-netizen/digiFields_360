@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Check_In_GPS__c</fullName>
+    <label>Check-In Location</label>
+    <type>Location</type>
+    <required>false</required>
+    <trackHistory>true</trackHistory>
+    <displayLocationInDecimal>true</displayLocationInDecimal><scale>6</scale>
+</CustomField>

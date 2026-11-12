@@ -1,0 +1,30 @@
+<template>
+    <lightning-card title="Parts Approval Inbox" icon-name="standard:approval">
+        <div class="slds-p-around_medium approval-box">
+            <template if:true={hasPending}>
+                <table class="slds-table slds-table_cell-buffer slds-table_bordered">
+                    <thead>
+                        <tr><th>Job</th><th>Part</th><th>Qty</th><th>Total Cost</th><th>Technician</th><th>Actions</th></tr>
+                    </thead>
+                    <tbody>
+                        <template for:each={pendingRequests} for:item="r">
+                            <tr key={r.id}>
+                                <td>{r.jobName}</td><td>{r.partName}</td><td>{r.qty}</td>
+                                <td><strong>₹{r.totalCost}</strong></td><td>{r.techName}</td>
+                                <td>
+                                    <lightning-button label="Approve" variant="success" size="small" class="slds-m-right_x-small"
+                                        data-id={r.id} onclick={handleApprove}></lightning-button>
+                                    <lightning-button label="Reject" variant="destructive" size="small"
+                                        data-id={r.id} onclick={handleReject}></lightning-button>
+                                </td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+            </template>
+            <template if:false={hasPending}>
+                <p class="slds-text-align_center slds-text-color_weak slds-p-around_large">No pending parts approvals found.</p>
+            </template>
+        </div>
+    </lightning-card>
+</template>

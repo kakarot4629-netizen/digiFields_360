@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Work_Order_Line_Item__c</fullName>
+    <label>Case Asset</label>
+    <type>Lookup</type>
+    <referenceTo>Work_Order_Line_Item__c</referenceTo>
+    <relationshipLabel>Asset Feedbacks</relationshipLabel>
+    <relationshipName>Asset_Feedbacks</relationshipName>
+    <deleteConstraint>SetNull</deleteConstraint>
+    <description>The specific Case Asset from the Work Order (Work Order Line Item) being evaluated.</description>
+    <lookupFilter>
+        <active>true</active>
+        <errorMessage>Please select a Case Asset that belongs to the chosen Work Order.</errorMessage>
+        <filterItems>
+            <field>Work_Order_Line_Item__c.Work_Order__c</field>
+            <operation>equals</operation>
+            <valueField>$Source.Work_Order__c</valueField>
+        </filterItems>
+        <isOptional>true</isOptional>
+    </lookupFilter>
+</CustomField>

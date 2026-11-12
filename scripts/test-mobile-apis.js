@@ -3,7 +3,7 @@
  */
 const { spawn } = require("child_process");
 
-const PORT = 3001; // Use test port 3001 to avoid conflicting with running instances
+const PORT = 3888; // Use test port 3888 to avoid conflicting with running instances
 const BASE_URL = `http://localhost:${PORT}`;
 
 async function runApiTests() {
@@ -48,7 +48,7 @@ async function runApiTests() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         username: "piyush.channe.3868c7575da5@agentforce.com",
-        password: "ImIronMan@3000"
+        password: "YOUR_PASSWORD_HERE"
       })
     });
     const data = await res.json();
@@ -145,8 +145,137 @@ async function runApiTests() {
       headers: { "x-mock-mode": "true" }
     });
     const data = await res.json();
-    if (!data.success || data.workOrder.Id !== "WO-001001") {
+    if (
+      !data.success ||
+      data.workOrder.Id !== "WO-001001" ||
+      !data.workOrder.caseNumber ||
+      !Array.isArray(data.workOrder.workOrderLineItems)
+    ) {
       throw new Error(`Invalid WO details: ${JSON.stringify(data)}`);
+    }
+  });
+
+  // 6.1 Multi-Asset Work Order Line Items (WOLIs)
+  await test("GET /api/work-orders/:id/line-items returns multi-asset line items", async () => {
+    const res = await fetch(`${BASE_URL}/api/work-orders/WO-001001/line-items`, {
+      headers: { "x-mock-mode": "true" }
+    });
+    const data = await res.json();
+    if (!data.success || !Array.isArray(data.lineItems) || data.count < 1) {
+      throw new Error(`Expected line items array, got: ${JSON.stringify(data)}`);
+    }
+  });
+
+  // 6.2 Update Line Item Status
+  await test("PATCH /api/line-items/:id updates equipment task status and resolution", async () => {
+    const res = await fetch(`${BASE_URL}/api/line-items/WOLI-00101`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", "x-mock-mode": "true" },
+      body: JSON.stringify({
+        status: "Completed",
+        isFirstTimeFix: true,
+        resolutionNotes: "Diagnostic inspection verified pass."
+      })
+    });
+    const data = await res.json();
+    if (!data.success || data.lineItemId !== "WOLI-00101") {
+      throw new Error(`Failed to update line item: ${JSON.stringify(data)}`);
+    }
+  });
+
+  // 6.3 Work Order Service Appointments
+  await test("GET /api/work-orders/:id/service-appointments returns child service appointments", async () => {
+    const res = await fetch(`${BASE_URL}/api/work-orders/WO-001001/service-appointments`, {
+      headers: { "x-mock-mode": "true" }
+    });
+    const data = await res.json();
+    if (!data.success || !Array.isArray(data.serviceAppointments) || data.count < 1) {
+      throw new Error(`Expected service appointments array, got: ${JSON.stringify(data)}`);
+    }
+  });
+
+  // 6.4 Service Appointments List & Filter
+  await test("GET /api/service-appointments returns appointment list with filters", async () => {
+    const res = await fetch(`${BASE_URL}/api/service-appointments?workOrderId=WO-001001`, {
+      headers: { "x-mock-mode": "true" }
+    });
+    const data = await res.json();
+    if (!data.success || !Array.isArray(data.serviceAppointments) || data.count < 1) {
+      throw new Error(`Expected filtered service appointments, got: ${JSON.stringify(data)}`);
+    }
+  });
+
+  // 6.5 Service Appointment Detail
+  await test("GET /api/service-appointments/:id returns appointment detail", async () => {
+    const res = await fetch(`${BASE_URL}/api/service-appointments/SA-001001`, {
+      headers: { "x-mock-mode": "true" }
+    });
+    const data = await res.json();
+    if (!data.success || !data.serviceAppointment || !data.serviceAppointment.workOrderId) {
+      throw new Error(`Expected appointment details, got: ${JSON.stringify(data)}`);
+    }
+  });
+
+  // 6.6 Create Service Appointment
+  await test("POST /api/service-appointments creates new appointment record", async () => {
+    const res = await fetch(`${BASE_URL}/api/service-appointments`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-mock-mode": "true" },
+      body: JSON.stringify({
+        workOrderId: "WO-001001",
+        jobType: "Preventive Maintenance",
+        priority: "High",
+        notes: "Scheduled field maintenance visit"
+      })
+    });
+    const data = await res.json();
+    if (res.status !== 201 || !data.success || !data.serviceAppointmentId) {
+      throw new Error(`Failed to create service appointment: ${JSON.stringify(data)}`);
+    }
+  });
+
+  // 6.7 Update Service Appointment Status
+  await test("PATCH /api/service-appointments/:id updates appointment status", async () => {
+    const res = await fetch(`${BASE_URL}/api/service-appointments/SA-001001`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", "x-mock-mode": "true" },
+      body: JSON.stringify({
+        status: "In Progress",
+        notes: "Technician arrived on site"
+      })
+    });
+    const data = await res.json();
+    if (!data.success || data.serviceAppointmentId !== "SA-001001") {
+      throw new Error(`Failed to update service appointment: ${JSON.stringify(data)}`);
+    }
+  });
+
+  // 6.8 Service Appointment GPS Check-in
+  await test("POST /api/service-appointments/:id/check-in validates GPS geofence", async () => {
+    const res = await fetch(`${BASE_URL}/api/service-appointments/SA-001001/check-in`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-mock-mode": "true" },
+      body: JSON.stringify({ latitude: 18.52043, longitude: 73.856743, accuracy: 5.0 })
+    });
+    const data = await res.json();
+    if (!res.ok || !data.success || !data.checkedIn || data.withinGeofence !== true) {
+      throw new Error(`Service appointment GPS check-in failed: ${JSON.stringify(data)}`);
+    }
+  });
+
+  // 6.9 Service Appointment Complete
+  await test("POST /api/service-appointments/:id/complete closes appointment with report", async () => {
+    const res = await fetch(`${BASE_URL}/api/service-appointments/SA-001001/complete`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-mock-mode": "true" },
+      body: JSON.stringify({
+        technicianNotes: "All tasks completed and tested.",
+        resolutionTimeMin: 45
+      })
+    });
+    const data = await res.json();
+    if (!res.ok || !data.success || data.status !== "COMPLETED") {
+      throw new Error(`Service appointment completion failed: ${JSON.stringify(data)}`);
     }
   });
 
@@ -633,6 +762,363 @@ async function runApiTests() {
     const content = data.result?.content?.[0]?.text || "";
     if (!content.includes("records")) {
       throw new Error(`MCP get_related_records failed: ${JSON.stringify(data)}`);
+    }
+  });
+
+  // 16. Extended Mobile Domain Endpoints (24 Screens Coverage)
+  await test("GET /api/dashboard returns shift metrics and SLA countdown", async () => {
+    const res = await fetch(`${BASE_URL}/api/dashboard`, {
+      headers: { "x-mock-mode": "true" }
+    });
+    const data = await res.json();
+    if (!res.ok || !data.success || !data.shift?.closestSlaMinutesRemaining) {
+      throw new Error(`Dashboard API failed: ${JSON.stringify(data)}`);
+    }
+  });
+
+  await test("POST /api/jobs/:id/check-in validates GPS geofence distance", async () => {
+    const res = await fetch(`${BASE_URL}/api/jobs/WO-001001/check-in`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-mock-mode": "true" },
+      body: JSON.stringify({ latitude: 18.52043, longitude: 73.856743, accuracy: 5.0 })
+    });
+    const data = await res.json();
+    if (!res.ok || !data.success || !data.checkedIn || data.withinGeofence !== true) {
+      throw new Error(`GPS check-in failed: ${JSON.stringify(data)}`);
+    }
+  });
+
+  await test("GET /api/parts returns parts catalogue", async () => {
+    const res = await fetch(`${BASE_URL}/api/parts?query=sensor`, {
+      headers: { "x-mock-mode": "true" }
+    });
+    const data = await res.json();
+    if (!res.ok || !data.success || data.parts.length === 0) {
+      throw new Error(`Parts catalogue failed: ${JSON.stringify(data)}`);
+    }
+  });
+
+  await test("POST /api/jobs/:id/parts-requests submits parts request", async () => {
+    const res = await fetch(`${BASE_URL}/api/jobs/WO-001001/parts-requests`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-mock-mode": "true" },
+      body: JSON.stringify({ partId: "PRT-001", partCode: "TS-40", quantity: 1, isWarranty: true })
+    });
+    const data = await res.json();
+    if (res.status !== 201 || !data.success || !data.partsRequestId) {
+      throw new Error(`Parts request submission failed: ${JSON.stringify(data)}`);
+    }
+  });
+
+  await test("POST /api/jobs/:id/parts-return returns unused part to inventory", async () => {
+    const res = await fetch(`${BASE_URL}/api/jobs/WO-001001/parts-return`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-mock-mode": "true" },
+      body: JSON.stringify({ partsRequestId: "REQ-00101", partName: "Temperature Sensor TS-40", quantity: 1 })
+    });
+    const data = await res.json();
+    if (!res.ok || !data.success || data.status !== "Returned") {
+      throw new Error(`Parts return failed: ${JSON.stringify(data)}`);
+    }
+  });
+
+  await test("POST /api/ai/guru returns diagnostic recommendations and confidence", async () => {
+    const res = await fetch(`${BASE_URL}/api/ai/guru`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-mock-mode": "true" },
+      body: JSON.stringify({ jobId: "WO-001001", message: "AC is not cooling and making loud rattling noise" })
+    });
+    const data = await res.json();
+    if (!res.ok || !data.success || !data.recommendedActions || data.confidence < 0.5) {
+      throw new Error(`GuruAI diagnostic chat failed: ${JSON.stringify(data)}`);
+    }
+  });
+
+  await test("POST /api/attendance/check-in records morning punch-in", async () => {
+    const res = await fetch(`${BASE_URL}/api/attendance/check-in`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ latitude: 18.52043, longitude: 73.856743 })
+    });
+    const data = await res.json();
+    if (!res.ok || !data.success || data.status !== "ON_DUTY") {
+      throw new Error(`Attendance punch-in failed: ${JSON.stringify(data)}`);
+    }
+  });
+
+  await test("GET /api/notifications returns unread alerts", async () => {
+    const res = await fetch(`${BASE_URL}/api/notifications`);
+    const data = await res.json();
+    if (!res.ok || !data.success || !Array.isArray(data.notifications)) {
+      throw new Error(`Notifications API failed: ${JSON.stringify(data)}`);
+    }
+  });
+
+  await test("POST /api/gps/batch processes telemetry queue", async () => {
+    const res = await fetch(`${BASE_URL}/api/gps/batch`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        deviceId: "DEV-TEST",
+        positions: [{ latitude: 18.5204, longitude: 73.8567, timestamp: new Date().toISOString() }]
+      })
+    });
+    const data = await res.json();
+    if (!res.ok || !data.success || data.batchSize !== 1) {
+      throw new Error(`Batch GPS failed: ${JSON.stringify(data)}`);
+    }
+  });
+
+  // 20. Work Order Safety Check & Hazard Mitigation Tests
+  await test("GET /api/work-orders/:id/safety-check returns equipment-specific hazard protocols & PPE", async () => {
+    const res = await fetch(`${BASE_URL}/api/work-orders/WO-001001/safety-check`, {
+      headers: { "x-mock-mode": "true" }
+    });
+    const data = await res.json();
+    if (
+      !res.ok ||
+      !data.success ||
+      !Array.isArray(data.requiredPPE) ||
+      !Array.isArray(data.hazardChecks) ||
+      !data.safetyWarning
+    ) {
+      throw new Error(`Safety check fetch failed: ${JSON.stringify(data)}`);
+    }
+  });
+
+  await test("POST /api/work-orders/:id/safety-check submits technician safety clearance", async () => {
+    const res = await fetch(`${BASE_URL}/api/work-orders/WO-001001/safety-check`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-mock-mode": "true" },
+      body: JSON.stringify({
+        technicianId: "TECH-001",
+        siteRiskLevel: "HIGH",
+        ppeVerified: {
+          safetyGoggles: true,
+          dielectricGloves: true,
+          steelToeBoots: true,
+          hardHat: true
+        },
+        hazardChecks: [
+          { hazardCode: "LOTO_APPLIED", verified: true },
+          { hazardCode: "ZERO_ENERGY_STATE", verified: true }
+        ],
+        technicianDeclaration: "I confirm that all safety protocols have been executed and the work zone is secure.",
+        latitude: 18.52043,
+        longitude: 73.856743
+      })
+    });
+    const data = await res.json();
+    if (!res.ok || !data.success || !data.assessment?.safetyCheckId || data.assessment.status !== "CLEARED") {
+      throw new Error(`Safety clearance submission failed: ${JSON.stringify(data)}`);
+    }
+  });
+
+  await test("POST /api/work-orders/:id/safety-escalation dispatches emergency hazard alert and halts job", async () => {
+    const res = await fetch(`${BASE_URL}/api/work-orders/WO-001001/safety-escalation`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-mock-mode": "true" },
+      body: JSON.stringify({
+        hazardType: "ELECTRICAL_ARCING",
+        severity: "CRITICAL",
+        hazardDetails: "Continuous high voltage arcing and active smoke near main busbar.",
+        immediateActionTaken: "Main breaker tripped and area evacuated immediately.",
+        evacuatedSite: true
+      })
+    });
+    const data = await res.json();
+    if (res.status !== 201 || !data.success || !data.escalation?.escalationId || !data.escalation.workHalted) {
+      throw new Error(`Safety escalation failed: ${JSON.stringify(data)}`);
+    }
+  });
+
+  await test("GET /api/work-orders/:id/safety-history returns safety audits and escalation records", async () => {
+    const res = await fetch(`${BASE_URL}/api/work-orders/WO-001001/safety-history`, {
+      headers: { "x-mock-mode": "true" }
+    });
+    const data = await res.json();
+    if (!res.ok || !data.success || data.totalAssessmentsCount < 1 || data.totalEscalationsCount < 1) {
+      throw new Error(`Safety history fetch failed: ${JSON.stringify(data)}`);
+    }
+  });
+
+  // 21. Dynamic Work Order Checklist & Sensor Measurement Tests
+  await test("GET /api/checklist/templates returns standardized templates by equipment category", async () => {
+    const res = await fetch(`${BASE_URL}/api/checklist/templates`, {
+      headers: { "x-mock-mode": "true" }
+    });
+    const data = await res.json();
+    if (!res.ok || !data.success || !data.templates.Generator || !data.templates.HVAC) {
+      throw new Error(`Checklist templates fetch failed: ${JSON.stringify(data)}`);
+    }
+  });
+
+  await test("GET /api/work-orders/:id/checklist returns dynamic multi-section checklist", async () => {
+    const res = await fetch(`${BASE_URL}/api/work-orders/WO-001001/checklist`, {
+      headers: { "x-mock-mode": "true" }
+    });
+    const data = await res.json();
+    if (!res.ok || !data.success || !Array.isArray(data.sections) || data.totalItemsCount < 5) {
+      throw new Error(`Dynamic checklist fetch failed: ${JSON.stringify(data)}`);
+    }
+  });
+
+  await test("PATCH /api/work-orders/:id/checklist/:itemId updates telemetry measurement reading", async () => {
+    const res = await fetch(`${BASE_URL}/api/work-orders/WO-001001/checklist/chk_5`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", "x-mock-mode": "true" },
+      body: JSON.stringify({
+        status: "PASSED",
+        measuredValue: 416.5,
+        comments: "L1-L2-L3 steady at 416.5V under balanced load."
+      })
+    });
+    const data = await res.json();
+    if (!res.ok || !data.success || data.updatedItem?.measuredValue !== 416.5 || data.updatedItem?.isCompleted !== true) {
+      throw new Error(`Checklist item telemetry update failed: ${JSON.stringify(data)}`);
+    }
+  });
+
+  await test("POST /api/work-orders/:id/checklist/submit processes batch submission", async () => {
+    const res = await fetch(`${BASE_URL}/api/work-orders/WO-001001/checklist/submit`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-mock-mode": "true" },
+      body: JSON.stringify({
+        items: [
+          { id: "chk_12", isCompleted: true, status: "PASSED" },
+          { id: "chk_18", isCompleted: true, status: "PASSED" }
+        ]
+      })
+    });
+    const data = await res.json();
+    if (!res.ok || !data.success || !data.status) {
+      throw new Error(`Checklist submit failed: ${JSON.stringify(data)}`);
+    }
+  });
+
+  // 22. MCP Safety & Checklist Protocol Tools
+  await test("POST /mcp tools/call get_work_order_safety_checklist executes", async () => {
+    const res = await fetch(`${BASE_URL}/mcp`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-mock-mode": "true" },
+      body: JSON.stringify({
+        jsonrpc: "2.0",
+        id: 201,
+        method: "tools/call",
+        params: {
+          name: "get_work_order_safety_checklist",
+          arguments: { workOrderId: "WO-001001", equipmentType: "Generator" }
+        }
+      })
+    });
+    const data = await res.json();
+    const content = data.result?.content?.[0]?.text || "";
+    if (!content.includes("requiredPPE") || !content.includes("hazardChecks")) {
+      throw new Error(`MCP get_work_order_safety_checklist failed: ${JSON.stringify(data)}`);
+    }
+  });
+
+  await test("POST /mcp tools/call get_work_order_checklist executes", async () => {
+    const res = await fetch(`${BASE_URL}/mcp`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-mock-mode": "true" },
+      body: JSON.stringify({
+        jsonrpc: "2.0",
+        id: 202,
+        method: "tools/call",
+        params: {
+          name: "get_work_order_checklist",
+          arguments: { workOrderId: "WO-001001", equipmentType: "HVAC" }
+        }
+      })
+    });
+    const data = await res.json();
+    const content = data.result?.content?.[0]?.text || "";
+    if (!content.includes("sections")) {
+      throw new Error(`MCP get_work_order_checklist failed: ${JSON.stringify(data)}`);
+    }
+  });
+
+  // 21. Asset 360 Details & Full Service History
+  await test("GET /api/assets/:id/details-and-history returns profile & historical jobs", async () => {
+    const res = await fetch(`${BASE_URL}/api/assets/a001000000001/details-and-history`, {
+      headers: { "x-mock-mode": "true" }
+    });
+    const data = await res.json();
+    if (!data.success || !data.asset?.serialNumber || !Array.isArray(data.serviceHistory)) {
+      throw new Error(`Asset details and history failed: ${JSON.stringify(data)}`);
+    }
+  });
+
+  // 22. Work Order Relevant Parts
+  await test("GET /api/work-orders/:id/applicable-parts returns filtered parts", async () => {
+    const res = await fetch(`${BASE_URL}/api/work-orders/WO-001001/applicable-parts`, {
+      headers: { "x-mock-mode": "true" }
+    });
+    const data = await res.json();
+    if (!data.success || !Array.isArray(data.parts) || data.count < 1) {
+      throw new Error(`Applicable parts failed: ${JSON.stringify(data)}`);
+    }
+  });
+
+  // 23. Temporarily Pause Work Order
+  await test("POST /api/work-orders/:id/pause sets Temporarily Paused status and captures dependencies", async () => {
+    const res = await fetch(`${BASE_URL}/api/work-orders/WO-001001/pause`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-mock-mode": "true" },
+      body: JSON.stringify({
+        reason: "Waiting for Part",
+        description: "Awaiting replacement coolant pump gasket from depot.",
+        dependency: "PR-00091",
+        responsibleTeam: "Procurement"
+      })
+    });
+    const data = await res.json();
+    if (!data.success || data.newStatus !== "Temporarily Paused" || !data.pauseLogId) {
+      throw new Error(`Pause work order failed: ${JSON.stringify(data)}`);
+    }
+  });
+
+  // 24. Resume Paused Work Order
+  await test("POST /api/work-orders/:id/resume resumes job and logs comments", async () => {
+    const res = await fetch(`${BASE_URL}/api/work-orders/WO-001001/resume`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-mock-mode": "true" },
+      body: JSON.stringify({
+        resumeComments: "Part received on site. Resumed work order."
+      })
+    });
+    const data = await res.json();
+    if (!data.success || data.newStatus !== "In Progress" || !data.resumedAt) {
+      throw new Error(`Resume work order failed: ${JSON.stringify(data)}`);
+    }
+  });
+
+  // 25. Paused Work Orders Supervisor Dashboard
+  await test("GET /api/work-orders/paused-dashboard returns aging and SLA breach metrics", async () => {
+    const res = await fetch(`${BASE_URL}/api/work-orders/paused-dashboard`, {
+      headers: { "x-mock-mode": "true" }
+    });
+    const data = await res.json();
+    if (!data.success || typeof data.summary?.totalPaused !== "number" || !Array.isArray(data.records)) {
+      throw new Error(`Paused dashboard failed: ${JSON.stringify(data)}`);
+    }
+  });
+
+  // 26. Guru AI Dynamic Structured Response
+  await test("POST /api/ai/guru returns structured SOP, safety precautions, and parts", async () => {
+    const res = await fetch(`${BASE_URL}/api/ai/guru`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-mock-mode": "true" },
+      body: JSON.stringify({
+        jobId: "WO-001001",
+        message: "How to replace coolant pump on Cummins generator?"
+      })
+    });
+    const data = await res.json();
+    const resp = data.structuredResponse;
+    if (!data.success || !resp || !resp.actionableSteps?.length || !resp.recommendedParts?.length) {
+      throw new Error(`Guru AI structured response failed: ${JSON.stringify(data)}`);
     }
   });
 

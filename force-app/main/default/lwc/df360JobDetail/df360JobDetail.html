@@ -1,0 +1,41 @@
+<template>
+    <lightning-card title={cardTitle} icon-name="standard:work_order">
+        <div class="slds-p-around_medium slds-is-relative">
+            <template if:true={isLoading}>
+                <lightning-spinner alternative-text="Updating Service Appointment..." size="small"></lightning-spinner>
+            </template>
+            <template if:true={job}>
+                <div class="slds-grid slds-gutters slds-m-bottom_medium">
+                    <div class="slds-col slds-size_1-of-2">
+                        <p><strong>Customer:</strong> {customerName}</p>
+                        <p><strong>Asset:</strong> {assetName}</p>
+                        <p><strong>Type:</strong> {job.Job_Type__c}</p>
+                    </div>
+                    <div class="slds-col slds-size_1-of-2 slds-text-align_right">
+                        <span class={statusBadgeClass}>{job.Status__c}</span>
+                        <p class="slds-m-top_x-small"><strong>Priority:</strong> {job.Priority__c}</p>
+                    </div>
+                </div>
+
+                <div class="slds-m-top_medium">
+                    <lightning-button-group class="slds-align_absolute-center">
+                        <lightning-button 
+                            variant="brand" 
+                            label={checkInButtonLabel} 
+                            icon-name="utility:checkin" 
+                            onclick={handleCheckIn}
+                            disabled={isCheckInDisabled}>
+                        </lightning-button>
+                        <lightning-button 
+                            variant="success" 
+                            label="Complete Job" 
+                            icon-name="utility:success" 
+                            onclick={handleCompleteJob}
+                            disabled={isCompleteDisabled}>
+                        </lightning-button>
+                    </lightning-button-group>
+                </div>
+            </template>
+        </div>
+    </lightning-card>
+</template>

@@ -1,0 +1,38 @@
+### ═══════════════════════════════════════════════════════════════════════════════
+### digiField360.ai — Real-Time Salesforce Login API Test
+### ═══════════════════════════════════════════════════════════════════════════════
+### Instructions:
+### 1. Install "REST Client" extension (Ctrl+Shift+X -> search "REST Client" -> Install).
+### 2. Click the small "Send Request" button that appears above the POST line below.
+### 3. The live Salesforce response will open on the right side!
+
+### 1. VALID LOGIN (Real Salesforce Credentials -> Returns 200 OK + Real 00D Token)
+POST https://digifields-360.onrender.com/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "piyush.channe.3868c7575da5@agentforce.com",
+  "password": "YOUR_PASSWORD_HERE"
+}
+
+### ═══════════════════════════════════════════════════════════════════════════════
+
+### 2. WRONG PASSWORD TEST (Returns 401 Unauthorized Rejection)
+POST https://digifields-360.onrender.com/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "piyush.channe.3868c7575da5@agentforce.com",
+  "password": "WRONG_PASSWORD_123"
+}
+
+### ═══════════════════════════════════════════════════════════════════════════════
+
+### 3. UNKNOWN USER TEST (Returns 401 Unauthorized Rejection)
+POST https://digifields-360.onrender.com/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "unknown.user@example.com",
+  "password": "YOUR_PASSWORD_HERE"
+}

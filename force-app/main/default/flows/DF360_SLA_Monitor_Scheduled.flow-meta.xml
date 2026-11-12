@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+    <apiVersion>61.0</apiVersion>
+    <description>Scheduled flow. Invokes DF360_SLAMonitorBatch Apex action.</description>
+    <label>DF360 - SLA Monitor Scheduled</label>
+    <processMetadataValues><name>BuilderType</name><value><stringValue>LightningFlowBuilder</stringValue></value></processMetadataValues>
+    <processType>AutoLaunchedFlow</processType>
+    <status>Active</status>
+    <interviewLabel>DF360 - SLA Monitor Scheduled {!$Flow.CurrentDateTime}</interviewLabel>
+    <start>
+        <locationX>182</locationX><locationY>48</locationY>
+        <connector><targetReference>Run_SLA_Batch</targetReference></connector>
+        <schedule><frequency>Daily</frequency><startDate>2026-01-01</startDate><startTime>00:05:00.000Z</startTime></schedule>
+        <triggerType>Scheduled</triggerType>
+    </start>
+    <actionCalls>
+        <name>Run_SLA_Batch</name><label>Run SLA Monitor Batch</label>
+        <locationX>182</locationX><locationY>158</locationY>
+        <actionName>DF360_SLAMonitorBatch</actionName>
+        <actionType>apex</actionType>
+    </actionCalls>
+</Flow>

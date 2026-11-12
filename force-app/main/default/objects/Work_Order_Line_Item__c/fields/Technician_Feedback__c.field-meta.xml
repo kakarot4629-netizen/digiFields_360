@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Technician_Feedback__c</fullName>
+    <label>Technician Feedback / Assessment</label>
+    <type>LongTextArea</type>
+    <length>2000</length>
+    <visibleLines>4</visibleLines>
+    <required>false</required>
+</CustomField>

@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
+    <label>Depot</label>
+    <pluralLabel>Depots</pluralLabel>
+    <nameField>
+        <label>Depot Name</label>
+        <type>AutoNumber</type>
+        <displayFormat>DEP-{00000}</displayFormat>
+    </nameField>
+    <deploymentStatus>Deployed</deploymentStatus>
+    <sharingModel>ReadWrite</sharingModel>
+    <description>Parts depot/warehouse. Technicians draw parts from nearest depot.</description>
+    <enableActivities>true</enableActivities>
+    <enableHistory>true</enableHistory>
+    <enableReports>true</enableReports>
+    <enableSearch>true</enableSearch>
+    <enableBulkApi>true</enableBulkApi>
+    <enableStreamingApi>true</enableStreamingApi>
+    <searchLayouts>
+        <customTabListAdditionalFields>Zone__c</customTabListAdditionalFields>
+        <customTabListAdditionalFields>Address__c</customTabListAdditionalFields>
+        <customTabListAdditionalFields>Manager__c</customTabListAdditionalFields>
+        <customTabListAdditionalFields>Is_Active__c</customTabListAdditionalFields>
+        <searchResultsAdditionalFields>Zone__c</searchResultsAdditionalFields>
+        <searchResultsAdditionalFields>Address__c</searchResultsAdditionalFields>
+        <searchResultsAdditionalFields>Manager__c</searchResultsAdditionalFields>
+        <searchResultsAdditionalFields>Is_Active__c</searchResultsAdditionalFields>
+        <lookupDialogsAdditionalFields>Zone__c</lookupDialogsAdditionalFields>
+        <lookupDialogsAdditionalFields>Address__c</lookupDialogsAdditionalFields>
+    </searchLayouts>
+</CustomObject>

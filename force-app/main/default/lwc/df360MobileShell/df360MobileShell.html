@@ -1,0 +1,26 @@
+<template>
+    <lightning-card title="digiField360 Mobile Hub" icon-name="standard:custom_notification">
+        <div class="slds-p-around_medium mobile-shell">
+            <div class="slds-grid slds-grid_align-spread slds-m-bottom_medium">
+                <div>
+                    <h3 class="slds-text-heading_small">Today's Assigned Jobs ({jobCount})</h3>
+                </div>
+                <div>
+                    <lightning-button label="Go Available" variant="success" size="small" onclick={handleSetAvailable}></lightning-button>
+                </div>
+            </div>
+            <div class="jobs-container">
+                <template for:each={jobs} for:item="j">
+                    <div key={j.id} class="slds-box slds-m-bottom_x-small slds-theme_default">
+                        <div class="slds-grid slds-grid_align-spread">
+                            <strong>{j.name}</strong>
+                            <span class="slds-badge slds-theme_inverse">{j.status}</span>
+                        </div>
+                        <p class="slds-text-body_small">{j.customerName} | {j.assetName}</p>
+                        <p class="slds-text-body_small slds-text-color_weak">{j.address}</p>
+                    </div>
+                </template>
+            </div>
+        </div>
+    </lightning-card>
+</template>

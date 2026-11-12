@@ -47,6 +47,7 @@ export default class Field360WorkOrderDetail extends LightningElement {
     @track troubleshootResult   = null;
     @track timeLogged           = false;
     @track timeLoggedMessage    = '';
+    @track isReportModalOpen    = false;
 
     // Loading states
     @track isGeneratingBriefing = false;
@@ -257,6 +258,7 @@ export default class Field360WorkOrderDetail extends LightningElement {
             const result = await generateReportApex({ workOrderId: this.recordId, sendToCustomer: false });
             if (result?.success) {
                 this.showToast('success', 'Report Generated', 'Service report is ready. Tap "View Report" to review before sending to customer.');
+                await notifyRecordUpdateAvailable([{ recordId: this.recordId }]);
             }
         } catch (e) {
             console.error('Report generation error:', e);
@@ -266,10 +268,27 @@ export default class Field360WorkOrderDetail extends LightningElement {
     }
 
     viewServiceReport() {
-        // Navigate to a modal or URL with the report content
+        this.isReportModalOpen = true;
         this.dispatchEvent(new CustomEvent('viewreport', {
-            detail: { report: this.workOrder.AI_Service_Report__c }
+            detail: { report: this.workOrder?.AI_Service_Report__c }
         }));
+    }
+
+    closeReportModal() {
+        this.isReportModalOpen = false;
+    }
+
+    handleCopyReport() {
+        const text = this.workOrder?.AI_Service_Report__c || '';
+        if (text && navigator.clipboard) {
+            navigator.clipboard.writeText(text)
+                .then(() => {
+                    this.showToast('success', 'Copied!', 'Service report copied to clipboard.');
+                })
+                .catch(() => {
+                    this.showToast('info', 'Report Text', 'Please select and copy the report text manually.');
+                });
+        }
     }
 
     showToast(variant, title, message, mode = 'dismissable') {

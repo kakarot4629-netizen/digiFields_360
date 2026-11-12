@@ -105,7 +105,8 @@ public with sharing class F360_SmartAssignmentAction {
             Subject__c,
             Equipment_Type__c,
             Priority__c,
-            Site_Address__c
+            Site_Address__c,
+            Case__c
           FROM Work_Order__c
           WHERE Id = :req.workOrderId
           LIMIT 1

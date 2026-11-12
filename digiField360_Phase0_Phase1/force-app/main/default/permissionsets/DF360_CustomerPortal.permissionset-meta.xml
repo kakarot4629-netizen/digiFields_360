@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<PermissionSet xmlns="http://soap.sforce.com/2006/04/metadata">
+    <label>DF360 Customer Portal</label>
+    <description>Customer-facing Experience Cloud user. Read own job status and CSAT only.</description>
+    <hasActivationRequired>false</hasActivationRequired>
+</PermissionSet>

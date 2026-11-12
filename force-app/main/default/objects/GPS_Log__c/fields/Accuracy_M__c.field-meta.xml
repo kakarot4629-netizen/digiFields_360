@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Accuracy_M__c</fullName>
+    <label>Accuracy (metres)</label>
+    <type>Number</type>
+    <required>false</required>
+    <trackHistory>true</trackHistory>
+    <precision>6</precision><scale>1</scale>
+</CustomField>

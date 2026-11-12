@@ -160,7 +160,22 @@
         <type>Text</type>
     </nameField>
     <pluralLabel>Maintenance Alerts</pluralLabel>
-    <searchLayouts />
+    <searchLayouts>
+        <customTabListAdditionalFields>Account__c</customTabListAdditionalFields>
+        <customTabListAdditionalFields>Equipment_ID__c</customTabListAdditionalFields>
+        <customTabListAdditionalFields>Equipment_Type__c</customTabListAdditionalFields>
+        <customTabListAdditionalFields>Risk_Score__c</customTabListAdditionalFields>
+        <customTabListAdditionalFields>Status__c</customTabListAdditionalFields>
+        <customTabListAdditionalFields>Days_Since_Last_Service__c</customTabListAdditionalFields>
+        <customTabListAdditionalFields>Resulting_Work_Order__c</customTabListAdditionalFields>
+        <searchResultsAdditionalFields>Account__c</searchResultsAdditionalFields>
+        <searchResultsAdditionalFields>Equipment_ID__c</searchResultsAdditionalFields>
+        <searchResultsAdditionalFields>Equipment_Type__c</searchResultsAdditionalFields>
+        <searchResultsAdditionalFields>Risk_Score__c</searchResultsAdditionalFields>
+        <searchResultsAdditionalFields>Status__c</searchResultsAdditionalFields>
+        <lookupDialogsAdditionalFields>Account__c</lookupDialogsAdditionalFields>
+        <lookupDialogsAdditionalFields>Equipment_ID__c</lookupDialogsAdditionalFields>
+    </searchLayouts>
     <sharingModel>ReadWrite</sharingModel>
     <visibility>Public</visibility>
 </CustomObject>

@@ -1,0 +1,14 @@
+.kpi-card { border-radius: 8px; padding: 16px; color: #fff; }
+.kpi-blue { background: linear-gradient(135deg, #0176d3 0%, #0b5cab 100%); }
+.kpi-green { background: linear-gradient(135deg, #2e844a 0%, #1e5a32 100%); }
+.kpi-purple { background: linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%); }
+.kpi-amber { background: linear-gradient(135deg, #fe9339 0%, #d46b08 100%); }
+.kpi-title { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px; opacity: 0.9; }
+.kpi-value { font-size: 2rem; font-weight: 800; margin: 8px 0; }
+.kpi-subtitle { font-size: 0.8rem; opacity: 0.85; }
+.sla-bar-container { display: flex; height: 36px; border-radius: 6px; overflow: hidden; }
+.sla-segment { display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700; color: #fff; min-width: 40px; }
+.sla-green-bg { background-color: #2e844a; }
+.sla-amber-bg { background-color: #fe9339; }
+.sla-red-bg { background-color: #ea001e; }
+.compliance-pct { font-size: 3.5rem; font-weight: 900; color: #0176d3; }

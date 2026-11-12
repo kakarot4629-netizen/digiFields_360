@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Operational_Status__c</fullName>
+    <label>Operational Status</label>
+    <type>Picklist</type>
+    <required>false</required>
+    <valueSet>
+        <valueSetDefinition>
+            <sorted>false</sorted>
+            <value>
+                <fullName>Working / Operational</fullName>
+                <default>false</default>
+            </value>
+            <value>
+                <fullName>Not Working / Defective</fullName>
+                <default>false</default>
+            </value>
+            <value>
+                <fullName>Partially Working / Sub-optimal</fullName>
+                <default>false</default>
+            </value>
+            <value>
+                <fullName>Pending Inspection</fullName>
+                <default>true</default>
+            </value>
+            <value>
+                <fullName>Replaced / Repaired</fullName>
+                <default>false</default>
+            </value>
+        </valueSetDefinition>
+    </valueSet>
+</CustomField>

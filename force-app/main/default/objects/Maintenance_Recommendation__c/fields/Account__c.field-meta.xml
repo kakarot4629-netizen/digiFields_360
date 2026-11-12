@@ -5,4 +5,5 @@
     <type>Lookup</type>
     <referenceTo>Account</referenceTo><relationshipName
   >Maintenance_Recommendations</relationshipName>
+    <deleteConstraint>SetNull</deleteConstraint>
 </CustomField>

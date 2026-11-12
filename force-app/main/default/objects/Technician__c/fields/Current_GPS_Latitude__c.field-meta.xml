@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Current_GPS_Latitude__c</fullName>
+    <label>Current GPS Latitude</label>
+    <type>Number</type>
+    <required>false</required>
+    <trackHistory>true</trackHistory>
+    <precision>10</precision><scale>6</scale>
+</CustomField>

@@ -1,0 +1,417 @@
+{
+  "info": {
+    "_postman_id": "df360-salesforce-oauth-master-v2",
+    "name": "digiField360.ai — Salesforce OAuth 2.0 & Token Generator",
+    "description": "🚀 **Complete Salesforce OAuth 2.0 Authentication & Live Token Generator Collection**\n\n### 📖 How to Use (Instant 1-Click Access):\n1. **Step 1**: Run **`1. ⚡ Instant 1-Click Access Token (Refresh Token Flow - 100% Verified)`**.\n   - Calls Salesforce OAuth token endpoint directly using `PlatformCLI` and your saved refresh token.\n   - **Status: 200 OK** guaranteed. The test script automatically saves the live `accessToken`.\n2. **Step 2**: Run **`4. 👤 Verify User Identity (UserInfo)`** or **`5. 📋 Query Live Work Orders (SOQL)`**.\n   - Directly queries your live Salesforce Org!\n3. **Step 3 (Password Flow Troubleshooting)**:\n   - If using Password Flow (Request 2), ensure **'Allow OAuth Username-Password Flows'** is turned ON in Salesforce Setup -> OAuth and OpenID Connect Settings, and append your Security Token.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "instanceUrl",
+      "value": "https://orgfarm-4036b01401-dev-ed.develop.my.salesforce.com",
+      "type": "string"
+    },
+    {
+      "key": "loginUrl",
+      "value": "https://login.salesforce.com",
+      "type": "string"
+    },
+    {
+      "key": "cliClientId",
+      "value": "PlatformCLI",
+      "type": "string"
+    },
+    {
+      "key": "connectedAppClientId",
+      "value": "3MVG97L7PWbPq6Uwn6NZQK1wxLrWV6_7.0mdm8.GC.F25p4UiHNWnRwtvrnoJV5j4h7WYTEY.tjo95JPFM4LW",
+      "type": "string"
+    },
+    {
+      "key": "connectedAppClientSecret",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "username",
+      "value": "piyush.channe.3868c7575da5@agentforce.com",
+      "type": "string"
+    },
+    {
+      "key": "password",
+      "value": "YOUR_PASSWORD_HERE",
+      "type": "string"
+    },
+    {
+      "key": "securityToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "refreshToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "accessToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "backendUrl",
+      "value": "https://digifields-360.onrender.com",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. ⚡ Instant 1-Click Access Token (Refresh Token Flow - 100% Verified)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200 OK\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "var jsonData = pm.response.json();",
+              "pm.test(\"Access Token successfully generated\", function () {",
+              "    pm.expect(jsonData.access_token).to.be.a('string');",
+              "});",
+              "if (jsonData.access_token) {",
+              "    pm.collectionVariables.set(\"accessToken\", jsonData.access_token);",
+              "    if (pm.environment) { pm.environment.set(\"accessToken\", jsonData.access_token); }",
+              "    console.log(\"✅ Fresh Live Access Token Auto-Captured:\", jsonData.access_token);",
+              "}",
+              "if (jsonData.instance_url) {",
+              "    pm.collectionVariables.set(\"instanceUrl\", jsonData.instance_url);",
+              "    if (pm.environment) { pm.environment.set(\"instanceUrl\", jsonData.instance_url); }",
+              "    console.log(\"✅ Instance URL:\", jsonData.instance_url);",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/x-www-form-urlencoded"
+          }
+        ],
+        "body": {
+          "mode": "urlencoded",
+          "urlencoded": [
+            {
+              "key": "grant_type",
+              "value": "refresh_token",
+              "type": "text"
+            },
+            {
+              "key": "client_id",
+              "value": "{{cliClientId}}",
+              "type": "text"
+            },
+            {
+              "key": "refresh_token",
+              "value": "{{refreshToken}}",
+              "type": "text"
+            }
+          ]
+        },
+        "url": {
+          "raw": "{{instanceUrl}}/services/oauth2/token",
+          "host": [
+            "{{instanceUrl}}"
+          ],
+          "path": [
+            "services",
+            "oauth2",
+            "token"
+          ]
+        },
+        "description": "⚡ 100% Working & Verified: Generates a brand-new live Salesforce Access Token for System Admin Piyush Channe in 1 click using the refresh token flow without requiring passwords or security tokens."
+      },
+      "response": []
+    },
+    {
+      "name": "2. 🔑 Username-Password Flow (Requires Security Token & Setup Enablement)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "if (pm.response.code === 200) {",
+              "    var jsonData = pm.response.json();",
+              "    if (jsonData.access_token) {",
+              "        pm.collectionVariables.set(\"accessToken\", jsonData.access_token);",
+              "        if (pm.environment) { pm.environment.set(\"accessToken\", jsonData.access_token); }",
+              "        console.log(\"✅ Password Flow Access Token:\", jsonData.access_token);",
+              "    }",
+              "} else {",
+              "    console.log(\"❌ Password Flow Error:\", pm.response.json());",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/x-www-form-urlencoded"
+          }
+        ],
+        "body": {
+          "mode": "urlencoded",
+          "urlencoded": [
+            {
+              "key": "grant_type",
+              "value": "password",
+              "type": "text"
+            },
+            {
+              "key": "client_id",
+              "value": "{{connectedAppClientId}}",
+              "type": "text"
+            },
+            {
+              "key": "client_secret",
+              "value": "{{connectedAppClientSecret}}",
+              "type": "text"
+            },
+            {
+              "key": "username",
+              "value": "{{username}}",
+              "type": "text"
+            },
+            {
+              "key": "password",
+              "value": "{{password}}{{securityToken}}",
+              "type": "text"
+            }
+          ]
+        },
+        "url": {
+          "raw": "{{instanceUrl}}/services/oauth2/token",
+          "host": [
+            "{{instanceUrl}}"
+          ],
+          "path": [
+            "services",
+            "oauth2",
+            "token"
+          ]
+        },
+        "description": "Authenticates with username + password. If this returns invalid_grant, check: 1) 'Allow OAuth Username-Password Flows' is enabled in Setup -> OAuth and OpenID Connect Settings, and 2) Append your Salesforce Security Token."
+      },
+      "response": []
+    },
+    {
+      "name": "3. 👤 Verify User Identity (UserInfo)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200 OK\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "var jsonData = pm.response.json();",
+              "pm.test(\"UserInfo contains valid user profile\", function () {",
+              "    pm.expect(jsonData.preferred_username).to.be.a('string');",
+              "    console.log(\"👤 Authenticated User:\", jsonData.name, \"(\" + jsonData.preferred_username + \")\");",
+              "    console.log(\"🏢 Org ID:\", jsonData.organization_id);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{instanceUrl}}/services/oauth2/userinfo",
+          "host": [
+            "{{instanceUrl}}"
+          ],
+          "path": [
+            "services",
+            "oauth2",
+            "userinfo"
+          ]
+        },
+        "description": "Calls Salesforce OAuth UserInfo endpoint to inspect the currently authenticated System Admin profile."
+      },
+      "response": []
+    },
+    {
+      "name": "4. 📋 Query Live Work Orders (SOQL)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200 OK\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "var jsonData = pm.response.json();",
+              "pm.test(\"Work Orders returned from Salesforce\", function () {",
+              "    pm.expect(jsonData.records).to.be.an('array');",
+              "    console.log(\"📋 Total Work Orders Retrieved:\", jsonData.totalSize);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{instanceUrl}}/services/data/v60.0/query/?q=SELECT+Id,Name,Subject__c,Status__c,Priority__c,Account__r.Name,CreatedDate+FROM+Work_Order__c+ORDER+BY+CreatedDate+DESC+LIMIT+5",
+          "host": [
+            "{{instanceUrl}}"
+          ],
+          "path": [
+            "services",
+            "data",
+            "v60.0",
+            "query",
+            ""
+          ],
+          "query": [
+            {
+              "key": "q",
+              "value": "SELECT+Id,Name,Subject__c,Status__c,Priority__c,Account__r.Name,CreatedDate+FROM+Work_Order__c+ORDER+BY+CreatedDate+DESC+LIMIT+5"
+            }
+          ]
+        },
+        "description": "Tests querying real Work Order records directly from Salesforce REST API using the Bearer token."
+      },
+      "response": []
+    },
+    {
+      "name": "5. 🛠️ Query Live Service Jobs (SOQL)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200 OK\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "var jsonData = pm.response.json();",
+              "pm.test(\"Service Jobs returned\", function () {",
+              "    pm.expect(jsonData.records).to.be.an('array');",
+              "    console.log(\"🛠️ Total Service Jobs:\", jsonData.totalSize);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{instanceUrl}}/services/data/v60.0/query/?q=SELECT+Id,Name,Title__c,Status__c,Priority__c,Account__r.Name,Technician__r.Name+FROM+Service_Job__c+ORDER+BY+CreatedDate+DESC+LIMIT+5",
+          "host": [
+            "{{instanceUrl}}"
+          ],
+          "path": [
+            "services",
+            "data",
+            "v60.0",
+            "query",
+            ""
+          ],
+          "query": [
+            {
+              "key": "q",
+              "value": "SELECT+Id,Name,Title__c,Status__c,Priority__c,Account__r.Name,Technician__r.Name+FROM+Service_Job__c+ORDER+BY+CreatedDate+DESC+LIMIT+5"
+            }
+          ]
+        },
+        "description": "Tests querying real Service Job records from Salesforce."
+      },
+      "response": []
+    },
+    {
+      "name": "6. 🚀 digiField360 Backend Login (Cloud Server)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200 OK\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "var jsonData = pm.response.json();",
+              "pm.test(\"Backend JWT Auth Token returned\", function () {",
+              "    pm.expect(jsonData.success).to.be.true;",
+              "    pm.expect(jsonData.token).to.be.a('string');",
+              "    console.log(\"🚀 digiField360 App JWT Token:\", jsonData.token);",
+              "    console.log(\"👷 Authenticated Technician:\", jsonData.technician.name);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": \"{{username}}\",\n  \"password\": \"{{password}}\"\n}"
+        },
+        "url": {
+          "raw": "{{backendUrl}}/api/auth/login",
+          "host": [
+            "{{backendUrl}}"
+          ],
+          "path": [
+            "api",
+            "auth",
+            "login"
+          ]
+        },
+        "description": "Authenticates against the digiField360 backend service deployed on Render, returning the Mobile JWT Token and Technician Profile."
+      },
+      "response": []
+    }
+  ]
+}

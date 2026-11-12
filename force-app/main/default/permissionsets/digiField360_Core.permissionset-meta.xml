@@ -21,6 +21,24 @@
         <allowEdit>true</allowEdit>
         <allowRead>true</allowRead>
         <modifyAllRecords>true</modifyAllRecords>
+        <object>Work_Order_Line_Item__c</object>
+        <viewAllRecords>true</viewAllRecords>
+    </objectPermissions>
+    <objectPermissions>
+        <allowCreate>true</allowCreate>
+        <allowDelete>true</allowDelete>
+        <allowEdit>true</allowEdit>
+        <allowRead>true</allowRead>
+        <modifyAllRecords>true</modifyAllRecords>
+        <object>Service_Job__c</object>
+        <viewAllRecords>true</viewAllRecords>
+    </objectPermissions>
+    <objectPermissions>
+        <allowCreate>true</allowCreate>
+        <allowDelete>true</allowDelete>
+        <allowEdit>true</allowEdit>
+        <allowRead>true</allowRead>
+        <modifyAllRecords>true</modifyAllRecords>
         <object>Technician__c</object>
         <viewAllRecords>true</viewAllRecords>
     </objectPermissions>
@@ -87,6 +105,105 @@
         <object>Account</object>
         <viewAllRecords>true</viewAllRecords>
     </objectPermissions>
+    <objectPermissions>
+        <allowCreate>true</allowCreate>
+        <allowDelete>true</allowDelete>
+        <allowEdit>true</allowEdit>
+        <allowRead>true</allowRead>
+        <modifyAllRecords>true</modifyAllRecords>
+        <object>Work_Order_Pause_Log__c</object>
+        <viewAllRecords>true</viewAllRecords>
+    </objectPermissions>
+    <objectPermissions>
+        <allowCreate>true</allowCreate>
+        <allowDelete>true</allowDelete>
+        <allowEdit>true</allowEdit>
+        <allowRead>true</allowRead>
+        <modifyAllRecords>true</modifyAllRecords>
+        <object>Customer_Address__c</object>
+        <viewAllRecords>true</viewAllRecords>
+    </objectPermissions>
+    <objectPermissions>
+        <allowCreate>true</allowCreate>
+        <allowDelete>true</allowDelete>
+        <allowEdit>true</allowEdit>
+        <allowRead>true</allowRead>
+        <modifyAllRecords>true</modifyAllRecords>
+        <object>Asset_Feedback__c</object>
+        <viewAllRecords>true</viewAllRecords>
+    </objectPermissions>
+
+    <!-- Asset_Feedback__c Field Permissions -->
+    <fieldPermissions><field>Asset_Feedback__c.Asset__c</field><editable>true</editable><readable>true</readable></fieldPermissions>
+    <fieldPermissions><field>Asset_Feedback__c.Case__c</field><editable>true</editable><readable>true</readable></fieldPermissions>
+    <fieldPermissions><field>Asset_Feedback__c.Work_Order__c</field><editable>true</editable><readable>true</readable></fieldPermissions>
+    <fieldPermissions><field>Asset_Feedback__c.Work_Order_Line_Item__c</field><editable>true</editable><readable>true</readable></fieldPermissions>
+    <fieldPermissions><field>Asset_Feedback__c.Technician__c</field><editable>true</editable><readable>true</readable></fieldPermissions>
+    <fieldPermissions><field>Asset_Feedback__c.Feedback_Type__c</field><editable>true</editable><readable>true</readable></fieldPermissions>
+    <fieldPermissions><field>Asset_Feedback__c.Operational_Status__c</field><editable>true</editable><readable>true</readable></fieldPermissions>
+    <fieldPermissions><field>Asset_Feedback__c.Asset_Condition__c</field><editable>true</editable><readable>true</readable></fieldPermissions>
+    <fieldPermissions><field>Asset_Feedback__c.Rating__c</field><editable>true</editable><readable>true</readable></fieldPermissions>
+    <fieldPermissions><field>Asset_Feedback__c.Feedback_Notes__c</field><editable>true</editable><readable>true</readable></fieldPermissions>
+    <fieldPermissions><field>Asset_Feedback__c.Recommended_Action__c</field><editable>true</editable><readable>true</readable></fieldPermissions>
+    <fieldPermissions><field>Asset_Feedback__c.Pre_Service_Photo_URL__c</field><editable>true</editable><readable>true</readable></fieldPermissions>
+    <fieldPermissions><field>Asset_Feedback__c.Post_Service_Photo_URL__c</field><editable>true</editable><readable>true</readable></fieldPermissions>
+
+    <!-- Customer_Address__c Field Permissions -->
+    <fieldPermissions><field>Customer_Address__c.Account__c</field><editable>true</editable><readable>true</readable></fieldPermissions>
+    <fieldPermissions><field>Customer_Address__c.Street_Address__c</field><editable>true</editable><readable>true</readable></fieldPermissions>
+    <fieldPermissions><field>Customer_Address__c.Landmark__c</field><editable>true</editable><readable>true</readable></fieldPermissions>
+    <fieldPermissions><field>Customer_Address__c.City__c</field><editable>true</editable><readable>true</readable></fieldPermissions>
+    <fieldPermissions><field>Customer_Address__c.State__c</field><editable>true</editable><readable>true</readable></fieldPermissions>
+    <fieldPermissions><field>Customer_Address__c.Postal_Code__c</field><editable>true</editable><readable>true</readable></fieldPermissions>
+    <fieldPermissions><field>Customer_Address__c.Country__c</field><editable>true</editable><readable>true</readable></fieldPermissions>
+    <fieldPermissions><field>Customer_Address__c.Contact_Person_Name__c</field><editable>true</editable><readable>true</readable></fieldPermissions>
+    <fieldPermissions><field>Customer_Address__c.Contact_Phone__c</field><editable>true</editable><readable>true</readable></fieldPermissions>
+    <fieldPermissions><field>Customer_Address__c.Is_Default__c</field><editable>true</editable><readable>true</readable></fieldPermissions>
+
+    <!-- Case Service Address Field Permission -->
+    <fieldPermissions><field>Case.Customer_Address__c</field><editable>true</editable><readable>true</readable></fieldPermissions>
+
+    <!-- Work_Order_Line_Item__c Enhanced Field Permissions -->
+    <fieldPermissions><field>Work_Order_Line_Item__c.Operational_Status__c</field><editable>true</editable><readable>true</readable></fieldPermissions>
+    <fieldPermissions><field>Work_Order_Line_Item__c.Technician_Feedback__c</field><editable>true</editable><readable>true</readable></fieldPermissions>
+    <fieldPermissions><field>Work_Order_Line_Item__c.Asset_Condition__c</field><editable>true</editable><readable>true</readable></fieldPermissions>
+    <fieldPermissions><field>Work_Order_Line_Item__c.Pre_Service_Photo_Id__c</field><editable>true</editable><readable>true</readable></fieldPermissions>
+    <fieldPermissions><field>Work_Order_Line_Item__c.Post_Service_Photo_Id__c</field><editable>true</editable><readable>true</readable></fieldPermissions>
+    <fieldPermissions><field>Work_Order_Line_Item__c.Pre_Service_Photo_URL__c</field><editable>true</editable><readable>true</readable></fieldPermissions>
+    <fieldPermissions><field>Work_Order_Line_Item__c.Post_Service_Photo_URL__c</field><editable>true</editable><readable>true</readable></fieldPermissions>
+
+    <!-- Work_Order_Pause_Log__c Field Permissions -->
+    <fieldPermissions><field>Work_Order_Pause_Log__c.Work_Order__c</field><editable>true</editable><readable>true</readable></fieldPermissions>
+    <fieldPermissions><field>Work_Order_Pause_Log__c.Pause_Reason__c</field><editable>true</editable><readable>true</readable></fieldPermissions>
+    <fieldPermissions><field>Work_Order_Pause_Log__c.Description__c</field><editable>true</editable><readable>true</readable></fieldPermissions>
+    <fieldPermissions><field>Work_Order_Pause_Log__c.Dependency__c</field><editable>true</editable><readable>true</readable></fieldPermissions>
+    <fieldPermissions><field>Work_Order_Pause_Log__c.Paused_At__c</field><editable>true</editable><readable>true</readable></fieldPermissions>
+    <fieldPermissions><field>Work_Order_Pause_Log__c.Expected_Resume_Date__c</field><editable>true</editable><readable>true</readable></fieldPermissions>
+    <fieldPermissions><field>Work_Order_Pause_Log__c.Responsible_Team__c</field><editable>true</editable><readable>true</readable></fieldPermissions>
+    <fieldPermissions><field>Work_Order_Pause_Log__c.Resumed_At__c</field><editable>true</editable><readable>true</readable></fieldPermissions>
+    <fieldPermissions><field>Work_Order_Pause_Log__c.Resume_Comments__c</field><editable>true</editable><readable>true</readable></fieldPermissions>
+    <fieldPermissions><field>Work_Order_Pause_Log__c.Duration_Minutes__c</field><editable>true</editable><readable>true</readable></fieldPermissions>
+
+    <!-- Asset__c New Field Permissions -->
+    <fieldPermissions><field>Asset__c.Manufacturer__c</field><editable>true</editable><readable>true</readable></fieldPermissions>
+    <fieldPermissions><field>Asset__c.Model__c</field><editable>true</editable><readable>true</readable></fieldPermissions>
+    <fieldPermissions><field>Asset__c.Status__c</field><editable>true</editable><readable>true</readable></fieldPermissions>
+    <fieldPermissions><field>Asset__c.Specifications__c</field><editable>true</editable><readable>true</readable></fieldPermissions>
+
+    <!-- Work_Order__c New Field Permissions -->
+    <fieldPermissions><field>Work_Order__c.Asset__c</field><editable>true</editable><readable>true</readable></fieldPermissions>
+    <fieldPermissions><field>Work_Order__c.Current_Pause_Reason__c</field><editable>true</editable><readable>true</readable></fieldPermissions>
+    <fieldPermissions><field>Work_Order__c.Current_Pause_Description__c</field><editable>true</editable><readable>true</readable></fieldPermissions>
+    <fieldPermissions><field>Work_Order__c.Current_Pause_Dependency__c</field><editable>true</editable><readable>true</readable></fieldPermissions>
+    <fieldPermissions><field>Work_Order__c.Paused_DateTime__c</field><editable>true</editable><readable>true</readable></fieldPermissions>
+    <fieldPermissions><field>Work_Order__c.Expected_Resume_Date__c</field><editable>true</editable><readable>true</readable></fieldPermissions>
+    <fieldPermissions><field>Work_Order__c.Paused_Owner_Team__c</field><editable>true</editable><readable>true</readable></fieldPermissions>
+    <fieldPermissions><field>Work_Order__c.Total_Paused_Minutes__c</field><editable>true</editable><readable>true</readable></fieldPermissions>
+    <fieldPermissions><field>Work_Order__c.Last_Resume_DateTime__c</field><editable>true</editable><readable>true</readable></fieldPermissions>
+    <fieldPermissions><field>Work_Order__c.Last_Resume_Comments__c</field><editable>true</editable><readable>true</readable></fieldPermissions>
+
+    <!-- Parts_Request__c New Field Permissions -->
+    <fieldPermissions><field>Parts_Request__c.Work_Order__c</field><editable>true</editable><readable>true</readable></fieldPermissions>
 
     <!-- Work_Order__c Field Permissions -->
     <fieldPermissions><field
@@ -137,6 +254,12 @@
     >true</editable><readable>true</readable></fieldPermissions>
     <fieldPermissions><field
     >Work_Order__c.Time_Logged_Minutes__c</field><editable
+    >true</editable><readable>true</readable></fieldPermissions>
+    <fieldPermissions><field>Work_Order__c.Case__c</field><editable
+    >true</editable><readable>true</readable></fieldPermissions>
+    <fieldPermissions><field>Service_Job__c.Case__c</field><editable
+    >true</editable><readable>true</readable></fieldPermissions>
+    <fieldPermissions><field>Service_Job__c.Work_Order__c</field><editable
     >true</editable><readable>true</readable></fieldPermissions>
 
     <!-- Technician__c Field Permissions -->
@@ -380,4 +503,104 @@
         <apexClass>F360_TestDataSetup</apexClass>
         <enabled>true</enabled>
     </classAccesses>
+    <applicationVisibilities>
+        <application>digifiled_360</application>
+        <visible>true</visible>
+    </applicationVisibilities>
+    <applicationVisibilities>
+        <application>DigiField_360</application>
+        <visible>true</visible>
+    </applicationVisibilities>
+    <tabSettings>
+        <tab>Service_Job__c</tab>
+        <visibility>Visible</visibility>
+    </tabSettings>
+    <tabSettings>
+        <tab>Asset__c</tab>
+        <visibility>Visible</visibility>
+    </tabSettings>
+    <tabSettings>
+        <tab>Technician__c</tab>
+        <visibility>Visible</visibility>
+    </tabSettings>
+    <tabSettings>
+        <tab>Part__c</tab>
+        <visibility>Visible</visibility>
+    </tabSettings>
+    <tabSettings>
+        <tab>Depot__c</tab>
+        <visibility>Visible</visibility>
+    </tabSettings>
+    <tabSettings>
+        <tab>Parts_Stock__c</tab>
+        <visibility>Visible</visibility>
+    </tabSettings>
+    <tabSettings>
+        <tab>Parts_Request__c</tab>
+        <visibility>Visible</visibility>
+    </tabSettings>
+    <tabSettings>
+        <tab>SLA_Config__c</tab>
+        <visibility>Visible</visibility>
+    </tabSettings>
+    <tabSettings>
+        <tab>CSAT__c</tab>
+        <visibility>Visible</visibility>
+    </tabSettings>
+    <tabSettings>
+        <tab>Attendance__c</tab>
+        <visibility>Visible</visibility>
+    </tabSettings>
+    <tabSettings>
+        <tab>GPS_Log__c</tab>
+        <visibility>Visible</visibility>
+    </tabSettings>
+    <tabSettings>
+        <tab>Service_Zone__c</tab>
+        <visibility>Visible</visibility>
+    </tabSettings>
+    <tabSettings>
+        <tab>Skill__c</tab>
+        <visibility>Visible</visibility>
+    </tabSettings>
+    <tabSettings>
+        <tab>Service_Contract__c</tab>
+        <visibility>Visible</visibility>
+    </tabSettings>
+    <tabSettings>
+        <tab>Job_Activity__c</tab>
+        <visibility>Visible</visibility>
+    </tabSettings>
+    <tabSettings>
+        <tab>SLA_Event__c</tab>
+        <visibility>Visible</visibility>
+    </tabSettings>
+    <tabSettings>
+        <tab>DF360_Dispatch_Console</tab>
+        <visibility>Visible</visibility>
+    </tabSettings>
+    <tabSettings>
+        <tab>DF360_Manager_Dashboard</tab>
+        <visibility>Visible</visibility>
+    </tabSettings>
+    <tabSettings>
+        <tab>DF360_GPS_Radar</tab>
+        <visibility>Visible</visibility>
+    </tabSettings>
+    <tabSettings>
+        <tab>DF360_Guru_AI</tab>
+        <visibility>Visible</visibility>
+    </tabSettings>
+    <tabSettings>
+        <tab>DF360_Attendance_Hub</tab>
+        <visibility>Visible</visibility>
+    </tabSettings>
+    <tabSettings>
+        <tab>Dispatch_Board</tab>
+        <visibility>Visible</visibility>
+    </tabSettings>
+    <tabSettings>
+        <tab>Work_Order__c</tab>
+        <visibility>Visible</visibility>
+    </tabSettings>
 </PermissionSet>

@@ -1,0 +1,1024 @@
+digiField360.ai
+Technical Architecture Document
+Salesforce Edition  v1.0
+Attribute
+Detail
+Product
+digiField360.ai — Salesforce Edition
+Namespace
+DF360__
+Document Type
+Technical Architecture Document (TechArch)
+Version
+1.0
+Salesforce API
+v61.0 (Summer 2026)
+Agentforce
+Agent Actions + Prompt Builder + Einstein Trust Layer
+Mobile
+Flutter 3.x — same codebase as digiSFA app, separate modules
+Date
+August 2026
+Prepared By
+digiCloud Solutions — Solution Architecture Team
+1. Architecture Overview
+digiField360.ai Salesforce Edition is a managed package (DF360__) deployed on a Salesforce Enterprise org. It follows the same architectural philosophy as digiSFA: Salesforce as the platform of record, Agentforce as the AI backbone, Flutter as the offline-capable mobile client, and Meta WhatsApp Business API as the primary customer communication channel.
+The two products (digiSFA and digiField360) are designed to co-exist in the same Salesforce org. They share Named Credentials, the WhatsApp service infrastructure, and the Firebase push notification channel, while operating in separate namespaces (dSFA__ and DF360__) with no object overlap.
+1.1 Platform Stack
+Layer
+Technology
+Purpose
+Data Platform
+Salesforce Enterprise (v61.0)
+Custom objects, SOQL, FLS, sharing rules, platform events
+AI / Agents
+Agentforce — 5 agents (DF360-001 to DF360-005)
+Autonomous dispatch, SLA monitoring, parts expediting, analytics, customer comms
+Backend Logic
+Apex (13 controller classes + triggers + batch)
+All server-side business logic, external callouts, calculations
+Automation
+Salesforce Flows (8 flows)
+Status transitions, SLA escalation, CSAT dispatch, parts approval routing
+UI — Desktop
+Lightning Web Components (12 LWC)
+Service manager dashboard, dispatch board, job detail, parts management
+UI — Mobile
+Flutter 3.x (shared with digiSFA)
+Technician offline app: job list, activity log, parts request, GPS, signature
+Customer Comms
+Meta WhatsApp Business API (via dSFA_MetaWhatsApp Named Credential)
+Job updates, CSAT collection, SLA alerts to customers
+Push Notifications
+Firebase Cloud Messaging (dSFA_Firebase)
+Real-time job assignments to technician device
+Mapping
+Google Maps Distance Matrix API (dSFA_GoogleMaps)
+Technician travel time for AI dispatch scoring
+AI Vision
+Google Cloud Vision API (DF360_GoogleVision)
+Activity photo classification; damage detection
+Files
+Salesforce ContentVersion / ContentDocumentLink
+Job photos, customer signatures, parts receipts
+2. Custom Object Architecture — Detailed Specification
+2.1 Object Count: 18 Custom Objects
+💡  Object count derivation: each object maps to a distinct entity with its own lifecycle, relationships, and audit requirements. No objects are speculative. Standard Salesforce objects (Account, Contact, User, Case, Task, ContentVersion, FeedItem) are leveraged wherever possible.
+DF360__Service_Job__c — Core Job Record
+The central object. Every field service request creates one record. All other objects relate to it.
+Field API Name
+Label
+Type
+Key Rules
+DF360__Customer__c
+Customer
+Lookup(Account)
+Required. Sharing: technician sees only their zone
+DF360__Asset__c
+Asset
+Lookup(Asset__c)
+Required. Links to the equipment being serviced
+DF360__Technician__c
+Assigned Technician
+Lookup(Technician__c)
+Set by Dispatch AI; overrideable by manager
+DF360__Job_Type__c
+Job Type
+Picklist
+Installation / Repair / Preventive / Warranty / Inspection
+DF360__Status__c
+Status
+Picklist
+New / Assigned / En Route / On Site / In Progress / Parts Awaited / Completed / Cancelled
+DF360__Priority__c
+Priority
+Picklist
+Critical / High / Medium / Low — drives SLA selection
+DF360__SLA_Deadline__c
+SLA Deadline
+DateTime
+Computed by Flow from SLA_Config__c on creation
+DF360__SLA_Status__c
+SLA Status
+Formula(Text)
+Green / Amber / Red — computed from SLA_Deadline vs Now()
+DF360__Check_In_GPS__c
+Check-In Location
+Location
+Set by mobile on GPS check-in
+DF360__Check_In_Time__c
+Check-In Time
+DateTime
+When technician confirmed arrival on site
+DF360__Completed_Time__c
+Completed Time
+DateTime
+When job was closed
+DF360__Resolution_Time_Min__c
+Resolution Time (min)
+Number
+Computed: Completed_Time - Check_In_Time
+DF360__FTFR__c
+First Time Fix
+Checkbox
+Set True on completion; False if parts required return visit
+DF360__Contract__c
+Service Contract
+Lookup(Service_Contract__c)
+If AMC/warranty governs this job
+DF360__Source__c
+Source
+Picklist
+WhatsApp / Phone / Portal / Internal / Batch
+DF360__Notes__c
+Job Notes
+LongTextArea
+Internal field notes; not shared with customer
+DF360__Customer_Signature__c
+Customer Signature URL
+URL
+Salesforce File link to signature captured on mobile
+DF360__Technician__c — Technician Profile
+Extends the Salesforce User record with field-service-specific attributes.
+Field API Name
+Label
+Type
+Key Rules
+DF360__User__c
+User
+Lookup(User)
+Required; 1:1 with the technician's Salesforce user
+DF360__Zone__c
+Service Zone
+Lookup(Service_Zone__c)
+Determines job eligibility and dispatch radius
+DF360__Availability_Status__c
+Availability
+Picklist
+Available / On Job / On Break / Off Shift / On Leave
+DF360__Current_GPS__c
+Current Location
+Location
+Updated every 5 min by mobile app via GPS_Log sync
+DF360__CSAT_Avg_30d__c
+CSAT Avg (30 days)
+Number
+Roll-up from CSAT__c; used in dispatch scoring
+DF360__FTFR_Pct__c
+FTFR %
+Percent
+Roll-up from completed Service_Job__c
+DF360__Active_Job_Count__c
+Active Jobs
+Number
+Roll-up count of In Progress jobs
+DF360__Employee_Code__c
+Employee Code
+Text
+For HR / payroll integration
+DF360__Service_Zone__c — Geographic Zone
+Field API Name
+Label
+Type
+Notes
+DF360__Zone_Name__c
+Zone Name
+Text(100)
+e.g. "Mumbai North", "Bangalore East"
+DF360__Manager__c
+Zone Manager
+Lookup(User)
+Service Manager responsible for this zone
+DF360__Pin_Codes__c
+Pin Codes
+LongTextArea
+Comma-separated list of pin codes in zone
+DF360__Technician_Count__c
+Technician Count
+Roll-Up(Technician__c)
+Count of active technicians in zone
+DF360__Active__c
+Is Active
+Checkbox
+Inactive zones excluded from dispatch
+DF360__Skill__c and DF360__Technician_Skill__c — Skill Management
+Field (Skill__c)
+Type
+Notes
+DF360__Skill_Name__c
+Text(100)
+e.g. "AC Installation", "Inverter Repair", "CCTV Setup"
+DF360__Category__c
+Picklist
+Electrical / Mechanical / Electronics / Network / HVAC
+DF360__Cert_Required__c
+Checkbox
+True if a formal certification must be held
+Field (Technician_Skill__c)
+Type
+Notes
+DF360__Technician__c
+Lookup(Technician__c)
+Required
+DF360__Skill__c
+Lookup(Skill__c)
+Required
+DF360__Proficiency__c
+Picklist
+Beginner / Intermediate / Expert
+DF360__Cert_Expiry__c
+Date
+If Cert_Required = true; alert 30 days before expiry
+DF360__Asset__c — Customer Equipment
+Field API Name
+Label
+Type
+Notes
+DF360__Account__c
+Customer
+Lookup(Account)
+Required
+DF360__Serial_Number__c
+Serial Number
+Text(100)
+Unique identifier; used for warranty lookup
+DF360__Product_Name__c
+Product
+Text(200)
+Make and model of the equipment
+DF360__Product_Category__c
+Category
+Picklist
+AC / Inverter / CCTV / Printer / Generator / etc.
+DF360__Install_Date__c
+Install Date
+Date
+For warranty calculation
+DF360__Warranty_Expiry__c
+Warranty Expiry
+Date
+Auto-calculated from Install_Date + warranty period
+DF360__Location_Address__c
+Location
+TextArea
+Customer site address; used for GPS proximity
+DF360__GPS_Location__c
+GPS Location
+Location
+Coordinates of asset location
+DF360__Last_Service_Date__c
+Last Service
+Date
+Updated on Service_Job completion
+DF360__Visit_Count_30d__c
+Visits (30 days)
+Roll-Up(Service_Job__c)
+Repeat visit detection threshold
+DF360__Service_Contract__c — AMC / Warranty Contract
+Field API Name
+Type
+Notes
+DF360__Account__c
+Lookup(Account)
+Customer on contract
+DF360__Contract_Type__c
+Picklist
+AMC / Warranty / Extended Warranty / Pay Per Call
+DF360__Start_Date__c
+Date
+Contract start
+DF360__End_Date__c
+Date
+Contract end; alert 30 days before
+DF360__SLA_Response_Hrs__c
+Number
+First response SLA hours for this contract
+DF360__SLA_Resolution_Hrs__c
+Number
+Resolution SLA hours for this contract
+DF360__Max_Visits_Per_Year__c
+Number
+Visit cap before additional billing
+DF360__Status__c
+Picklist
+Active / Expired / Suspended
+DF360__SLA_Config__c — SLA Templates
+Field API Name
+Type
+Notes
+DF360__Product_Category__c
+Picklist
+Matches Asset.Product_Category. "All" = wildcard
+DF360__Customer_Tier__c
+Picklist
+Gold / Silver / Standard / All
+DF360__Priority__c
+Picklist
+Critical / High / Medium / Low / All
+DF360__Ack_SLA_Mins__c
+Number
+Minutes to acknowledge (call or WhatsApp)
+DF360__Response_SLA_Hrs__c
+Number
+Hours to first on-site response
+DF360__Resolution_SLA_Hrs__c
+Number
+Hours from creation to resolution
+DF360__Job_Activity__c — Work Log
+Field API Name
+Type
+Notes
+DF360__Service_Job__c
+Lookup(Service_Job__c)
+Required. Master-detail relationship
+DF360__Activity_Type__c
+Picklist
+Diagnosis / Repair / Replacement / Test / Observation / Photo
+DF360__Description__c
+LongTextArea
+Technician notes on activity performed
+DF360__Duration_Min__c
+Number
+Time spent on this activity
+DF360__Photo_URL__c
+URL
+Salesforce ContentVersion link for attached photo
+DF360__Part_Used__c
+Lookup(Part__c)
+If a part was consumed in this activity
+DF360__Quantity_Used__c
+Number
+Units of part consumed
+DF360__Part__c — Parts Catalogue
+Field API Name
+Type
+Notes
+DF360__Part_Code__c
+Text(50)
+Unique SKU — External ID for ERP sync
+DF360__Category__c
+Picklist
+Mechanical / Electrical / Electronic / Consumable
+DF360__Unit_Cost__c
+Currency
+Standard cost for billing and approval threshold check
+DF360__Compatible_Products__c
+TextArea
+Comma list of compatible product categories
+DF360__Is_Warranty_Item__c
+Checkbox
+True = free for warranty jobs; False = billable
+DF360__Lead_Time_Days__c
+Number
+Procurement lead time if out of stock
+DF360__Is_Active__c
+Checkbox
+Inactive parts hidden from mobile app catalogue
+DF360__Parts_Request__c — Parts Workflow
+Field API Name
+Type
+Notes
+DF360__Service_Job__c
+Lookup(Service_Job__c)
+Required
+DF360__Part__c
+Lookup(Part__c)
+Required
+DF360__Quantity__c
+Number
+Required
+DF360__Status__c
+Picklist
+Pending Approval / Approved / Rejected / Dispatched / Delivered / Returned
+DF360__Depot__c
+Lookup(Depot__c)
+Depot that will fulfil the request
+DF360__Approved_By__c
+Lookup(User)
+Set on approval
+DF360__Approved_At__c
+DateTime
+Approval timestamp
+DF360__Dispatched_At__c
+DateTime
+When dispatched from depot
+DF360__Delivered_At__c
+DateTime
+When received by technician
+DF360__Is_Warranty__c
+Checkbox
+Copied from Part__c.Is_Warranty_Item__c
+DF360__Parts_Stock__c — Depot Inventory
+One record per Part × Depot combination. Updated on every dispatch and return.
+Field API Name
+Type
+Notes
+DF360__Part__c
+Lookup(Part__c)
+Required
+DF360__Depot__c
+Lookup(Depot__c)
+Required
+DF360__Quantity_Available__c
+Number
+Current stock on hand
+DF360__Reorder_Level__c
+Number
+Alert triggers when Qty ≤ this value
+DF360__Quantity_Reserved__c
+Number
+Qty reserved for pending requests
+DF360__Last_Updated__c
+DateTime
+Timestamp of last stock movement
+DF360__Depot__c — Parts Depot
+Field API Name
+Type
+Notes
+DF360__Depot_Name__c
+Text(100)
+e.g. "Mumbai Central Depot"
+DF360__Zone__c
+Lookup(Service_Zone__c)
+Zone this depot primarily serves
+DF360__Address__c
+TextArea
+Full address
+DF360__GPS_Location__c
+Location
+Coordinates for proximity dispatch
+DF360__Manager__c
+Lookup(User)
+Depot manager
+DF360__Is_Active__c
+Checkbox
+Inactive depots excluded from dispatch
+DF360__CSAT__c — Customer Satisfaction
+Field API Name
+Type
+Notes
+DF360__Service_Job__c
+Lookup(Service_Job__c)
+One CSAT per job. Required.
+DF360__Rating__c
+Number(1)
+1–5 star rating
+DF360__Comment__c
+LongTextArea
+Customer comment (optional)
+DF360__Response_Date__c
+DateTime
+When customer responded
+DF360__Via_WhatsApp__c
+Checkbox
+True = collected via WhatsApp; False = in-app
+DF360__Is_Responded__c
+Checkbox
+False until rating received; non-responders excluded from KPI
+DF360__Alert_Sent__c
+Checkbox
+True once low-CSAT alert sent to manager
+DF360__SLA_Event__c — Immutable SLA Audit Log
+Append-only log. No update or delete allowed via Permission Sets. Records every SLA milestone.
+Field API Name
+Type
+Notes
+DF360__Service_Job__c
+Lookup(Service_Job__c)
+Required
+DF360__Event_Type__c
+Picklist
+Created / Acknowledged / Tech Assigned / On Site / Parts Awaited / Resolved / Breached / Escalated
+DF360__Timestamp__c
+DateTime
+Required — auto-populated on insert
+DF360__SLA_Remaining_Hrs__c
+Number
+SLA hours remaining at time of event
+DF360__Notes__c
+TextArea
+Auto-populated description of what triggered the event
+DF360__GPS_Log__c — Technician Location History
+Written every 5 minutes by the mobile app via Apex REST. Retained for 1 year.
+Field API Name
+Type
+Notes
+DF360__Technician__c
+Lookup(Technician__c)
+Required
+DF360__Latitude__c
+Number
+GPS latitude (6 decimal places)
+DF360__Longitude__c
+Number
+GPS longitude (6 decimal places)
+DF360__Accuracy_M__c
+Number
+GPS accuracy in metres
+DF360__Timestamp__c
+DateTime
+Required — time of reading
+DF360__Active_Job__c
+Lookup(Service_Job__c)
+The job the tech was on at this time (nullable)
+DF360__Battery_Pct__c
+Number
+Device battery % — for mobile health monitoring
+DF360__WhatsApp_Message__c — Communication Log
+Field API Name
+Type
+Notes
+DF360__Service_Job__c
+Lookup(Service_Job__c)
+Job this message relates to
+DF360__Customer_Mobile__c
+Phone
+Recipient phone number
+DF360__Template__c
+Text(100)
+Meta-approved template name
+DF360__Status__c
+Picklist
+Pending / Sent / Delivered / Read / Failed
+DF360__Sent_At__c
+DateTime
+When sent to Meta API
+DF360__Delivered_At__c
+DateTime
+Delivery confirmation from Meta webhook
+DF360__Error_Code__c
+Text(50)
+Meta error code if Failed
+DF360__Attendance__c — Technician Attendance
+Field API Name
+Type
+Notes
+DF360__Technician__c
+Lookup(Technician__c)
+Required
+DF360__Date__c
+Date
+Required
+DF360__Check_In_Time__c
+DateTime
+GPS-verified morning check-in
+DF360__Check_In_GPS__c
+Location
+GPS location at check-in
+DF360__Check_Out_Time__c
+DateTime
+End of shift
+DF360__Status__c
+Picklist
+Present / Absent / Half Day / Leave / Holiday
+DF360__Leave_Type__c
+Picklist
+Casual / Sick / Earned / LOP / Comp Off
+DF360__Hours_Worked__c
+Number
+Computed from check-in to check-out
+DF360__Notes__c
+TextArea
+Manager or self-logged notes
+3. Custom Object Count Summary
+#
+Object API Name
+Records Type
+Estimated Monthly Volume
+1
+DF360__Service_Job__c
+Transactional
+50,000 / month at scale
+2
+DF360__Technician__c
+Master
+Up to 5,000 records
+3
+DF360__Service_Zone__c
+Configuration
+10–200 zones per org
+4
+DF360__Skill__c
+Configuration
+50–500 skill records
+5
+DF360__Technician_Skill__c
+Junction
+10–20 per technician
+6
+DF360__Asset__c
+Master
+Up to 500,000 assets per org
+7
+DF360__Service_Contract__c
+Reference
+1–5 per major account
+8
+DF360__SLA_Config__c
+Configuration
+< 100 SLA template records
+9
+DF360__Job_Activity__c
+Child of Job
+3–8 per job = 150–400K / month
+10
+DF360__Part__c
+Catalogue
+500–20,000 part records
+11
+DF360__Parts_Request__c
+Transactional
+0.5–2 per job = 25–100K / month
+12
+DF360__Parts_Stock__c
+Inventory
+Part count × Depot count; < 50K records
+13
+DF360__Depot__c
+Master
+5–100 depot records per org
+14
+DF360__CSAT__c
+Child of Job
+1 per completed job
+15
+DF360__SLA_Event__c
+Audit
+5–10 events per job = 250–500K / month
+16
+DF360__GPS_Log__c
+High-volume Transactional
+12 × technician count per working day; managed by retention policy
+17
+DF360__WhatsApp_Message__c
+Communications Log
+5–6 per job = 250–300K / month
+18
+DF360__Attendance__c
+HR
+1 per technician per working day
+TOTAL CUSTOM OBJECTS
+18
+💡  GPS_Log__c will be the highest-volume object. For a 500-technician deployment with 8-hour shifts, this generates approximately 500 × 8 × 12 = 48,000 records per day. A Salesforce Data Management Policy should be configured to archive GPS logs older than 1 year to Salesforce Backup or external storage.
+4. Apex Architecture
+4.1 Controller Classes
+Class Name
+Scope
+Key Methods
+DF360_ServiceJobController
+Service manager + mobile
+createJob, updateStatus, getDispatchBoard, getJobDetail, completeJob
+DF360_TechnicianController
+Mobile app + manager
+getTodaysJobs, checkIn, checkOut, getAvailability
+DF360_DispatchController
+Dispatch AI + manager
+findBestTechnician, assignJob, overrideAssignment, getDispatchKPIs
+DF360_SLAController
+SLA engine + flows
+calculateSLADeadline, checkSLAStatus, createSLAEvent, getSLAReport
+DF360_PartsController
+Mobile + depot
+getCatalogue, raiseRequest, approveRequest, dispatchParts, updateStock
+DF360_CSATController
+Customer comms + analytics
+sendCSATRequest, recordResponse, getTechnicianCSAT, getZoneCSAT
+DF360_WhatsAppService
+All WhatsApp flows
+sendTemplate, handleWebhook, updateDeliveryStatus
+DF360_GPSController
+Mobile (REST API)
+logGPSPosition, getTechnicianPositions, getJobRoutes
+DF360_AttendanceController
+Mobile + HR
+markAttendance, getAttendanceSummary, getLeaveBalance
+DF360_AssetController
+Manager + mobile
+getAssetHistory, checkWarranty, updateLastService
+DF360_AnalyticsController
+Manager dashboard
+getDashboardKPIs, getSLAReport, getFTFRReport, getCSATTrends
+DF360_GuruAIController
+Mobile (AI chat)
+askGuruAI, getTechnicianContext, getJobRecommendations
+DF360_MobileAPIController
+Flutter REST endpoint
+@RestResource: receive GPS, job updates, photo metadata, parts requests from mobile
+4.2 Trigger Architecture
+Trigger Name
+SObject
+Events
+Handler Class
+DF360_ServiceJobTrigger
+Service_Job__c
+Before Insert, After Insert, After Update
+DF360_SLAController (SLA deadline calc, SLA_Event creation), DF360_WhatsAppService (customer notifications)
+DF360_PartsRequestTrigger
+Parts_Request__c
+After Insert, After Update
+DF360_PartsController (stock reservation, low-stock check, approval routing)
+DF360_CSATTrigger
+CSAT__c
+After Insert
+DF360_CSATController (low CSAT alert, technician rollup)
+DF360_GPSLogTrigger
+GPS_Log__c
+After Insert
+DF360_TechnicianController (update Technician.Current_GPS)
+4.3 Batch & Scheduled Apex
+Class Name
+Schedule
+Purpose
+DF360_SLAMonitorBatch
+Every 5 minutes (System.schedule)
+Scan all open jobs for SLA proximity; trigger escalations; create SLA_Events
+DF360_GPSLogRetentionBatch
+Daily at 01:00
+Delete GPS_Log records older than 365 days
+DF360_ContractExpiryBatch
+Daily at 07:00
+Flag Service_Contract records expiring in 30 days; Chatter alert to account manager
+DF360_CertExpiryBatch
+Daily at 07:00
+Flag Technician_Skill cert expiry in 30 days; alert to zone manager
+DF360_CSATRollupBatch
+Nightly at 00:30
+Recalculate Technician.CSAT_Avg_30d and FTFR_Pct from last 30 days of completed jobs
+5. Lightning Web Components
+Component
+User
+Description
+df360CDispatchBoard
+Service Manager
+Kanban view of today's jobs by status. Drag-and-drop reassignment. SLA RAG indicators. Filter by zone, technician, job type.
+df360CServiceJobDetail
+Service Manager + Admin
+Full job record view: timeline, activities, parts, CSAT, SLA history, WhatsApp log.
+df360CManagerDashboard
+Service Manager
+KPI tiles: jobs open, CSAT avg, FTFR, SLA compliance. Live GPS map. Agentforce alert feed. Date range selector.
+df360CGPSMap
+Service Manager
+Google Maps embed showing live technician locations. Colour-coded by availability. Click for job detail.
+df360CPartsApproval
+Service Manager
+Pending parts requests requiring approval. One-click approve/reject with optional note.
+df360CSLAReport
+Service Manager / Director
+SLA breach report: zone, technician, job type breakdown. Export to Excel.
+df360CCSATScorecard
+Service Manager / Director
+CSAT trends by technician and zone. Drill-down to individual low-CSAT jobs.
+df360CPartsInventory
+Parts Admin / Depot
+Stock levels per depot per part. Low-stock highlighted in red. Reorder trigger.
+df360CTechnicianProfile
+Service Manager
+Technician card: skills, CSAT, FTFR, current job, GPS status, availability.
+df360CAssetHistory
+Service Manager / Admin
+Timeline of all jobs for a specific asset. Repeat visit flag. RCA links.
+df360CGuruAIChat
+Service Manager (web version)
+AI chat interface for managers to query service analytics in natural language.
+df360CJobCreator
+Admin / Service Manager
+Quick job creation form with asset lookup, SLA preview, technician suggestion.
+6. Mobile Architecture (Flutter)
+The digiField360 mobile app is a module within the same Flutter codebase as digiSFA. Both products share the core offline sync engine, GPS manager, authentication module, and WhatsApp integration. The DF360 module adds field-service-specific screens.
+6.1 Mobile Screens — DF360 Module
+Screen
+Description
+Today's Jobs
+List of assigned jobs ordered by SLA urgency. SLA countdown timer. Swipe to start / pause / complete.
+Job Detail
+Customer and asset info. History of previous visits. Activity log. Parts list. Checklist (if configured). Status update controls.
+GPS Check-In
+Mandatory before starting a job. Shows distance from asset GPS. Override with manager PIN if outside radius.
+Activity Log
+Add observations, record time, attach photos (camera or gallery), scan part barcodes, log parts used.
+Parts Request
+Search parts catalogue. Specify quantity. Confirm warranty vs billable. View request status.
+Customer Signature
+Capture digital signature on screen. Photo confirmation of completed work.
+GuruAI
+AI troubleshooting assistant. Describe the fault; AI suggests diagnosis and repair steps from knowledge base.
+Attendance
+Morning check-in with GPS. Evening check-out. Leave request form.
+6.2 Offline Sync Architecture
+Data Category
+Offline Behaviour
+Sync Priority
+Today's job assignments
+Downloaded at app start; refreshed every 30 min on wifi
+P1 — immediate on reconnect
+Parts catalogue
+Downloaded daily; cached on device
+P3 — background sync
+Activity logs written offline
+Queued in SQLite; synced via Apex REST on reconnect
+P1 — immediate
+GPS positions while offline
+Stored in local queue; bulk synced on reconnect (max 200)
+P2 — within 60 seconds
+Photos captured offline
+Stored locally until connectivity returns; uploaded as ContentVersion
+P1 — upload before activity sync
+CSAT responses collected offline
+Queued; synced to DF360__CSAT__c on reconnect
+P2 — within 60 seconds
+7. Integration Architecture
+7.1 External API Calls
+API
+Named Credential
+Trigger
+Apex Method
+Meta WhatsApp Business
+dSFA_MetaWhatsApp
+Job status change, SLA alert, CSAT request
+DF360_WhatsAppService.sendTemplate(toMobile, templateName, paramsJson, languageCode)
+Google Maps Distance Matrix
+dSFA_GoogleMaps
+Dispatch AI technician scoring
+DF360_DispatchController.getTravelTime(originLat, originLng, destLat, destLng)
+Agentforce / LLM
+dSFA_AIService
+All 5 agents; GuruAI on mobile
+Per-agent @InvocableMethod + prompt payload
+Firebase Cloud Messaging
+dSFA_Firebase
+New job assigned to technician
+DF360_TechnicianController.sendPushNotification(techFCMToken, jobId, jobType)
+Google Cloud Vision
+DF360_GoogleVision
+Job activity photo uploaded
+DF360_ServiceJobController.classifyActivityPhoto(imageBase64)
+ERP (SAP / Oracle / Tally)
+DF360_ERP
+Daily parts cost sync; warranty validation
+DF360_PartsController.syncPartsFromERP() — Scheduled batch
+7.2 Salesforce Platform Events
+Event Name
+Publisher
+Subscriber
+Purpose
+DF360_Job_Assigned__e
+DF360_DispatchController
+Mobile app (via CDC)
+Push new job to technician immediately via Firebase
+DF360_SLA_Alert__e
+DF360_SLAMonitorBatch
+Manager dashboard (streaming)
+Live SLA RAG status update without page refresh
+DF360_Parts_Approved__e
+DF360_PartsController
+Mobile app
+Notify technician when parts request approved
+8. Security Architecture
+8.1 Data Visibility Rules
+Role
+Can See
+Cannot See
+Technician (DF360_Technician)
+Own Service_Job, own GPS_Log, own Attendance, own Parts_Request, Parts catalogue
+Other technicians' jobs, manager dashboard, CSAT of other techs, stock levels
+Service Manager (DF360_ServiceManager)
+All objects for their Service_Zone; all technicians in zone; all jobs in zone
+Jobs and technicians in other zones (unless explicitly shared)
+Parts Admin (DF360_PartsAdmin)
+Part, Parts_Stock, Depot, Parts_Request across all zones
+Service_Job, CSAT, GPS_Log, Attendance
+Analytics (DF360_Analytics)
+Read all DF360__ objects across all zones
+No write access to any object
+Customer (via Experience Cloud)
+Own Service_Job status, own CSAT submitted
+Internal notes, technician GPS, parts cost, SLA_Config
+8.2 Field-Level Security Highlights
+Object
+Sensitive Fields
+Restriction
+Service_Job__c
+Notes__c
+Hidden from Customer Experience Cloud profile
+Technician__c
+Employee_Code__c
+Visible to HR Permission Set only
+Part__c
+Unit_Cost__c
+Hidden from Technician permission set
+GPS_Log__c
+All fields
+Hidden from Customer; read-only for Technician
+SLA_Event__c
+All fields
+Read-only; no delete for any profile except System Admin
+9. Deployment Architecture
+9.1 Org Strategy
+Environment
+Purpose
+Refresh Cadence
+Production
+Live customer org with DF360__ + dSFA__ installed
+N/A
+UAT / Pre-Prod Sandbox
+Final testing before production deploy; seeded with sanitised data
+Monthly from Prod
+Developer Sandbox
+Active development and unit testing
+On demand
+Scratch Org (CI/CD)
+GitHub Actions automated testing on every PR
+Per PR
+9.2 Deploy Order
+Step 1: Custom Objects and Fields (18 objects, all fields)
+Step 2: SLA_Config__c seed data (10 default templates)
+Step 3: Permission Sets (6 sets)
+Step 4: Named Credentials (2 new: DF360_GoogleVision, DF360_ERP)
+Step 5: Apex Classes (13 controllers + 4 triggers + 5 batch classes)
+Step 6: Flows (8 flows)
+Step 7: Agentforce Agents (5 agents via Agent Builder)
+Step 8: LWC Components (12 components)
+Step 9: Mobile app (TestFlight / internal APK for beta; Play Store / App Store for GA)
+9.3 Package.xml Metadata Types
+Metadata Type
+Count
+CustomObject
+18
+CustomField
+~180 (avg 10 per object)
+PermissionSet
+6
+ApexClass
+22 (13 controllers + 4 triggers + 5 batches)
+Flow
+8
+LightningComponentBundle
+12
+NamedCredential
+2 new (+ 5 shared from dSFA__ — deployed separately)
+PlatformEventDefinition
+3
+10. Performance Considerations
+Concern
+Volume
+Mitigation
+GPS_Log__c write volume
+500 techs × 96 writes/8hr shift = 48,000 writes/day
+Use Platform Events → Apex trigger (async); batch insert; annual data retention policy
+SLA Monitor batch (every 5 min)
+50,000 open jobs at scale
+Stateful batch; process 200 records per chunk; use indexed fields (Status, SLA_Deadline)
+Dispatch AI response time
+60-second SLA for assignment
+Agentforce agent pre-loads technician availability on shift start; callout cached for 5 min
+WhatsApp_Message__c volume
+300,000 per month at scale
+Asynchronous @future callouts; Platform Events for high-volume jobs; Meta API rate limit: 80 msgs/sec
+Mobile sync on reconnect
+Up to 200 records queued
+REST batch endpoint; 200 records per request; ContentVersion uploaded separately
+SOQL governor limits
+Deep relationships on Service_Job
+Consolidate queries using WITH SECURITY_ENFORCED; avoid nested loops; use AggregateResult for KPIs
+11. Co-existence with digiSFA
+digiField360 and digiSFA are designed to co-exist in the same Salesforce org without conflict. The following rules govern co-existence:
+Concern
+Rule
+Namespace isolation
+All DF360 objects prefixed DF360__; all dSFA objects prefixed dSFA__. No shared custom objects.
+Shared Named Credentials
+5 Named Credentials (MetaWhatsApp, GoogleMaps, AIService, Razorpay, Firebase) are created once and referenced by both packages.
+Shared Apex services
+DF360_WhatsAppService references the same sendFromFlow() @InvocableMethod signature as dSFA_WhatsAppService. Built as a separate class to avoid compilation dependency.
+Permission Sets
+No overlap. A user can hold both DF360_Technician and dSFA_FieldRep if they do both roles (uncommon but possible).
+User object
+Both products write to custom User fields (dSFA__Territory__c and DF360__Zone reference). No field conflict.
+Org limits impact
+Combined 34 custom objects (16 dSFA + 18 DF360) against Salesforce Enterprise limit of 800. < 5% utilisation.
+12. Technical Risk Register
+Risk
+Impact
+Likelihood
+Mitigation
+GPS_Log data volume exceeds Salesforce storage allowance
+High
+Medium
+Annual deletion batch + Salesforce Backup archival. Estimate: 1M GPS records/month = ~500MB/month compressed.
+Agentforce Dispatch AI response > 60 seconds during peak load
+High
+Low
+Pre-warm technician availability cache; fallback to rule-based assignment if AI timeout > 30 seconds
+Meta WhatsApp API rate limiting during SLA breach wave
+Medium
+Medium
+Queue WhatsApp_Message__c records; process via async batch with exponential backoff
+ERP integration (DF360_ERP) version mismatch
+Medium
+High
+Build adapter pattern in DF360_PartsController; DF360_ERP Named Credential endpoint is configurable; separate connector per ERP type
+Flutter offline sync collision (same job updated on device + Salesforce simultaneously)
+High
+Low
+Last-write-wins with server timestamp precedence; Salesforce is system of record; mobile shows conflict resolution prompt

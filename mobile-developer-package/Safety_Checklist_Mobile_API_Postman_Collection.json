@@ -1,0 +1,1343 @@
+{
+  "info": {
+    "_postman_id": "df360-master-collection-v3-fixed-pam",
+    "name": "digiField360 — Master Fixed Mobile & PAM API Collection",
+    "description": "Production-ready REST API Collection for Mobile Developers (React Native, Flutter, iOS, Android, PWA) & MCP Client Integrations. Features automatic background authentication, pre-configured live environments, complete Work Order workflows, Safety Hazard Protocols, and Predictive & Preventive Asset Maintenance (PAM).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Auto-Authentication Pre-Request Script",
+          "// Ensures valid accessToken is always present before any API call",
+          "var baseUrl = pm.environment.get('baseUrl') || pm.collectionVariables.get('baseUrl') || 'https://digifields-360.onrender.com';",
+          "var token = pm.environment.get('accessToken') || pm.collectionVariables.get('accessToken');",
+          "var tokenExpiry = pm.environment.get('tokenExpiry') || pm.collectionVariables.get('tokenExpiry');",
+          "var username = pm.environment.get('username') || 'piyush.channe.3868c7575da5@agentforce.com';",
+          "var password = pm.environment.get('password') || 'India@2026#';",
+          "",
+          "var isAuthEndpoint = pm.request.url.getPath().indexOf('login') !== -1 || pm.request.url.getPath().indexOf('oauth') !== -1 || pm.request.url.getPath().indexOf('health') !== -1;",
+          "",
+          "if (!isAuthEndpoint && (!token || token.length < 10 || (tokenExpiry && Date.now() > Number(tokenExpiry)))) {",
+          "    console.log('🔄 Auto-Authentication: Fetching fresh Bearer Token from: ' + baseUrl + '/api/auth/login');",
+          "    pm.sendRequest({",
+          "        url: baseUrl + '/api/auth/login',",
+          "        method: 'POST',",
+          "        header: { 'Content-Type': 'application/json' },",
+          "        body: {",
+          "            mode: 'raw',",
+          "            raw: JSON.stringify({ username: username, password: password })",
+          "        }",
+          "    }, function (err, res) {",
+          "        if (!err && res.code === 200) {",
+          "            var data = res.json();",
+          "            if (data.token) {",
+          "                pm.collectionVariables.set('accessToken', data.token);",
+          "                pm.collectionVariables.set('tokenExpiry', Date.now() + 3600000);",
+          "                if (data.technician && data.technician.id) {",
+          "                    pm.collectionVariables.set('technicianId', data.technician.id);",
+          "                    pm.collectionVariables.set('technicianName', data.technician.name);",
+          "                }",
+          "                console.log('✅ Auto-Authentication Successful: Token refreshed.');",
+          "            }",
+          "        } else {",
+          "            console.warn('⚠️ Auto-Authentication note: ' + (err ? err.message : ('HTTP ' + res.code)));",
+          "        }",
+          "    });",
+          "}"
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "https://digifields-360.onrender.com",
+      "type": "string"
+    },
+    {
+      "key": "accessToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "tokenExpiry",
+      "value": "0",
+      "type": "string"
+    },
+    {
+      "key": "username",
+      "value": "piyush.channe.3868c7575da5@agentforce.com",
+      "type": "string"
+    },
+    {
+      "key": "password",
+      "value": "India@2026#",
+      "type": "string"
+    },
+    {
+      "key": "workOrderId",
+      "value": "WO-100482",
+      "type": "string"
+    },
+    {
+      "key": "technicianId",
+      "value": "a02g500000Bvf9mAAB",
+      "type": "string"
+    },
+    {
+      "key": "technicianName",
+      "value": "Piyush Channe",
+      "type": "string"
+    },
+    {
+      "key": "assetId",
+      "value": "AST-HVAC-100",
+      "type": "string"
+    },
+    {
+      "key": "alertId",
+      "value": "ALT-10492",
+      "type": "string"
+    },
+    {
+      "key": "checklistId",
+      "value": "a0X000000000000AAA",
+      "type": "string"
+    },
+    {
+      "key": "checklistItemId",
+      "value": "a0Y000000000000AAA",
+      "type": "string"
+    },
+    {
+      "key": "safetyCheckId",
+      "value": "SAF-202609-001",
+      "type": "string"
+    },
+    {
+      "key": "currentLat",
+      "value": "18.520430",
+      "type": "string"
+    },
+    {
+      "key": "currentLng",
+      "value": "73.856743",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "0. Authentication & Health Check",
+      "item": [
+        {
+          "name": "0.1 Server Health & API Discovery",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "health"
+              ]
+            },
+            "description": "Pings server and returns available endpoints and live Salesforce connection status. Use this to wake up cold Render instances."
+          }
+        },
+        {
+          "name": "0.2 Login & Obtain Bearer Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200 OK', function () { pm.response.to.have.status(200); });",
+                  "var data = pm.response.json();",
+                  "pm.test('Token returned', function () { pm.expect(data.token).to.be.a('string'); });",
+                  "if (data.token) {",
+                  "    pm.collectionVariables.set('accessToken', data.token);",
+                  "    pm.collectionVariables.set('tokenExpiry', Date.now() + 3600000);",
+                  "    if (data.technician) {",
+                  "        pm.collectionVariables.set('technicianId', data.technician.id);",
+                  "        pm.collectionVariables.set('technicianName', data.technician.name);",
+                  "    }",
+                  "    console.log('Saved token and technician profile.');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{username}}\",\n  \"password\": \"{{password}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Authenticates against Salesforce credentials and returns JWT session token, technician details, and profile skills."
+          }
+        },
+        {
+          "name": "0.3 Get Technician Profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/technician/profile",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "technician",
+                "profile"
+              ]
+            },
+            "description": "Fetches active technician details, skills, assigned zone, CSAT, and FTFR."
+          }
+        }
+      ]
+    },
+    {
+      "name": "1. PAM — Predictive & Preventive Asset Maintenance",
+      "item": [
+        {
+          "name": "1.1 PAM Fleet Health Dashboard",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/pam/dashboard",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "pam",
+                "dashboard"
+              ]
+            },
+            "description": "Fetches fleet reliability metrics, average health index, high-risk assets, and active anomaly alerts."
+          }
+        },
+        {
+          "name": "1.2 Get Monitored Assets List",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/pam/assets",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "pam",
+                "assets"
+              ]
+            },
+            "description": "Lists all monitored plant equipment, current health scores, risk levels, and upcoming PM inspection dates."
+          }
+        },
+        {
+          "name": "1.3 Get Asset Health & Telemetry Degradation",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/pam/assets/{{assetId}}/health",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "pam",
+                "assets",
+                "{{assetId}}",
+                "health"
+              ]
+            },
+            "description": "Detailed diagnostic view: Real-time sensor metrics (Vibration, Temp, Pressure), remaining useful life (RUL), and AI maintenance recommendations."
+          }
+        },
+        {
+          "name": "1.4 Get Active Predictive Maintenance Alerts",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/pam/alerts",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "pam",
+                "alerts"
+              ]
+            },
+            "description": "Retrieves active anomaly alerts generated by IoT thresholds or AI predictive models."
+          }
+        },
+        {
+          "name": "1.5 Record Field Telemetry & Sensor Readings",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"assetId\": \"{{assetId}}\",\n  \"technicianId\": \"{{technicianId}}\",\n  \"readings\": {\n    \"vibrationRMS\": 3.4,\n    \"temperatureC\": 88.5,\n    \"pressurePSI\": 158,\n    \"motorCurrentA\": 46.2,\n    \"acousticDB\": 74\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/pam/telemetry/record",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "pam",
+                "telemetry",
+                "record"
+              ]
+            },
+            "description": "Logs live sensor readings during inspection; automatically flags anomalies and triggers alert if thresholds are breached."
+          }
+        },
+        {
+          "name": "1.6 Auto-Schedule Preventive Maintenance Work Order",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"assetId\": \"{{assetId}}\",\n  \"subject\": \"Preventive Chiller Inspection & Compressor Overhaul\",\n  \"priority\": \"High\",\n  \"technicianId\": \"{{technicianId}}\",\n  \"scheduledDate\": \"2026-09-29T05:34:59.469Z\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/pam/preventive-schedule",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "pam",
+                "preventive-schedule"
+              ]
+            },
+            "description": "Creates an automated Preventive Work Order in Salesforce linked to the asset and assigns it to technician."
+          }
+        },
+        {
+          "name": "1.7 Resolve Maintenance Alert",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"technicianId\": \"{{technicianId}}\",\n  \"notes\": \"Replaced high-pressure seal and recalibrated vibration sensor. Telemetry returned to normal baseline.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/pam/alerts/{{alertId}}/resolve",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "pam",
+                "alerts",
+                "{{alertId}}",
+                "resolve"
+              ]
+            },
+            "description": "Closes open anomaly alert with technician resolution log."
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Work Orders & Field Dispatch",
+      "item": [
+        {
+          "name": "2.1 List Assigned Work Orders",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/work-orders?status=Assigned",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "work-orders"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "Assigned"
+                }
+              ]
+            },
+            "description": "Fetches list of Work Orders assigned to the logged-in technician."
+          }
+        },
+        {
+          "name": "2.2 Get Work Order Detail & Equipment History",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/work-orders/{{workOrderId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "work-orders",
+                "{{workOrderId}}"
+              ]
+            },
+            "description": "Retrieves full Work Order details along with 3 past job histories on this equipment."
+          }
+        },
+        {
+          "name": "2.3 Update Work Order Status (In Progress / On Site)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"In Progress\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/work-orders/{{workOrderId}}/status",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "work-orders",
+                "{{workOrderId}}",
+                "status"
+              ]
+            },
+            "description": "Updates Work Order status in Salesforce."
+          }
+        },
+        {
+          "name": "2.4 Log Working Time",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"minutes\": 75,\n  \"activity\": \"Diagnostics and part replacement\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/work-orders/{{workOrderId}}/time-log",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "work-orders",
+                "{{workOrderId}}",
+                "time-log"
+              ]
+            },
+            "description": "Logs on-site labor minutes to Work Order."
+          }
+        },
+        {
+          "name": "2.5 Complete Work Order & Generate Service Report",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"technicianNotes\": \"Replaced faulty HVAC compressor valve, refilled R410A refrigerant, tested cooling output.\",\n  \"partsUsed\": \"Compressor Valve (EV-410), Refrigerant 5kg\",\n  \"customerSignature\": \"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==\",\n  \"customerSignerName\": \"Rajesh Sharma\",\n  \"customerSignerEmail\": \"rajesh@tatacommunications.com\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/work-orders/{{workOrderId}}/complete",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "work-orders",
+                "{{workOrderId}}",
+                "complete"
+              ]
+            },
+            "description": "Marks Work Order completed, uploads customer signature, and triggers AI service report."
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Safety Checklist & Hazard Protocols",
+      "item": [
+        {
+          "name": "3.1 Get Pre-Job Safety Protocols & Hazard Clearance",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/work-orders/{{workOrderId}}/safety-check",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "work-orders",
+                "{{workOrderId}}",
+                "safety-check"
+              ]
+            },
+            "description": "Fetches required PPE checklist, site hazard clearance protocols, risk assessment, and safety warnings tailored to equipment."
+          }
+        },
+        {
+          "name": "3.2 Submit Technician Safety Verification",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"technicianId\": \"{{technicianId}}\",\n  \"siteRiskLevel\": \"HIGH\",\n  \"ppeVerified\": {\n    \"dielectricGloves\": true,\n    \"safetyGoggles\": true,\n    \"steelToeBoots\": true,\n    \"hardHat\": true,\n    \"hearingProtection\": true\n  },\n  \"hazardChecks\": [\n    {\n      \"hazardCode\": \"LOTO_APPLIED\",\n      \"verified\": true\n    },\n    {\n      \"hazardCode\": \"ZERO_ENERGY_STATE\",\n      \"verified\": true\n    },\n    {\n      \"hazardCode\": \"BATTERY_ISOLATION\",\n      \"verified\": true\n    }\n  ],\n  \"gpsLocation\": {\n    \"latitude\": 19.076,\n    \"longitude\": 72.8777\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/work-orders/{{workOrderId}}/safety-check",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "work-orders",
+                "{{workOrderId}}",
+                "safety-check"
+              ]
+            },
+            "description": "Submits pre-work safety sign-off."
+          }
+        },
+        {
+          "name": "3.3 Get Dynamic Multi-Section Inspection Checklist",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/work-orders/{{workOrderId}}/checklist",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "work-orders",
+                "{{workOrderId}}",
+                "checklist"
+              ]
+            },
+            "description": "Retrieves complete dynamic checklist with physical, electrical, telemetry, and safety items."
+          }
+        },
+        {
+          "name": "3.4 Submit Batch Inspection Checklist",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"workOrderId\": \"{{workOrderId}}\",\n  \"technicianId\": \"{{technicianId}}\",\n  \"totalItems\": 4,\n  \"passedItems\": 4,\n  \"failedItems\": 0,\n  \"gpsLatitude\": 19.076,\n  \"gpsLongitude\": 72.8777,\n  \"signatureBase64\": \"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==\",\n  \"items\": [\n    {\n      \"itemId\": \"CHK-01\",\n      \"status\": \"PASSED\",\n      \"remarks\": \"Breakers inspected, zero burn marks\"\n    },\n    {\n      \"itemId\": \"CHK-02\",\n      \"status\": \"PASSED\",\n      \"measuredValue\": 415.2,\n      \"remarks\": \"Phase voltage balanced\"\n    },\n    {\n      \"itemId\": \"CHK-03\",\n      \"status\": \"PASSED\",\n      \"measuredValue\": 72.5,\n      \"remarks\": \"Normal operating thermal reading\"\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/work-orders/{{workOrderId}}/checklist/submit",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "work-orders",
+                "{{workOrderId}}",
+                "checklist",
+                "submit"
+              ]
+            },
+            "description": "Submits entire completed checklist with GPS and signature."
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Morning Sync & Offline Data",
+      "item": [
+        {
+          "name": "4.1 Morning Sync Payload (Offline DB Seeding)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/sync/morning-payload",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "sync",
+                "morning-payload"
+              ]
+            },
+            "description": "Downloads complete offline dataset: Assigned jobs, equipment history, parts catalogue, safety templates, and emergency contacts."
+          }
+        },
+        {
+          "name": "4.2 Replay Offline Mutations Queue",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"mutations\": [\n    {\n      \"id\": \"MUT-01\",\n      \"type\": \"UPDATE_STATUS\",\n      \"workOrderId\": \"{{workOrderId}}\",\n      \"payload\": {\n        \"status\": \"In Progress\"\n      },\n      \"timestamp\": \"2026-09-28T05:34:59.471Z\"\n    },\n    {\n      \"id\": \"MUT-02\",\n      \"type\": \"LOG_TIME\",\n      \"workOrderId\": \"{{workOrderId}}\",\n      \"payload\": {\n        \"minutes\": 45\n      },\n      \"timestamp\": \"2026-09-28T05:34:59.471Z\"\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/sync/offline-queue",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "sync",
+                "offline-queue"
+              ]
+            },
+            "description": "Synchronizes pending offline updates created during field connectivity outages."
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Parts & Inventory Management",
+      "item": [
+        {
+          "name": "5.1 Get Parts Catalogue",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/parts",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "parts"
+              ]
+            },
+            "description": "Fetches warehouse spare parts catalog with part codes, unit costs, and categories."
+          }
+        },
+        {
+          "name": "5.2 Submit Urgent Spare Parts Request",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"partCode\": \"CV-KIT-01\",\n  \"quantity\": 1,\n  \"urgency\": \"HIGH\",\n  \"notes\": \"Replacement required for Chiller Unit 100 on-site breakdown\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/jobs/{{workOrderId}}/parts-requests",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "jobs",
+                "{{workOrderId}}",
+                "parts-requests"
+              ]
+            },
+            "description": "Requests urgent spare parts dispatch to technician GPS coordinates."
+          }
+        }
+      ]
+    },
+    {
+      "name": "6. AI & Agentforce Diagnostics",
+      "item": [
+        {
+          "name": "6.1 Generate AI Pre-Job Briefing",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"workOrderId\": \"{{workOrderId}}\",\n  \"language\": \"en\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/ai/pre-job-briefing",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "ai",
+                "pre-job-briefing"
+              ]
+            },
+            "description": "Generates AI pre-job risk assessment, probable root causes, recommended tools, and safety warnings."
+          }
+        },
+        {
+          "name": "6.2 Diagnostic Guru & Troubleshooting",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"equipmentType\": \"HVAC\",\n  \"symptoms\": \"Blower fan running but no cool air; compressor tripping on thermal overload after 10 minutes\",\n  \"historyContext\": \"Past failure on EV-410 expansion valve\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/ai/troubleshoot",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "ai",
+                "troubleshoot"
+              ]
+            },
+            "description": "Returns step-by-step diagnostic guide with safety hazards highlighted."
+          }
+        },
+        {
+          "name": "6.3 AI Natural Language Query",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"prompt\": \"Show me all high priority open work orders in Mumbai West zone\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/ai/query",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "ai",
+                "query"
+              ]
+            },
+            "description": "Dynamically translates natural language prompt into SOQL and executes securely against Salesforce."
+          }
+        }
+      ]
+    },
+    {
+      "name": "7. Direct Apex REST (SafetyChecklistRESTService)",
+      "item": [
+        {
+          "name": "7.1 Get Checklist Templates (Apex REST)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/services/apexrest/api/safety-checklist/templates",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "services",
+                "apexrest",
+                "api",
+                "safety-checklist",
+                "templates"
+              ]
+            },
+            "description": "Direct Apex REST endpoint mapping to SafetyChecklistRESTService handleGet()."
+          }
+        },
+        {
+          "name": "7.2 Get Checklists by Work Order (Apex REST)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/services/apexrest/api/safety-checklist/work-order/{{workOrderId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "services",
+                "apexrest",
+                "api",
+                "safety-checklist",
+                "work-order",
+                "{{workOrderId}}"
+              ]
+            },
+            "description": "Fetches safety inspections linked to Work Order directly via Apex REST."
+          }
+        },
+        {
+          "name": "7.3 Submit Safety Checklist with Items & GPS (Apex REST)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"workOrderId\": \"{{workOrderId}}\",\n  \"technicianId\": \"{{technicianId}}\",\n  \"technicianName\": \"{{technicianName}}\",\n  \"gpsLatitude\": 19.076,\n  \"gpsLongitude\": 72.8777,\n  \"signatureBase64\": \"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==\",\n  \"items\": [\n    {\n      \"questionText\": \"Is equipment isolated via LOTO?\",\n      \"category\": \"PPE & Isolation\",\n      \"isPassed\": true\n    },\n    {\n      \"questionText\": \"Are dielectric gloves & PPE worn?\",\n      \"category\": \"PPE & Isolation\",\n      \"isPassed\": true\n    },\n    {\n      \"questionText\": \"Measured Voltage reading within safe limit?\",\n      \"category\": \"Telemetry\",\n      \"isPassed\": true,\n      \"measuredValue\": 415.2\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/services/apexrest/api/safety-checklist/submit",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "services",
+                "apexrest",
+                "api",
+                "safety-checklist",
+                "submit"
+              ]
+            },
+            "description": "Apex REST POST endpoint for submitting full safety audit."
+          }
+        }
+      ]
+    },
+    {
+      "name": "8. MCP JSON-RPC 2.0 Protocol",
+      "item": [
+        {
+          "name": "8.1 List MCP Tools",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": 1,\n  \"method\": \"tools/list\",\n  \"params\": {}\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/mcp",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "mcp"
+              ]
+            },
+            "description": "Retrieves list of MCP tools exposed to AI agents and external tools."
+          }
+        },
+        {
+          "name": "8.2 Call MCP Tool: get_work_order_safety_checklist",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": 2,\n  \"method\": \"tools/call\",\n  \"params\": {\n    \"name\": \"get_work_order_safety_checklist\",\n    \"arguments\": {\n      \"workOrderId\": \"{{workOrderId}}\"\n    }\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/mcp",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "mcp"
+              ]
+            },
+            "description": "Executes MCP tool to retrieve safety checklist and required PPE."
+          }
+        }
+      ]
+    },
+    {
+      "name": "10. Pre-Job Safety Protocols & Hazard Checklist (Screen 06)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status is 200 OK\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "var json = pm.response.json();",
+              "pm.test(\"Safety protocols returned successfully\", function () {",
+              "    pm.expect(json.success).to.be.true;",
+              "    pm.expect(json.requiredPPE).to.be.an('array');",
+              "    pm.expect(json.hazardChecks).to.be.an('array');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/work-orders/{{workOrderId}}/safety-check",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "work-orders",
+            "{{workOrderId}}",
+            "safety-check"
+          ]
+        },
+        "description": "Fetches required PPE checklist, site hazard clearance protocols, risk level assessment, and safety warnings tailored to the equipment type."
+      },
+      "response": []
+    },
+    {
+      "name": "11. Submit Technician Safety Verification (Screen 08)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status is 200 OK\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "var json = pm.response.json();",
+              "pm.test(\"Safety verification cleared\", function () {",
+              "    pm.expect(json.success).to.be.true;",
+              "    pm.expect(json.assessment.status).to.eql(\"CLEARED\");",
+              "});",
+              "if (json.assessment && json.assessment.safetyCheckId) {",
+              "    pm.collectionVariables.set(\"safetyCheckId\", json.assessment.safetyCheckId);",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"technicianId\": \"{{technicianId}}\",\n  \"siteRiskLevel\": \"HIGH\",\n  \"ppeVerified\": {\n    \"dielectricGloves\": true,\n    \"safetyGoggles\": true,\n    \"steelToeBoots\": true,\n    \"hardHat\": true,\n    \"hearingProtection\": true\n  },\n  \"hazardChecks\": [\n    {\n      \"hazardCode\": \"LOTO_APPLIED\",\n      \"verified\": true\n    },\n    {\n      \"hazardCode\": \"ZERO_ENERGY_STATE\",\n      \"verified\": true\n    },\n    {\n      \"hazardCode\": \"BATTERY_ISOLATION\",\n      \"verified\": true\n    },\n    {\n      \"hazardCode\": \"FUEL_GAS_CLEAR\",\n      \"verified\": true\n    },\n    {\n      \"hazardCode\": \"EXHAUST_VENTILATION\",\n      \"verified\": true\n    }\n  ],\n  \"technicianDeclaration\": \"I confirm that all safety protocols and Lockout/Tagout measures have been verified before servicing this equipment.\",\n  \"latitude\": 18.52043,\n  \"longitude\": 73.856743\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/work-orders/{{workOrderId}}/safety-check",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "work-orders",
+            "{{workOrderId}}",
+            "safety-check"
+          ]
+        },
+        "description": "Submits technician pre-job safety sign-off, PPE verification, and hazard checks. Inserts safety audit activity into Salesforce."
+      },
+      "response": []
+    },
+    {
+      "name": "12. Emergency Safety Escalation & Hazard Alert",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status is 201 Created\", function () {",
+              "    pm.response.to.have.status(201);",
+              "});",
+              "var json = pm.response.json();",
+              "pm.test(\"Hazard escalated and job halted\", function () {",
+              "    pm.expect(json.success).to.be.true;",
+              "    pm.expect(json.escalation.workHalted).to.be.true;",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"hazardType\": \"ELECTRICAL_ARCING\",\n  \"severity\": \"CRITICAL\",\n  \"hazardDetails\": \"Active electrical arcing detected at main 415V distribution busbar with visible insulation scorch.\",\n  \"immediateActionTaken\": \"Tripped upstream substation breaker and cordoned off 10-meter perimeter.\",\n  \"evacuatedSite\": true,\n  \"technicianId\": \"{{technicianId}}\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/work-orders/{{workOrderId}}/safety-escalation",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "work-orders",
+            "{{workOrderId}}",
+            "safety-escalation"
+          ]
+        },
+        "description": "Immediately halts work on the Work Order and triggers critical safety hazard escalation to dispatch and supervisors."
+      },
+      "response": []
+    },
+    {
+      "name": "13. Get Equipment Safety Audit History",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status is 200 OK\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "var json = pm.response.json();",
+              "pm.test(\"Safety history returned\", function () {",
+              "    pm.expect(json.success).to.be.true;",
+              "    pm.expect(json.workOrderId).to.be.ok;",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/work-orders/{{workOrderId}}/safety-history",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "work-orders",
+            "{{workOrderId}}",
+            "safety-history"
+          ]
+        },
+        "description": "Fetches past safety audits, PPE compliance records, and hazard escalation history for the work order."
+      },
+      "response": []
+    }
+  ]
+}

@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomApplication xmlns="http://soap.sforce.com/2006/04/metadata">
+    <brand>
+        <headerColor>#0176D3</headerColor>
+        <shouldOverrideOrgTheme>false</shouldOverrideOrgTheme>
+    </brand>
+    <description>digiField 360 — Next-Gen AI Field Service Management Platform powered by Agentforce</description>
+    <formFactors>Large</formFactors>
+    <formFactors>Small</formFactors>
+    <label>digiField 360</label>
+    <navType>Standard</navType>
+    <tabs>standard-home</tabs>
+    <tabs>DF360_Dispatch_Console</tabs>
+    <tabs>DF360_Manager_Dashboard</tabs>
+    <tabs>Work_Order__c</tabs>
+    <tabs>DF360_Paused_Work_Orders</tabs>
+    <tabs>Service_Job__c</tabs>
+    <tabs>Technician__c</tabs>
+    <tabs>Asset__c</tabs>
+    <tabs>Asset_Feedback__c</tabs>
+    <tabs>Part__c</tabs>
+    <tabs>Parts_Stock__c</tabs>
+    <tabs>Parts_Request__c</tabs>
+    <tabs>Depot__c</tabs>
+    <tabs>CSAT__c</tabs>
+    <tabs>Attendance__c</tabs>
+    <tabs>DF360_GPS_Radar</tabs>
+    <tabs>Service_Contract__c</tabs>
+    <tabs>Service_Zone__c</tabs>
+    <tabs>Skill__c</tabs>
+    <tabs>SLA_Config__c</tabs>
+    <tabs>DF360_Guru_AI</tabs>
+    <tabs>standard-Account</tabs>
+    <tabs>standard-Contact</tabs>
+    <uiType>Lightning</uiType>
+</CustomApplication>

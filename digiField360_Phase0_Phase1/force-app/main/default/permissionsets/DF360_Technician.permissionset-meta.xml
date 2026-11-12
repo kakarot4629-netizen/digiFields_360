@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<PermissionSet xmlns="http://soap.sforce.com/2006/04/metadata">
+    <label>DF360 Technician</label>
+    <description>Field technician mobile user. Read/write own jobs, activities, parts requests, GPS, attendance.</description>
+    <hasActivationRequired>false</hasActivationRequired>
+</PermissionSet>

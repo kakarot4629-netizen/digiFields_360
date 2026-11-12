@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ListView xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Critical_Emergency_Jobs</fullName>
+    <columns>NAME</columns>
+    <columns>Account__c</columns>
+    <columns>Job_Type__c</columns>
+    <columns>Priority__c</columns>
+    <columns>Status__c</columns>
+    <columns>Technician__c</columns>
+    <columns>SLA_Deadline__c</columns>
+    <columns>SLA_Status__c</columns>
+    <filterScope>Everything</filterScope>
+    <filters>
+        <field>Priority__c</field>
+        <operation>equals</operation>
+        <value>Critical,High</value>
+    </filters>
+    <label>Critical &amp; High Priority Jobs</label>
+</ListView>

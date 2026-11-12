@@ -159,8 +159,23 @@
         <trackHistory>false</trackHistory>
         <type>Text</type>
     </nameField>
-    <pluralLabel>Job Historys</pluralLabel>
-    <searchLayouts />
+    <pluralLabel>Job Histories</pluralLabel>
+    <searchLayouts>
+        <customTabListAdditionalFields>Equipment_ID__c</customTabListAdditionalFields>
+        <customTabListAdditionalFields>Equipment_Type__c</customTabListAdditionalFields>
+        <customTabListAdditionalFields>Fault_Description__c</customTabListAdditionalFields>
+        <customTabListAdditionalFields>Resolution__c</customTabListAdditionalFields>
+        <customTabListAdditionalFields>First_Time_Fix__c</customTabListAdditionalFields>
+        <customTabListAdditionalFields>Technician__c</customTabListAdditionalFields>
+        <customTabListAdditionalFields>Job_Date__c</customTabListAdditionalFields>
+        <searchResultsAdditionalFields>Equipment_ID__c</searchResultsAdditionalFields>
+        <searchResultsAdditionalFields>Equipment_Type__c</searchResultsAdditionalFields>
+        <searchResultsAdditionalFields>Fault_Description__c</searchResultsAdditionalFields>
+        <searchResultsAdditionalFields>Resolution__c</searchResultsAdditionalFields>
+        <searchResultsAdditionalFields>First_Time_Fix__c</searchResultsAdditionalFields>
+        <lookupDialogsAdditionalFields>Equipment_ID__c</lookupDialogsAdditionalFields>
+        <lookupDialogsAdditionalFields>Fault_Description__c</lookupDialogsAdditionalFields>
+    </searchLayouts>
     <sharingModel>ReadWrite</sharingModel>
     <visibility>Public</visibility>
 </CustomObject>

@@ -29,6 +29,10 @@
             </layoutItems>
             <layoutItems>
                 <behavior>Edit</behavior>
+                <field>Case__c</field>
+            </layoutItems>
+            <layoutItems>
+                <behavior>Edit</behavior>
                 <field>Assigned_Technician__c</field>
             </layoutItems>
         </layoutColumns>
@@ -167,4 +171,87 @@
     <showInteractionLogPanel>false</showInteractionLogPanel>
     <showRunAssignmentRulesCheckbox>false</showRunAssignmentRulesCheckbox>
     <showSubmitAndAttachButton>false</showSubmitAndAttachButton>
+    <relatedLists>
+        <fields>NAME</fields>
+        <fields>Asset__c</fields>
+        <fields>Sequence__c</fields>
+        <fields>Status__c</fields>
+        <fields>Is_First_Time_Fix__c</fields>
+        <fields>Parts_Used__c</fields>
+        <relatedList>Work_Order_Line_Item__c.Work_Order__c</relatedList>
+    </relatedLists>
+    <relatedLists>
+        <fields>NAME</fields>
+        <fields>Technician__c</fields>
+        <fields>Status__c</fields>
+        <fields>Priority__c</fields>
+        <fields>Job_Type__c</fields>
+        <fields>SLA_Deadline__c</fields>
+        <fields>SLA_Status__c</fields>
+        <relatedList>Service_Job__c.Work_Order__c</relatedList>
+    </relatedLists>
+    <relatedLists>
+        <fields>NAME</fields>
+        <fields>Pause_Reason__c</fields>
+        <fields>Paused_At__c</fields>
+        <fields>Resumed_At__c</fields>
+        <fields>Duration_Minutes__c</fields>
+        <fields>Responsible_Team__c</fields>
+        <relatedList>Work_Order_Pause_Log__c.Work_Order__c</relatedList>
+    </relatedLists>
+    <relatedLists>
+        <fields>NAME</fields>
+        <fields>Part__c</fields>
+        <fields>Quantity__c</fields>
+        <fields>Status__c</fields>
+        <fields>Technician__c</fields>
+        <relatedList>Parts_Request__c.Work_Order__c</relatedList>
+    </relatedLists>
+    <relatedLists>
+        <fields>NAME</fields>
+        <fields>Technician__c</fields>
+        <fields>Scheduled_Date__c</fields>
+        <fields>Start_Time__c</fields>
+        <fields>End_Time__c</fields>
+        <fields>Status__c</fields>
+        <fields>Priority__c</fields>
+        <relatedList>Job_Schedule__c.Work_Order__c</relatedList>
+    </relatedLists>
+    <relatedLists>
+        <fields>NAME</fields>
+        <fields>Job_Date__c</fields>
+        <fields>Technician__c</fields>
+        <fields>Root_Cause__c</fields>
+        <fields>First_Time_Fix__c</fields>
+        <fields>Customer_Satisfaction__c</fields>
+        <relatedList>Job_History__c.Work_Order__c</relatedList>
+    </relatedLists>
+    <relatedLists>
+        <fields>NAME</fields>
+        <fields>Account__c</fields>
+        <fields>Equipment_Type__c</fields>
+        <fields>Risk_Score__c</fields>
+        <fields>Status__c</fields>
+        <relatedList>Maintenance_Alert__c.Resulting_Work_Order__c</relatedList>
+    </relatedLists>
+    <relatedLists>
+        <fields>NAME</fields>
+        <fields>Maintenance_Type__c</fields>
+        <fields>Recommended_Action__c</fields>
+        <fields>Recommended_Date__c</fields>
+        <fields>Risk_Score__c</fields>
+        <fields>Status__c</fields>
+        <relatedList>Maintenance_Recommendation__c.Work_Order__c</relatedList>
+    </relatedLists>
+    <relatedLists>
+        <fields>NAME</fields>
+        <fields>Work_Order_Line_Item__c</fields>
+        <fields>Asset__c</fields>
+        <fields>Feedback_Type__c</fields>
+        <fields>Operational_Status__c</fields>
+        <fields>Asset_Condition__c</fields>
+        <fields>Rating__c</fields>
+        <fields>Technician__c</fields>
+        <relatedList>Asset_Feedback__c.Work_Order__c</relatedList>
+    </relatedLists>
 </Layout>

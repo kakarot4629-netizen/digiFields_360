@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Zone__c</fullName>
+    <label>Service Zone</label>
+    <type>Lookup</type>
+    <required>false</required>
+    <trackHistory>true</trackHistory>
+    <referenceTo>Service_Zone__c</referenceTo><relationshipName>Zone_Technicians</relationshipName><relationshipLabel>Service Zones</relationshipLabel>
+    <deleteConstraint>SetNull</deleteConstraint>
+</CustomField>

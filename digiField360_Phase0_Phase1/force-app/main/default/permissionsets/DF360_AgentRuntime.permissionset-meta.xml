@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<PermissionSet xmlns="http://soap.sforce.com/2006/04/metadata">
+    <label>DF360 Agent Runtime</label>
+    <description>Agentforce system user. Minimal write: assign technician, update job status, create events and messages.</description>
+    <hasActivationRequired>false</hasActivationRequired>
+</PermissionSet>

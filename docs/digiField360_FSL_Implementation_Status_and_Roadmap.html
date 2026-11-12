@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>digiField360 — FSL Architecture & Roadmap</title>
+  <style>
+    :root {
+      --primary: #00488F;
+      --primary-light: #E8F0FE;
+      --secondary: #0070D2;
+      --text: #2D3748;
+      --bg: #F8FAFC;
+      --surface: #FFFFFF;
+      --border: #E2E8F0;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      padding: 30px 15px;
+    }
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+      background: var(--surface);
+      padding: 40px 50px;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+      border: 1px solid var(--border);
+    }
+    .actions-bar {
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+      margin-bottom: 24px;
+      position: sticky;
+      top: 15px;
+      z-index: 100;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--primary);
+      color: #fff;
+      padding: 10px 18px;
+      font-size: 14px;
+      font-weight: 600;
+      border-radius: 8px;
+      text-decoration: none;
+      border: none;
+      cursor: pointer;
+      box-shadow: 0 2px 6px rgba(0,72,143,0.3);
+      transition: all 0.2s;
+    }
+    .btn:hover { background: #003366; transform: translateY(-1px); }
+    .btn-secondary { background: #4A5568; box-shadow: 0 2px 6px rgba(74,85,104,0.3); }
+    .btn-secondary:hover { background: #2D3748; }
+    h1 { color: var(--primary); font-size: 28px; margin-bottom: 12px; border-bottom: 3px solid var(--primary); padding-bottom: 10px; }
+    h2 { color: #1A365D; font-size: 22px; margin-top: 32px; margin-bottom: 14px; border-bottom: 1px solid var(--border); padding-bottom: 6px; }
+    h3 { color: #2B6CB0; font-size: 18px; margin-top: 24px; margin-bottom: 10px; }
+    p { margin-bottom: 14px; }
+    blockquote {
+      background: var(--primary-light);
+      border-left: 4px solid var(--primary);
+      padding: 12px 18px;
+      border-radius: 0 8px 8px 0;
+      margin: 18px 0;
+      color: #2D3748;
+      font-style: italic;
+    }
+    .table-responsive {
+      overflow-x: auto;
+      margin: 20px 0;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13.5px;
+      text-align: left;
+    }
+    th {
+      background: var(--primary);
+      color: #FFFFFF;
+      padding: 11px 14px;
+      font-weight: 600;
+    }
+    td {
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border);
+      color: var(--text);
+    }
+    tr:nth-child(even) { background: #F8FAFC; }
+    tr:hover { background: #EDF2F7; }
+    pre {
+      background: #1A202C;
+      color: #E2E8F0;
+      padding: 18px;
+      border-radius: 8px;
+      overflow-x: auto;
+      font-family: Consolas, Monaco, monospace;
+      font-size: 13px;
+      margin: 18px 0;
+    }
+    code {
+      background: #EDF2F7;
+      color: #C53030;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 13px;
+      font-family: Consolas, Monaco, monospace;
+    }
+    pre code { background: transparent; color: inherit; padding: 0; }
+    li { margin-left: 24px; margin-bottom: 6px; }
+    hr { border: none; border-top: 1px solid var(--border); margin: 30px 0; }
+    a { color: var(--secondary); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    @media print {
+      body { background: #fff; padding: 0; }
+      .container { box-shadow: none; border: none; padding: 0; width: 100%; max-width: 100%; }
+      .actions-bar { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="actions-bar">
+      <button class="btn" onclick="window.print()">🖨️ Print / Save as PDF</button>
+      <a class="btn btn-secondary" href="digiField360_FSL_Implementation_Status_and_Roadmap.docx" download>📄 Download Word (.docx)</a>
+    </div>
+    <h1>digiField360 — High-Level Field Service (FSL) Architecture, Implementation Status & Production Roadmap</h1>
+<blockquote><strong>Document Type</strong>: Master Technical Architecture, FSL Capability Comparison, Gap Analysis & Resource Timeline</blockquote>
+<blockquote><strong>Product</strong>: <strong>digiField360.ai — Salesforce Edition</strong></blockquote>
+<blockquote><strong>Platform Stack</strong>: Salesforce Lightning Enterprise Edition (API v61.0–v67.0) | Agentforce AI | Node.js MCP Gateway Server | Offline-First Cross-Platform Mobile Client (Flutter / React Native)</blockquote>
+<blockquote><strong>Target Release</strong>: Commercial v1.0 GA (General Availability)</blockquote>
+<blockquote><strong>Date</strong>: October 2026</blockquote>
+<blockquote><strong>Repository Root</strong>: `c:\digiField 360\digiFields_360`</blockquote>
+<hr/>
+<h2>Executive Summary</h2>
+<p><strong>digiField360</strong> is an enterprise-grade Field Service Management (FSM) platform natively engineered on the <strong>Salesforce Lightning Enterprise Platform</strong> paired with <strong>Agentforce AI</strong> and an <strong>Offline-First MCP (Model Context Protocol) API Gateway</strong>.</p>
+<h3>The Strategic Business Problem & Architectural Solution</h3>
+<p>Standard <strong>Salesforce Field Service (FSL)</strong> imposes a steep licensing cost of <strong>$175 per technician per month</strong>. For enterprise field forces in India and Southeast Asia (managing 100 to 5,000 field technicians across Telecom, HVAC, Consumer Electronics, and Heavy Machinery), this cost is economically prohibitive.</p>
+<p><strong>digiField360</strong> replicates and enhances the core operational pillars of Salesforce FSL directly on standard <strong>Salesforce Platform User licenses ($25/user/month)</strong>, achieving an <strong>85.7% software licensing savings</strong> (saving $1,800/year per technician) while adding:</p>
+<p>1. <strong>Autonomous 60-Second Dispatching</strong>: Heuristic AI scoring (skills, location, workload, first-time fix rate).</p>
+<p>2. <strong>Offline-First Resilience</strong>: Local SQLite database with a FIFO mutation queue and transactional replay synchronization for zero-connectivity field sites.</p>
+<p>3. <strong>Zero-App Customer Communications</strong>: Automated Meta WhatsApp Business notifications at every operational milestone.</p>
+<p>4. <strong>Agentforce AI Suite</strong>: 5 autonomous AI agents reducing 80% of manual supervisor overhead.</p>
+<hr/>
+<h2>1. Salesforce FSL vs. digiField360 Architectural Mapping</h2>
+<p>To understand what has been implemented as per FSL, the table below maps standard Salesforce Field Service (FSL) architectural entities to the custom implementation in digiField360:</p>
+<div class="table-responsive"><table><thead><tr><th>FSL Standard Entity</th><th>digiField360 Custom Entity</th><th>Implementation Status</th><th>Technical Capability in digiField360</th></tr></thead><tbody><tr><td><strong>WorkOrder</strong></td><td><code>Work_Order__c</code></td><td>✅ <strong>Complete</strong></td><td>Parent field ticket, customer asset lookup, warranty verification, scheduled windows, parent Case binding, and temporary pause state.</td></tr><tr><td><strong>WorkOrderLineItem</strong></td><td><code>Work_Order_Line_Item__c</code> *(Case Assets)*</td><td>✅ <strong>Complete</strong></td><td>Multi-asset servicing per site visit. Tracks equipment status, first-time fix flag, pre/post photo evidence, and resolution notes.</td></tr><tr><td><strong>ServiceAppointment</strong></td><td><code>Service_Job__c</code></td><td>✅ <strong>Complete</strong></td><td>Primary field appointment record with geofenced arrival windows, scheduled start/end, SLA countdown timer, and digital signature capture.</td></tr><tr><td><strong>AssignedResource</strong></td><td><code>Assigned_Resource__c</code></td><td>✅ <strong>Complete</strong></td><td>Multi-resource appointment assignment supporting individual technicians, specialized service crews, apprentice tagging, and check-in times.</td></tr><tr><td><strong>ServiceResource</strong></td><td><code>Technician__c</code></td><td>✅ <strong>Complete</strong></td><td>1:1 linked to Salesforce <code>User</code>, tracking active shift status, live GPS coordinates, rolling 30-day CSAT, FTFR %, and mobile FCM token.</td></tr><tr><td><strong>ServiceCrew & Member</strong></td><td><code>Service_Crew__c</code> / <code>Service_Crew_Member__c</code></td><td>✅ <strong>Complete</strong></td><td>Multi-technician squad management with designated Crew Leader, active date ranges, and territory allocation.</td></tr><tr><td><strong>ServiceTerritory</strong></td><td><code>Service_Zone__c</code></td><td>✅ <strong>Complete</strong></td><td>Geographic regions mapped by PIN codes, assigned territory managers, and active technician counts.</td></tr><tr><td><strong>Skill & ServiceResourceSkill</strong></td><td><code>Skill__c</code> / <code>Technician_Skill__c</code></td><td>✅ <strong>Complete</strong></td><td>Skill repository, technical certification expiry dates, and proficiency levels (1–5).</td></tr><tr><td><strong>Location / Warehouse</strong></td><td><code>Depot__c</code></td><td>✅ <strong>Complete</strong></td><td>Regional distribution centers, GPS warehouse coordinates, and inventory depot managers.</td></tr><tr><td><strong>ProductItem & ProductRequest</strong></td><td><code>Part__c</code>, <code>Parts_Stock__c</code>, <code>Parts_Request__c</code></td><td>✅ <strong>Complete</strong></td><td>Master SKU catalogue, multi-depot stock balance, ₹5,000 auto-approval threshold, and warehouse reservation decrement.</td></tr><tr><td><strong>Service Contract & Entitlement</strong></td><td><code>Service_Contract__c</code>, <code>SLA_Config__c</code></td><td>✅ <strong>Complete</strong></td><td>AMC contract caps, warranty coverage, tiered resolution SLA matrix (Gold/Silver/Bronze).</td></tr><tr><td><strong>TimeSheet & Attendance</strong></td><td><code>Attendance__c</code></td><td>✅ <strong>Complete</strong></td><td>Geofenced daily shift check-in/out, hours worked calculation, and leave management.</td></tr><tr><td><strong>Resource Location Tracking</strong></td><td><code>GPS_Log__c</code></td><td>✅ <strong>Complete</strong></td><td>5-minute periodic GPS breadcrumb stream with 365-day automated data retention batch purge.</td></tr><tr><td><strong>FSL Dispatcher Console</strong></td><td><code>df360DispatchBoard</code> / <code>df360ManagerDashboard</code></td><td>✅ <strong>Complete</strong></td><td>Custom LWC suite featuring drag-and-drop Kanban dispatch board, live Google Maps fleet markers, and executive KPI streaming.</td></tr><tr><td><strong>FSL Mobile App</strong></td><td>Cross-Platform Mobile Client + <code>OfflineMCPGateway.js</code></td><td>🟡 <strong>Backend Live / UI in Build</strong></td><td>Node.js MCP Gateway Server on 24/7 Render Cloud, RESTful endpoints, local SQLite cache engine, and FIFO mutation replay.</td></tr></tbody></table></div>
+<hr/>
+<h2>2. What Has Been Implemented as per FSL</h2>
+<h3>2.1 Core Schema & Data Architecture (22 Custom Objects & 3 Platform Events)</h3>
+<li><strong>Work Order & Multi-Asset Hierarchy</strong>: Full upstream lineage from <code>Case</code> ➔ <code>Work_Order__c</code> ➔ <code>Work_Order_Line_Item__c</code> (Case Assets) allowing technicians to service multiple machines (e.g. 5 ACs or 3 generators) under a single site visit without duplicate paperwork.</li>
+<li><strong>Customer Address Catalog (<code>Customer_Address__c</code>)</strong>: Multi-site client management mapping physical factories, retail outlets, and facilities to support cases.</li>
+<li><strong>Temporary Pause & SLA Freeze (<code>Work_Order_Pause_Log__c</code>)</strong>: Allows freezing customer SLA timers when blockers occur (customer unavailable, site inaccessible, awaiting unstocked parts). Automatically logs paused/resumed timestamps and calculates total delay minutes.</li>
+<li><strong>Asset Health & Feedback (<code>Asset_Feedback__c</code>)</strong>: Standardized equipment inspection logging 1–5 star ratings, physical condition, pre/post repair photos, and bi-directional auto-sync back to the master <code>Asset__c</code>.</li>
+<li><strong>Multi-Resource & Crew Scheduling</strong>: Support for individual technicians or multi-member crews via <code>Assigned_Resource__c</code>, <code>Service_Crew__c</code>, and <code>Service_Crew_Member__c</code>.</li>
+<h3>2.2 Apex Backend & API Architecture (102 Files)</h3>
+<li><strong><code>DF360_AppointmentLifecycleAPI.cls</code> (51 KB)</strong>: Comprehensive <code>@RestResource</code> endpoint handling:</li>
+<li>GPS-verified site check-in (validates technician within 200m of asset location).</li>
+<li>Pre-service and post-service photo evidence upload into Salesforce <code>ContentVersion</code> & <code>ContentDocumentLink</code>.</li>
+<li>Marking appointments incomplete with reason codes (No Access, Customer Rescheduled, Safety Hazard).</li>
+<li>360-degree appointment payload generation with crew rosters and line items.</li>
+<li><strong><code>DF360_WorkOrderAppointmentsAPI.cls</code> (33 KB)</strong>:</li>
+<li>Route <code>/my</code> & <code>/assigned</code>: Dynamically returns only work orders and appointments assigned to the authenticated technician or their active crew.</li>
+<li>Work Order situational briefing generation.</li>
+<li><strong><code>DF360_WorkOrderAssetController.cls</code> (20 KB)</strong>: Multi-asset lifecycle management and Case Asset resolution.</li>
+<li><strong><code>DF360_WorkOrderPauseController.cls</code> (8 KB)</strong>: State machine logic for pausing, resuming, and calculating cumulative frozen minutes.</li>
+<li><strong><code>DF360_DispatchController.cls</code></strong>: Multi-factor scoring algorithm:</li>
+<p>$$\text{Score} = (\text{Skill Match} \times 0.40) + (\text{Proximity} \times 0.30) + (\text{FTFR \%} \times 0.20) + (\text{Workload Inverted} \times 0.10)$$</p>
+<li><strong><code>DF360_SLAController.cls</code> & <code>DF360_SLAMonitorBatch.cls</code></strong>: Scheduled 5-minute background batch monitoring open jobs, publishing <code>DF360_SLA_Alert__e</code> at 80% elapsed time and escalating at 100% breach.</li>
+<li><strong><code>DF360_PartsController.cls</code></strong>: Compatibility search, depot inventory reservation, and approval routing.</li>
+<li><strong><code>DF360_CSATController.cls</code> & <code>DF360_CSATRollupBatch.cls</code></strong>: Nightly batch recalculating rolling 30-day average CSAT and First-Time Fix Rates (FTFR).</li>
+<li><strong><code>DF360_WhatsAppService.cls</code></strong>: Meta WhatsApp Business API client for automated milestone communications.</li>
+<h3>2.3 Lightning Web Components (19 LWCs)</h3>
+<li><strong>Dispatcher & Manager Tools</strong>: <code>df360ManagerDashboard</code>, <code>df360DispatchBoard</code>, <code>df360GPSMap</code>, <code>field360NaturalLanguageQuery</code> (NL2SOQL AI query tool), <code>df360PausedOrdersDashboard</code>.</li>
+<li><strong>Operations & Inventory</strong>: <code>df360PartsApproval</code>, <code>df360PartsCatalog</code>, <code>df360RelevantPartsCatalog</code>, <code>df360Attendance</code>, <code>df360SLATracker</code>.</li>
+<li><strong>Work Order & Asset Views</strong>: <code>df360WorkOrderAssetCard</code>, <code>df360PauseWorkOrderModal</code>, <code>df360JobDetail</code>, <code>field360WorkOrderDetail</code>.</li>
+<h3>2.4 Mobile API Gateway & Live Cloud Infrastructure</h3>
+<li><strong>Live Node.js MCP Gateway Server</strong>: Deployed and operating 24/7 on Render Cloud at <code>https://digifields-360.onrender.com</code> (and locally on port 3000).</li>
+<li><strong>Postman Test Collections & Environments</strong>:</li>
+<li><code>digiField360_Salesforce_Live_APIs.postman_collection.json</code> (94 KB): Automated pre-request OAuth refresh token scripts, dynamic <code>workOrderId</code> extraction, and full test assertions.</li>
+<li><code>Safety_Checklist_Mobile_API_Postman_Collection.json</code> (44 KB): OSHA safety templates, submission with GPS & digital signature, and photo evidence.</li>
+<li><code>DF360_New_Photo_and_360_APIs.postman_collection.json</code> (15 KB): Check-in, 360 appointment detail, photo uploads, and incomplete routes.</li>
+<hr/>
+<h2>3. Gap Analysis: What We Need to Complete (Remaining Requirements)</h2>
+<p>To take digiField360 from the verified backend/schema stage to full commercial production launch, the following 6 work packages must be completed:</p>
+<pre><code class="language-text">
+┌────────────────────────────────────────────────────────────────────────────────────────┐
+|                                REMAINING DELIVERABLES                                  |
+└────────────────────────────────────────────────────────────────────────────────────────┘
+  1. Mobile App Client Build       2. Agentforce Multi-Agent      3. Declarative Flow
+     (Flutter / React Native)         Production Activation          Production Activation
+  ─────────────────────────────    ─────────────────────────      ─────────────────────────
+  • 24 mobile UI screens           • Prompt template tuning       • Activate 8 core flows
+  • Local SQLite cache engine      • ConnectApi runtime testing   • Delayed CSAT path
+  • FIFO sync replay handler       • Agent guardrail validation   • SLA escalation routes
+
+  4. Production Named Creds        5. Automated Test Coverage     6. Pilot Customer UAT
+     &amp; 3rd-Party Configurations       &amp; Quality Gate                 &amp; Rollout
+  ─────────────────────────────    ─────────────────────────      ─────────────────────────
+  • Meta WhatsApp live webhook     • Achieve &gt;85% Apex coverage   • 2 pilot client fleets
+  • Google Maps billing key        • End-to-end integration tests • 50–100 live field techs
+  • Firebase push FCM certs        • Mock failover scenarios      • Production cutover
+</code></pre>
+<h3>Gap Details:</h3>
+<p>1. <strong>Mobile Frontend Client Development (Flutter / React Native)</strong>:</p>
+<li>*Current State*: The backend APIs, REST endpoints, and cloud gateway are 100% verified with Postman.</li>
+<li>*Requirement*: Mobile engineering team needs to build client-side UI screens (Today's Jobs list, Geofenced Check-In, Multi-Asset Checklist, Digital Signature canvas, Camera integration) and integrate the local SQLite cache with the <code>OfflineMCPGateway.js</code> replay queue.</li>
+<p>2. <strong>Agentforce AI Production Activation</strong>:</p>
+<li>*Current State*: GenAI prompt templates and Apex invocable actions (<code>F360_SmartAssignmentAction</code>, <code>F360_PreJobBriefingAction</code>, <code>F360_TroubleshootingAction</code>, <code>F360_ServiceReportAction</code>) are built.</li>
+<li>*Requirement*: Activate the 5 autonomous Agentforce agents (DF360-001 through DF360-005) in Setup, test prompt templates against live customer data, and configure strict guardrails.</li>
+<p>3. <strong>Declarative Flow Activation & Testing</strong>:</p>
+<li>*Current State*: 8 flow metadata XML files are created in <code>force-app/main/default/flows</code>.</li>
+<li>*Requirement*: Deploy and activate flows in the target org: <code>DF360_Job_Created_Dispatch</code>, <code>DF360_Job_Status_Changed</code>, <code>DF360_SLA_Monitor_Scheduled</code>, <code>DF360_Job_Completed_CSAT</code>, <code>DF360_Parts_Request_Approval</code>, <code>DF360_Low_CSAT_Alert</code>, <code>DF360_Low_Stock_Alert</code>, <code>DF360_Repeat_Visit_Flag</code>.</li>
+<p>4. <strong>Production Named Credentials & 3rd-Party Integrations</strong>:</p>
+<li>*Requirement*: Set up client-owned production credentials for:</li>
+<li><code>DF360_MetaWhatsApp</code>: Meta WhatsApp Business API webhook and message templates.</li>
+<li><code>DF360_GoogleMaps</code>: Google Maps Distance Matrix API production key.</li>
+<li><code>DF360_Firebase</code>: Firebase Cloud Messaging (FCM) credentials for mobile push alerts.</li>
+<p>5. <strong>Test Coverage & Quality Gate</strong>:</p>
+<li>*Current State*: Core test classes exist (<code>DF360_AppointmentLifecycleAPITest</code>, <code>DF360_WorkOrderAppointmentsAPITest</code>, <code>DF360_WorkOrderEnhancementsTest</code>, <code>F360_AI_Tests</code>).</li>
+<li>*Requirement*: Elevate org-wide Apex test coverage to >85% across all 100+ Apex files to satisfy enterprise ISV packaging rules.</li>
+<p>6. <strong>Pilot Customer UAT</strong>:</p>
+<li>*Requirement*: Conduct a 2-week pilot with 2 early-adopter customers (50–100 technicians) to validate real-world cellular dropouts, offline sync replay, and supervisor approval loops.</li>
+<hr/>
+<h2>4. Resource Sizing & Team Requirements ("How Much We Need")</h2>
+<p>To execute the remaining scope within the proposed 10-week timeline, the following dedicated cross-functional team is required:</p>
+<h3>4.1 Resource Allocation Matrix</h3>
+<div class="table-responsive"><table><thead><tr><th>Role</th><th>Headcount</th><th>Key Responsibilities</th><th>Primary Deliverables</th></tr></thead><tbody><tr><td><strong>Lead Solution Architect / PM</strong></td><td>1</td><td>Architecture governance, customer alignment, sprint management, FSL alignment.</td><td>Solution Design Document, Security Reviews, Release Sign-off.</td></tr><tr><td><strong>Senior Salesforce Developers</strong></td><td>2</td><td>Flow activations, Agentforce prompt engineering, batch optimizations, Apex test coverage (>85%).</td><td>Production Apex classes, Activated Flows, Agentforce Agents, LWC enhancements.</td></tr><tr><td><strong>Senior Mobile Developers</strong> (Flutter / RN)</td><td>2</td><td>Mobile UI screens (24 screens), SQLite offline database, FIFO mutation replay queue, device hardware (camera, GPS, canvas).</td><td>Production iOS/Android APK/IPA, SQLite schema, Offline sync engine.</td></tr><tr><td><strong>Integration & Cloud Engineer</strong></td><td>1</td><td>MCP Gateway scaling, Meta WhatsApp webhooks, Google Maps, FCM push notifications, Render Cloud maintenance.</td><td>Webhook microservices, CI/CD pipelines, production Named Credentials.</td></tr><tr><td><strong>QA / Automation Engineer</strong></td><td>1</td><td>End-to-end API test automation, mobile regression testing, offline sync conflict testing, UAT coordination.</td><td>Test execution logs, automated Postman runs, UAT defect tracker.</td></tr><tr><td><strong>TOTAL TEAM SIZE</strong></td><td><strong>7 Persons</strong></td><td><strong>Full-Time Sizing over 10 Weeks</strong></td><td><strong>Complete Commercial Release</strong></td></tr></tbody></table></div>
+<hr/>
+<h2>5. Timeline, Sprints & Work Breakdown Structure ("For What Time How Much We Do")</h2>
+<p>The roadmap is structured into <strong>5 two-week sprints</strong> spanning <strong>10 weeks (50 working days)</strong>, culminating in General Availability (GA):</p>
+<pre><code class="language-mermaid">
+gantt
+    title digiField360 Production Delivery Roadmap (10 Weeks)
+    dateFormat  YYYY-MM-DD
+    section Sprint 1: Foundation
+    Flows &amp; Schema Activation     :2026-11-02, 10d
+    Mobile UI Core &amp; SQLite Init  :2026-11-02, 10d
+    section Sprint 2: Mobile &amp; AI
+    Mobile Journey &amp; Geofence     :2026-11-16, 10d
+    Agentforce Setup &amp; Prompts    :2026-11-16, 10d
+    section Sprint 3: Workflows
+    Multi-Asset &amp; Photo Upload    :2026-11-30, 10d
+    WhatsApp &amp; Maps Named Creds   :2026-11-30, 10d
+    section Sprint 4: Hardening
+    Offline FIFO Replay Sync      :2026-12-14, 10d
+    Apex Test Suite (&gt;85%)        :2026-12-14, 10d
+    section Sprint 5: UAT &amp; Pilot
+    Pilot Customer Rollout        :2026-12-28, 10d
+    Production Cutover (GA)       :2027-01-08, 3d
+</code></pre>
+<h3>Detailed Sprint Breakdown</h3>
+<pre><code class="language-text">
+┌────────────────────────────────────────────────────────────────────────────────────────┐
+│ SPRINT 1 (Weeks 1–2): Core Activation &amp; Mobile Foundation                             │
+├────────────────────────────────────────────────────────────────────────────────────────┤
+│ • Effort: 160 Developer Hours | Story Points: 42                                      │
+│ • Salesforce Track:                                                                    │
+│   - Deploy and activate all 8 declarative Flows in target org.                         │
+│   - Schedule DF360_SLAMonitorBatch (every 5 min) and DF360_CSATRollupBatch (nightly).   │
+│   - Validate Permission Sets (DF360_Technician, DF360_ServiceManager, DF360_PartsAdmin).│
+│ • Mobile Track:                                                                        │
+│   - Initialize mobile repository (Flutter 3.x / React Native).                         │
+│   - Implement Authentication screen connecting to /api/auth/login with OAuth PKCE.    │
+│   - Set up local SQLite database tables for Jobs, Assets, Checklists, and Parts.      │
+│ • Milestone 1 Gate: Successful login on mobile device, live job download into SQLite.  │
+└────────────────────────────────────────────────────────────────────────────────────────┘
+
+┌────────────────────────────────────────────────────────────────────────────────────────┐
+│ SPRINT 2 (Weeks 3–4): Mobile Shift Execution &amp; Agentforce Activation                  │
+├────────────────────────────────────────────────────────────────────────────────────────┤
+│ • Effort: 180 Developer Hours | Story Points: 48                                      │
+│ • Salesforce Track:                                                                    │
+│   - Activate Agentforce Agents: DF360-001 (Dispatch AI) &amp; DF360-002 (SLA Guardian).   │
+│   - Bind Prompt Templates: F360_PreJobBriefing and F360_SmartAssignment.              │
+│   - Validate supervisor override rules on df360DispatchBoard.                         │
+│ • Mobile Track:                                                                        │
+│   - Build "Today's Jobs" screen sorted by SLA urgency with status chips.              │
+│   - Implement Shift Start / End attendance check-in with GPS geofence verification.   │
+│   - Implement En-Route navigation trigger with automatic customer ETA WhatsApp alert. │
+│ • Milestone 2 Gate: Technician marks En-Route, WhatsApp notification arrives at client.│
+└────────────────────────────────────────────────────────────────────────────────────────┘
+
+┌────────────────────────────────────────────────────────────────────────────────────────┐
+│ SPRINT 3 (Weeks 5–6): On-Site Execution, Multi-Asset &amp; Parts Approval                 │
+├────────────────────────────────────────────────────────────────────────────────────────┤
+│ • Effort: 190 Developer Hours | Story Points: 52                                      │
+│ • Salesforce Track:                                                                    │
+│   - Activate DF360-003 (Parts Expeditor Agent) and parts approval workflow.           │
+│   - Connect production Meta WhatsApp Business Webhook for inbound message responses.  │
+│   - Verify Google Maps API production credentials for real-time travel estimation.    │
+│ • Mobile Track:                                                                        │
+│   - Build Case Assets Multi-Inspection screen (servicing multiple machines per visit).│
+│   - Implement Camera interface for Pre-Service, Post-Service, and Damage photo upload. │
+│   - Build Parts Request modal with compatibility filtering against machine model.     │
+│   - Implement "Temporarily Paused" state with mandatory reason selector and SLA freeze│
+│ • Milestone 3 Gate: Multi-asset inspection completed, photos uploaded to ContentVersion│
+└────────────────────────────────────────────────────────────────────────────────────────┘
+
+┌────────────────────────────────────────────────────────────────────────────────────────┐
+│ SPRINT 4 (Weeks 7–8): Offline FIFO Sync Engine &amp; Apex Test Hardening                  │
+├────────────────────────────────────────────────────────────────────────────────────────┤
+│ • Effort: 170 Developer Hours | Story Points: 46                                      │
+│ • Salesforce Track:                                                                    │
+│   - Achieve &gt;85% Apex test coverage across all 100+ classes.                           │
+│   - Stress test batch jobs (SLAMonitor, CSATRollup, GPSPurge) under 50,000 records.   │
+│   - Configure Manager KPI Analytics dashboard (FTFR %, SLA compliance RAG).           │
+│ • Mobile Track:                                                                        │
+│   - Implement Offline FIFO Mutation Queue (OfflineMCPGateway.js replay).               │
+│   - Test 8-hour zero-connectivity field simulation with batch sync on reconnect.      │
+│   - Build Digital Customer Signature canvas with Base64 export to Salesforce.         │
+│ • Milestone 4 Gate: 200 offline actions replayed without conflict; Apex tests pass.   │
+└────────────────────────────────────────────────────────────────────────────────────────┘
+
+┌────────────────────────────────────────────────────────────────────────────────────────┐
+│ SPRINT 5 (Weeks 9–10): Pilot Customer UAT, Security Review &amp; Production Cutover       │
+├────────────────────────────────────────────────────────────────────────────────────────┤
+│ • Effort: 150 Developer Hours | Story Points: 38                                      │
+│ • All Tracks:                                                                          │
+│   - Onboard 2 pilot enterprise clients (50 field technicians).                        │
+│   - Conduct 10 days of live field pilot operations with real work orders.              │
+│   - Triage and resolve any field UX or synchronization edge cases.                    │
+│   - Executive demo to stakeholders; final sign-off.                                   │
+│   - Production package deployment and General Availability (GA) announcement.         │
+│ • Milestone 5 Gate: Formal Customer Acceptance Sign-off &amp; Production Cutover.         │
+└────────────────────────────────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3>5.1 Total Sizing Summary</h3>
+<div class="table-responsive"><table><thead><tr><th>Metric</th><th>Total Value</th></tr></thead><tbody><tr><td><strong>Total Duration</strong></td><td><strong>10 Weeks (5 Sprints)</strong></td></tr><tr><td><strong>Total Engineering Effort</strong></td><td><strong>850 Person-Hours</strong> (~106 Person-Days)</td></tr><tr><td><strong>Total Story Points</strong></td><td><strong>226 Story Points</strong></td></tr><tr><td><strong>Dedicated Team Size</strong></td><td><strong>7 Full-Time Engineers & Leads</strong></td></tr><tr><td><strong>Target GA Date</strong></td><td><strong>Mid-January 2027</strong></td></tr></tbody></table></div>
+<hr/>
+<h2>6. Financial ROI & Licensing Cost Comparison</h2>
+<p>Implementing digiField360 on the standard Salesforce Platform yields massive financial savings compared to traditional Salesforce FSL:</p>
+<div class="table-responsive"><table><thead><tr><th>Cost Element</th><th>Standard Salesforce FSL</th><th>digiField360 on Platform</th><th>Net Annual Savings</th></tr></thead><tbody><tr><td><strong>Technician License (Per User / Month)</strong></td><td>$175</td><td>$25</td><td><strong>$150 / user / month (85.7% saving)</strong></td></tr><tr><td><strong>Fleet of 100 Technicians (Annual)</strong></td><td>$210,000</td><td>$30,000</td><td><strong>$180,000 saved per year</strong></td></tr><tr><td><strong>Fleet of 500 Technicians (Annual)</strong></td><td>$1,050,000</td><td>$150,000</td><td><strong>$900,000 saved per year</strong></td></tr><tr><td><strong>Fleet of 1,000 Technicians (Annual)</strong></td><td>$2,100,000</td><td>$300,000</td><td><strong>$1,800,000 saved per year</strong></td></tr></tbody></table></div>
+<p>*Note: In addition to license savings, digiField360 eliminates customer portal licensing costs by leveraging zero-app Meta WhatsApp notifications.*</p>
+<hr/>
+<h2>7. Risk Management & Mitigation Strategies</h2>
+<div class="table-responsive"><table><thead><tr><th>Risk Category</th><th>Identified Risk</th><th>Impact</th><th>Mitigation Strategy</th></tr></thead><tbody><tr><td><strong>Mobile Offline Sync</strong></td><td>Complex mutation conflict when multiple technicians touch the same asset offline.</td><td><strong>High</strong></td><td>Implement strict Last-Write-Wins (LWW) conflict resolution timestamped at device level, paired with individual transaction UUIDs.</td></tr><tr><td><strong>Salesforce Governor Limits</strong></td><td>High volume of 5-minute GPS coordinate logs hitting daily API limits.</td><td><strong>Medium</strong></td><td>GPS snapshots are ingested via <code>@RestResource</code> in bulk arrays, cached in Platform Cache, and persisted in batches rather than individual DML inserts.</td></tr><tr><td><strong>Meta WhatsApp Latency</strong></td><td>Message delivery delay during regional network throttling.</td><td><strong>Medium</strong></td><td>WhatsApp callouts execute via <code>@future(callout=true)</code> and Queueable Apex with fallback SMS triggers if delivery status fails within 120s.</td></tr><tr><td><strong>Agentforce Cost & Token Usage</strong></td><td>High inference costs for high-frequency dispatch evaluations.</td><td><strong>Low</strong></td><td>Use heuristic Apex scoring (<code>DF360_DispatchController</code>) for standard routine jobs; invoke Agentforce LLM only for complex multi-skill exception dispatching.</td></tr></tbody></table></div>
+<hr/>
+<h2>8. Summary & Next Immediate Steps</h2>
+<p>The backend foundation, custom FSL-equivalent schema, API controllers, Render cloud gateway, and test collections are fully built and verified.</p>
+<h3>Recommended Next Steps for Kickoff:</h3>
+<p>1. <strong>Approve Sprint 1 Scope</strong>: Lock in the 10-week roadmap and team resource assignments.</p>
+<p>2. <strong>Activate Flows in Target Org</strong>: Deploy and enable the 8 declarative flows.</p>
+<p>3. <strong>Hand Over Mobile Spec</strong>: Mobilize the 2 mobile frontend engineers using <a href="file:///c:/digiField%20360/digiFields_360/docs/MOBILE_DEVELOPER_API_DOCS.md" target="_blank"><code>docs/MOBILE_DEVELOPER_API_DOCS.md</code></a> and <a href="file:///c:/digiField%20360/digiFields_360/docs/SAFETY_CHECKLIST_FRONTEND_API_README.md" target="_blank"><code>docs/SAFETY_CHECKLIST_FRONTEND_API_README.md</code></a>.</p>
+<p>4. <strong>Provision Production API Keys</strong>: Secure production credentials for Meta WhatsApp Business and Google Maps Platform.</p>
+  </div>
+</body>
+</html>

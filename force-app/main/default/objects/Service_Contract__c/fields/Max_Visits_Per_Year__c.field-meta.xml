@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Max_Visits_Per_Year__c</fullName>
+    <label>Max Visits/Year</label>
+    <type>Number</type>
+    <required>false</required>
+    <trackHistory>true</trackHistory>
+    <precision>5</precision><scale>0</scale>
+</CustomField>

@@ -5,4 +5,5 @@
     <type>Lookup</type>
     <referenceTo>User</referenceTo><relationshipName
   >Van_Inventory</relationshipName>
+    <deleteConstraint>SetNull</deleteConstraint>
 </CustomField>

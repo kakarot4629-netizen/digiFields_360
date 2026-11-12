@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Contract_Type__c</fullName>
+    <label>Contract Type</label>
+    <type>Picklist</type>
+    <required>false</required>
+    <trackHistory>true</trackHistory>
+    <valueSet><valueSetDefinition><sorted>false</sorted><value><fullName>AMC</fullName><default>true</default><label>AMC</label></value><value><fullName>Warranty</fullName><default>false</default><label>Warranty</label></value><value><fullName>Extended Warranty</fullName><default>false</default><label>Extended Warranty</label></value><value><fullName>Pay Per Call</fullName><default>false</default><label>Pay Per Call</label></value></valueSetDefinition></valueSet>
+</CustomField>

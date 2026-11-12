@@ -1,0 +1,506 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# digiField360.ai — Live Salesforce Mobile APIs (REST Client for VS Code / IDE)
+# ═══════════════════════════════════════════════════════════════════════════════
+# Instructions:
+# 1. Install the "REST Client" extension (by Huachao Mao) or "Thunder Client" in your IDE.
+# 2. Click "Send Request" directly above any request to execute it in real-time.
+# 3. Variables like @authToken are automatically captured and passed to all subsequent calls!
+
+@baseUrl = https://digifields-360.onrender.com
+@instanceUrl = https://orgfarm-4036b01401-dev-ed.develop.my.salesforce.com
+@username = piyush.channe.3868c7575da5@agentforce.com
+@password = YOUR_PASSWORD_HERE
+
+### ═══════════════════════════════════════════════════════════════════════════
+### 1. AUTHENTICATION & PROFILE (Screens 01, 02, 23)
+### ═══════════════════════════════════════════════════════════════════════════
+
+### 1.1 Health Check & API Discovery
+GET {{baseUrl}}/health
+Content-Type: application/json
+
+### 1.2 Live Salesforce Login (Returns Real 00D Salesforce Access Token)
+# @name login
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "{{username}}",
+  "password": "{{password}}"
+}
+
+### Automatically capture real live Salesforce token and technician ID from login response:
+@authToken = {{login.response.body.token}}
+@technicianId = {{login.response.body.technician.id}}
+
+### 1.3 Wrong Password Test (Verifies 401 Unauthorized Rejection)
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "{{username}}",
+  "password": "WRONG_PASSWORD_999"
+}
+
+### 1.4 Get Authenticated Technician Profile (Screen 23)
+GET {{baseUrl}}/api/technician/profile
+Authorization: Bearer {{authToken}}
+
+### 1.5 Get Full User Details & Shift Summary
+GET {{baseUrl}}/api/user/details
+Authorization: Bearer {{authToken}}
+
+### ═══════════════════════════════════════════════════════════════════════════
+### 2. SHIFT MORNING SYNC & DASHBOARD (Screens 03, 04)
+### ═══════════════════════════════════════════════════════════════════════════
+
+### 2.1 Morning Pre-Load Sync (Shift Start / SQLite Cache)
+# @name morningSync
+GET {{baseUrl}}/api/sync/morning-payload?technicianId={{technicianId}}
+Authorization: Bearer {{authToken}}
+
+### 2.2 Technician Dashboard Summary (Screen 04)
+GET {{baseUrl}}/api/dashboard
+Authorization: Bearer {{authToken}}
+
+### 2.3 Sync Engine Status (Screen 03)
+GET {{baseUrl}}/api/sync/status
+Authorization: Bearer {{authToken}}
+
+### ═══════════════════════════════════════════════════════════════════════════
+### 3. JOBS & WORK ORDERS LIFECYCLE (Screens 05, 06, 07)
+### ═══════════════════════════════════════════════════════════════════════════
+
+### 3.1 List Assigned Work Orders (Screen 05)
+# @name listWorkOrders
+GET {{baseUrl}}/api/work-orders?limit=10
+Authorization: Bearer {{authToken}}
+
+### Extract first Work Order ID dynamically:
+@workOrderId = {{listWorkOrders.response.body.workOrders[0].Id}}
+
+### 3.2 Get Work Order Detail & Equipment History (Screen 06)
+GET {{baseUrl}}/api/work-orders/{{workOrderId}}
+Authorization: Bearer {{authToken}}
+
+### 3.3 Transition Status: En Route (Screen 07)
+PATCH {{baseUrl}}/api/work-orders/{{workOrderId}}/status
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "status": "En Route",
+  "operationId": "OP-STATUS-001"
+}
+
+### 3.4 Transition Status: On Site (Screen 07)
+PATCH {{baseUrl}}/api/work-orders/{{workOrderId}}/status
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "status": "On Site",
+  "operationId": "OP-STATUS-002"
+}
+
+### 3.5 Transition Status: In Progress (Screen 07)
+PATCH {{baseUrl}}/api/work-orders/{{workOrderId}}/status
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "status": "In Progress",
+  "operationId": "OP-STATUS-003"
+}
+
+### ═══════════════════════════════════════════════════════════════════════════
+### 4. GPS GEOFENCING & TELEMETRY (Screens 08, 09)
+### ═══════════════════════════════════════════════════════════════════════════
+
+### 4.1 GPS Check-In with Geofence Distance Calculation (Screen 08)
+POST {{baseUrl}}/api/jobs/{{workOrderId}}/check-in
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "latitude": 18.520430,
+  "longitude": 73.856743,
+  "accuracy": 5.0,
+  "overrideReason": null
+}
+
+### 4.2 Batch GPS Telemetry Tracking (Screen 09)
+POST {{baseUrl}}/api/gps/batch
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "deviceId": "DEVICE-TECH-001",
+  "positions": [
+    {
+      "latitude": 18.520430,
+      "longitude": 73.856743,
+      "accuracy": 8,
+      "speed": 32.5,
+      "timestamp": "2026-09-02T10:15:00Z"
+    }
+  ]
+}
+
+### ═══════════════════════════════════════════════════════════════════════════
+### 5. ACTIVITY LOG & LABOR TRACKING (Screen 10)
+### ═══════════════════════════════════════════════════════════════════════════
+
+### 5.1 Get Activities for Job (Screen 10)
+GET {{baseUrl}}/api/jobs/{{workOrderId}}/activities
+Authorization: Bearer {{authToken}}
+
+### 5.2 Log Labor Time & Activity (Screen 10)
+# @name logActivity
+POST {{baseUrl}}/api/jobs/{{workOrderId}}/activities
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "type": "Repair",
+  "durationMinutes": 60,
+  "notes": "Replaced faulty temperature sensor TS-40 and flushed coolant line.",
+  "partsUsed": "Temp Sensor TS-40 (1x), Coolant 5L"
+}
+
+@activityId = {{logActivity.response.body.activityId}}
+
+### ═══════════════════════════════════════════════════════════════════════════
+### 6. PHOTO CAPTURE (Salesforce ContentVersion & ContentDocumentLink) (Screen 11)
+### ═══════════════════════════════════════════════════════════════════════════
+
+### 6.1 Upload Job Site Photo to Salesforce ContentVersion
+POST {{baseUrl}}/api/attachments/upload
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "workOrderId": "{{workOrderId}}",
+  "attachmentType": "Photo",
+  "fileName": "Pre_Service_Inspection.jpg",
+  "category": "Pre-Service Inspection",
+  "base64Data": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAP..."
+}
+
+### ═══════════════════════════════════════════════════════════════════════════
+### 7. PARTS CATALOGUE & MANAGEMENT (Screens 12, 13, 14, 15)
+### ═══════════════════════════════════════════════════════════════════════════
+
+### 7.1 Search Parts Catalogue (Screen 12)
+GET {{baseUrl}}/api/parts?query=sensor
+Authorization: Bearer {{authToken}}
+
+### 7.2 Submit Parts Request (Screen 13)
+# @name requestPart
+POST {{baseUrl}}/api/jobs/{{workOrderId}}/parts-requests
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "partId": "PRT-001",
+  "partCode": "TS-40",
+  "partName": "Temperature Sensor TS-40",
+  "quantity": 1,
+  "isWarranty": true,
+  "depot": "Pune Central Depot"
+}
+
+### 7.3 Track Parts Request Status (Screen 14)
+GET {{baseUrl}}/api/jobs/{{workOrderId}}/parts-requests
+Authorization: Bearer {{authToken}}
+
+### ═══════════════════════════════════════════════════════════════════════════
+### 8. CUSTOMER & ASSET HISTORY (Screen 16)
+### ═══════════════════════════════════════════════════════════════════════════
+
+### 8.1 Get Customer Details
+GET {{baseUrl}}/api/jobs/{{workOrderId}}/customer
+Authorization: Bearer {{authToken}}
+
+### ═══════════════════════════════════════════════════════════════════════════
+### 8.5 PRE-JOB SAFETY CHECK & HAZARD CLEARANCE (Screens 06, 08)
+### ═══════════════════════════════════════════════════════════════════════════
+
+### 8.5.1 Get Safety Checklist & Hazard Protocols (Screen 06)
+GET {{baseUrl}}/api/work-orders/{{workOrderId}}/safety-check
+Authorization: Bearer {{authToken}}
+
+### 8.5.2 Submit Technician Safety Verification (Screen 08)
+POST {{baseUrl}}/api/work-orders/{{workOrderId}}/safety-check
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "technicianId": "{{technicianId}}",
+  "siteRiskLevel": "HIGH",
+  "ppeVerified": {
+    "dielectricGloves": true,
+    "safetyGoggles": true,
+    "steelToeBoots": true,
+    "hardHat": true,
+    "hearingProtection": true
+  },
+  "hazardChecks": [
+    { "hazardCode": "LOTO_APPLIED", "verified": true },
+    { "hazardCode": "ZERO_ENERGY_STATE", "verified": true },
+    { "hazardCode": "BATTERY_ISOLATION", "verified": true },
+    { "hazardCode": "FUEL_GAS_CLEAR", "verified": true },
+    { "hazardCode": "EXHAUST_VENTILATION", "verified": true }
+  ],
+  "technicianDeclaration": "I confirm that all safety protocols and Lockout/Tagout measures have been verified before servicing this equipment.",
+  "latitude": 18.52043,
+  "longitude": 73.856743
+}
+
+### 8.5.3 Emergency Safety Escalation & Hazard Alert
+POST {{baseUrl}}/api/work-orders/{{workOrderId}}/safety-escalation
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "hazardType": "ELECTRICAL_ARCING",
+  "severity": "CRITICAL",
+  "hazardDetails": "Active electrical arcing detected at main 415V distribution busbar with visible insulation scorch.",
+  "immediateActionTaken": "Tripped upstream substation breaker and cordoned off 10-meter perimeter.",
+  "evacuatedSite": true,
+  "technicianId": "{{technicianId}}"
+}
+
+### 8.5.4 Get Equipment Safety Audit History
+GET {{baseUrl}}/api/work-orders/{{workOrderId}}/safety-history
+Authorization: Bearer {{authToken}}
+
+### ═══════════════════════════════════════════════════════════════════════════
+### 9. DYNAMIC WORK ORDER CHECKLIST & SENSOR TELEMETRY (Screen 17)
+### ═══════════════════════════════════════════════════════════════════════════
+
+### 9.1 Get Dynamic Work Order Checklist (Screen 17)
+GET {{baseUrl}}/api/work-orders/{{workOrderId}}/checklist
+Authorization: Bearer {{authToken}}
+
+### 9.2 Update Single Checklist Item & Measurement Reading
+PATCH {{baseUrl}}/api/work-orders/{{workOrderId}}/checklist/chk_5
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "status": "PASSED",
+  "measuredValue": 415.2,
+  "comments": "Phase-to-phase output voltage calibrated at 415.2V RMS within target tolerances."
+}
+
+### 9.3 Submit Completed Checklist Batch
+POST {{baseUrl}}/api/work-orders/{{workOrderId}}/checklist/submit
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "items": [
+    { "id": "chk_1", "isCompleted": true, "status": "PASSED" },
+    { "id": "chk_2", "isCompleted": true, "status": "PASSED", "selected": "NORMAL" },
+    { "id": "chk_3", "isCompleted": true, "status": "PASSED", "selected": "ADEQUATE" },
+    { "id": "chk_4", "isCompleted": true, "status": "PASSED" },
+    { "id": "chk_5", "isCompleted": true, "status": "PASSED", "measuredValue": 415.2 },
+    { "id": "chk_6", "isCompleted": true, "status": "PASSED", "measuredValue": 78.4 },
+    { "id": "chk_7", "isCompleted": true, "status": "PASSED", "measuredValue": 52.0 },
+    { "id": "chk_8", "isCompleted": true, "status": "PASSED", "measuredValue": 12.8 },
+    { "id": "chk_9", "isCompleted": true, "status": "PASSED" },
+    { "id": "chk_10", "isCompleted": true, "status": "PASSED" },
+    { "id": "chk_12", "isCompleted": true, "status": "PASSED" },
+    { "id": "chk_13", "isCompleted": true, "status": "PASSED" },
+    { "id": "chk_14", "isCompleted": true, "status": "PASSED" },
+    { "id": "chk_15", "isCompleted": true, "status": "PASSED" },
+    { "id": "chk_16", "isCompleted": true, "status": "PASSED" },
+    { "id": "chk_17", "isCompleted": true, "status": "PASSED" },
+    { "id": "chk_18", "isCompleted": true, "status": "PASSED" }
+  ]
+}
+
+### 9.4 Get Standard Checklist Templates by Asset Category
+GET {{baseUrl}}/api/checklist/templates
+Authorization: Bearer {{authToken}}
+
+### ═══════════════════════════════════════════════════════════════════════════
+### 10. SIGNATURE & JOB COMPLETION (Screens 18, 19)
+### ═══════════════════════════════════════════════════════════════════════════
+
+### 10.1 Upload Customer Digital Signature (Screen 18)
+POST {{baseUrl}}/api/attachments/upload
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "workOrderId": "{{workOrderId}}",
+  "attachmentType": "Signature",
+  "fileName": "Customer_Signature.png",
+  "signerName": "Dr. Rajesh Mehta (Facility Director)",
+  "category": "Customer Approval",
+  "base64Data": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
+}
+
+### 10.2 Complete Work Order & Trigger AI Service Report (Screen 19)
+POST {{baseUrl}}/api/work-orders/{{workOrderId}}/complete
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "technicianNotes": "Replaced thermal sensor TS-40 and flushed coolant line. Ran full 15-minute load test; temperature remained steady at 81C.",
+  "partsUsed": "Temp Sensor TS-40 (1x), Coolant 5L",
+  "timeLoggedMinutes": 90,
+  "signerName": "Dr. Rajesh Mehta",
+  "sendToCustomer": true
+}
+
+### ═══════════════════════════════════════════════════════════════════════════
+### 10. GURUAI & SMART TROUBLESHOOTING (Screen 20)
+### ═══════════════════════════════════════════════════════════════════════════
+
+### 10.1 GuruAI Diagnostic Chat (Screen 20)
+POST {{baseUrl}}/api/ai/guru
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "jobId": "{{workOrderId}}",
+  "message": "Generator temperature rising above 95C and smoking near exhaust manifold",
+  "equipmentType": "Generator"
+}
+
+### 10.2 Natural Language to SOQL (NL2SOQL)
+POST {{baseUrl}}/api/ai/query
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "prompt": "Show top 5 customer accounts in Pune by annual revenue",
+  "maxRecords": 5
+}
+
+### ═══════════════════════════════════════════════════════════════════════════
+### 11. TECHNICIAN ATTENDANCE (Screen 21)
+### ═══════════════════════════════════════════════════════════════════════════
+
+### 11.1 Attendance Punch-In with GPS (Screen 21)
+POST {{baseUrl}}/api/attendance/check-in
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "latitude": 18.520430,
+  "longitude": 73.856743,
+  "technicianId": "{{technicianId}}"
+}
+
+### 11.2 Attendance Punch-Out (Screen 21)
+POST {{baseUrl}}/api/attendance/check-out
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "technicianId": "{{technicianId}}"
+}
+
+### 11.3 Attendance Today & Shift History
+GET {{baseUrl}}/api/attendance/today
+Authorization: Bearer {{authToken}}
+
+### ═══════════════════════════════════════════════════════════════════════════
+### 12. NOTIFICATIONS & ALERTS (Screen 22)
+### ═══════════════════════════════════════════════════════════════════════════
+
+### 12.1 Get Active Notifications (Screen 22)
+GET {{baseUrl}}/api/notifications
+Authorization: Bearer {{authToken}}
+
+### ═══════════════════════════════════════════════════════════════════════════
+### 14. DIRECT REAL-TIME SALESFORCE SOBJECT APIS
+### ═══════════════════════════════════════════════════════════════════════════
+
+### 14.1 Query Work Orders from Salesforce
+GET {{baseUrl}}/api/data/Work_Order__c?fields=Id,Name,Subject__c,Status__c,Priority__c&limit=5
+Authorization: Bearer {{authToken}}
+
+### 14.2 Query Accounts from Salesforce
+GET {{baseUrl}}/api/data/Account?fields=Id,Name,BillingCity,AnnualRevenue&limit=5
+Authorization: Bearer {{authToken}}
+
+### 14.3 Direct SOQL Query against Salesforce Org
+POST {{baseUrl}}/api/data/query
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "soql": "SELECT Id, Name, Skills__c, First_Time_Fix_Rate__c, Is_Active__c FROM Technician__c LIMIT 5"
+}
+
+### ═══════════════════════════════════════════════════════════════════════════
+### 15. ASSET 360, RELEVANT PARTS, PAUSE WORK ORDER & GURU AI (NEW MODULES)
+### ═══════════════════════════════════════════════════════════════════════════
+
+### 15.1 Asset Profile 360 & Complete Service History
+GET {{baseUrl}}/api/assets/a001000000001/details-and-history
+Authorization: Bearer {{authToken}}
+x-mock-mode: true
+
+### 15.2 Work Order Equipment-Filtered Relevant Parts Catalogue
+GET {{baseUrl}}/api/work-orders/{{workOrderId}}/applicable-parts?query=gasket
+Authorization: Bearer {{authToken}}
+x-mock-mode: true
+
+### 15.3 Temporarily Pause Work Order (Waiting for Part / Approval / Access)
+POST {{baseUrl}}/api/work-orders/{{workOrderId}}/pause
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+x-mock-mode: true
+
+{
+  "reason": "Waiting for Part",
+  "description": "Awaiting replacement coolant pump gasket kit from Pune Central Depot.",
+  "dependency": "PR-000492",
+  "expectedResumeDate": "2026-10-13T10:00:00.000Z",
+  "responsibleTeam": "Procurement"
+}
+
+### 15.4 Resume Temporarily Paused Work Order
+POST {{baseUrl}}/api/work-orders/{{workOrderId}}/resume
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+x-mock-mode: true
+
+{
+  "resumeComments": "Part received on-site. Replacement procedure resumed."
+}
+
+### 15.5 Paused Work Orders Supervisor Command Center Dashboard
+GET {{baseUrl}}/api/work-orders/paused-dashboard
+Authorization: Bearer {{authToken}}
+x-mock-mode: true
+
+### 15.6 Reverse Logistics: Return Unused Part to Depot Inventory
+POST {{baseUrl}}/api/jobs/{{workOrderId}}/parts-return
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+x-mock-mode: true
+
+{
+  "partsRequestId": "REQ-00101",
+  "partName": "Coolant Pump Gasket Kit CV-KIT-01",
+  "quantity": 1
+}
+
+### 15.7 GuruAI Field Diagnostic Copilot (Dynamic Structured SOP & Parts)
+POST {{baseUrl}}/api/ai/guru
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+x-mock-mode: true
+
+{
+  "jobId": "{{workOrderId}}",
+  "message": "How do I replace the coolant pump on a 250kVA Cummins generator?"
+}
+

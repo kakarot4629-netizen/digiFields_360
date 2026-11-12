@@ -1,0 +1,7 @@
+{
+  "packageDirectories": [{"path": "force-app", "default": true}],
+  "name": "digiField360",
+  "namespace": "",
+  "sourceApiVersion": "61.0",
+  "sfdcLoginUrl": "https://login.salesforce.com"
+}

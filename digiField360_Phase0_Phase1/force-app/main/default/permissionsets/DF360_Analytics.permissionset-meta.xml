@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<PermissionSet xmlns="http://soap.sforce.com/2006/04/metadata">
+    <label>DF360 Analytics</label>
+    <description>Regional director. Read-only access to all DF360 objects across all zones.</description>
+    <hasActivationRequired>false</hasActivationRequired>
+</PermissionSet>

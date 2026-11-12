@@ -1,0 +1,117 @@
+<template>
+    <lightning-card title="GuruAI — Agentforce Field Diagnostic Copilot" icon-name="standard:bot">
+        <div class="guru-container slds-p-around_medium">
+            <!-- Chat Window -->
+            <div class="chat-window slds-box slds-m-bottom_small">
+                <template for:each={messages} for:item="msg">
+                    <div key={msg.id} class={msg.containerClass}>
+                        <div class={msg.bubbleClass}>
+                            <div class="msg-header">
+                                <span class="msg-sender">{msg.sender}</span>
+                                <span class="msg-time">{msg.time}</span>
+                            </div>
+                            
+                            <!-- Structured Response View -->
+                            <template if:true={msg.isStructured}>
+                                <div class="structured-card slds-m-top_xx-small">
+                                    <h3 class="structured-title">{msg.structured.title}</h3>
+                                    <p class="structured-summary">{msg.structured.summary}</p>
+
+                                    <template if:true={msg.structured.safetyPrecautions}>
+                                        <div class="safety-box slds-m-top_x-small slds-p-around_x-small">
+                                            <span class="safety-header">⚠️ Mandatory Safety Protocols:</span>
+                                            <ul class="safety-list">
+                                                <template for:each={msg.structured.safetyPrecautions} for:item="s">
+                                                    <li key={s}>{s}</li>
+                                                </template>
+                                            </ul>
+                                        </div>
+                                    </template>
+
+                                    <template if:true={msg.structured.actionableSteps}>
+                                        <div class="steps-box slds-m-top_x-small">
+                                            <span class="steps-header">📋 Step-by-Step SOP Resolution:</span>
+                                            <div class="step-items slds-m-top_xx-small">
+                                                <template for:each={msg.structured.actionableSteps} for:item="st">
+                                                    <div key={st.step} class="step-line slds-m-bottom_xx-small">
+                                                        <span class="step-badge">{st.step}</span>
+                                                        <strong>{st.action}:</strong> {st.details}
+                                                    </div>
+                                                </template>
+                                            </div>
+                                        </div>
+                                    </template>
+
+                                    <template if:true={msg.structured.recommendedParts}>
+                                        <div class="parts-box slds-m-top_x-small">
+                                            <span class="parts-header">🔧 Matched Inventory Spares:</span>
+                                            <div class="slds-grid slds-wrap slds-m-top_xx-small">
+                                                <template for:each={msg.structured.recommendedParts} for:item="p">
+                                                    <span key={p.partCode} class="slds-badge slds-theme_inverse slds-m-right_xx-small slds-m-bottom_xx-small">
+                                                        {p.partCode} — {p.name} (₹{p.unitCost})
+                                                    </span>
+                                                </template>
+                                            </div>
+                                        </div>
+                                    </template>
+                                </div>
+                            </template>
+
+                            <!-- Plain Text Fallback View -->
+                            <template if:false={msg.isStructured}>
+                                <div class="msg-text">{msg.text}</div>
+                            </template>
+                        </div>
+                    </div>
+                </template>
+                <template if:true={isLoading}>
+                    <div class="msg-row ai-row">
+                        <div class="msg-bubble ai-bubble loading-bubble">
+                            <span class="dot"></span>
+                            <span class="dot"></span>
+                            <span class="dot"></span>
+                            <span class="slds-m-left_x-small">GuruAI is analyzing diagnostics...</span>
+                        </div>
+                    </div>
+                </template>
+            </div>
+
+            <!-- Quick Suggestions -->
+            <div class="slds-m-bottom_small quick-pills">
+                <span class="quick-title slds-text-title_bold slds-m-right_x-small">💡 Quick Prompts:</span>
+                <button class="slds-button slds-button_neutral pill-btn" onclick={handleQuickPrompt} data-prompt="How to replace the coolant pump on a 250kVA Cummins Diesel Generator?">
+                    Cummins Coolant Pump SOP
+                </button>
+                <button class="slds-button slds-button_neutral pill-btn" onclick={handleQuickPrompt} data-prompt="Diagnose Error Code E-401 on HVAC Chiller Unit">
+                    Error Code E-401 (HVAC)
+                </button>
+                <button class="slds-button slds-button_neutral pill-btn" onclick={handleQuickPrompt} data-prompt="Which gasket and oil filter part numbers do I need for quarterly servicing?">
+                    Quarterly Filter Parts
+                </button>
+            </div>
+
+            <!-- Input Bar -->
+            <div class="slds-grid slds-gutters slds-grid_vertical-align-center input-bar">
+                <div class="slds-col slds-grow">
+                    <lightning-input 
+                        placeholder="Ask GuruAI equipment questions, error codes, or SOP procedures... (Press Enter to Send)" 
+                        value={inputMsg} 
+                        onchange={handleInputChange}
+                        onkeyup={handleKeyUp}
+                        disabled={isLoading}
+                        variant="label-hidden">
+                    </lightning-input>
+                </div>
+                <div class="slds-col slds-no-flex">
+                    <lightning-button 
+                        label="Ask AI" 
+                        variant="brand" 
+                        icon-name="utility:send" 
+                        onclick={handleSend}
+                        disabled={isLoading}>
+                    </lightning-button>
+                </div>
+            </div>
+        </div>
+    </lightning-card>
+</template>

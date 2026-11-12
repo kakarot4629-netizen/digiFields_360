@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>CSAT_Avg_30d__c</fullName>
+    <label>CSAT Avg (30 days)</label>
+    <type>Number</type>
+    <required>false</required>
+    <trackHistory>true</trackHistory>
+    <precision>4</precision><scale>2</scale>
+</CustomField>

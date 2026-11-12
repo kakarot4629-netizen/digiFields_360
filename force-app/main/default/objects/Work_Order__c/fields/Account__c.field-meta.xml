@@ -5,4 +5,5 @@
     <type>Lookup</type>
     <referenceTo>Account</referenceTo><relationshipName
   >Work_Orders</relationshipName>
+    <deleteConstraint>SetNull</deleteConstraint>
 </CustomField>

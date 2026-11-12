@@ -1,0 +1,279 @@
+{
+  "info": {
+    "_postman_id": "df360-login-auth-standalone-v1",
+    "name": "digiField360.ai — Real-Time Login & Auth API",
+    "description": "🚀 **Simple, Standalone Real-Time Salesforce Login & Authentication Collection for digiField360.ai**\n\nUse this collection to test:\n1. **Valid Login**: Authenticates against live Salesforce and returns a Bearer Token and Technician Profile.\n2. **Wrong Password**: Verifies strict 401 Unauthorized rejection.\n3. **Unknown User**: Verifies strict 401 Unauthorized rejection.\n4. **Get Profile**: Fetches the authenticated technician record using the dynamically captured `{{authToken}}`.\n5. **Direct Salesforce Query**: Queries live `Work_Order__c` records to confirm end-to-end Salesforce connectivity.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "https://digifields-360.onrender.com",
+      "type": "string"
+    },
+    {
+      "key": "username",
+      "value": "piyush.channe.3868c7575da5@agentforce.com",
+      "type": "string"
+    },
+    {
+      "key": "password",
+      "value": "YOUR_PASSWORD_HERE",
+      "type": "string"
+    },
+    {
+      "key": "authToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "technicianId",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Valid Login (Real Salesforce Credentials -> 200 OK)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status is 200 OK\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "var jsonData = pm.response.json();",
+              "pm.test(\"Login successful and token returned\", function () {",
+              "    pm.expect(jsonData.success).to.be.true;",
+              "    pm.expect(jsonData.token).to.be.a('string');",
+              "});",
+              "if (jsonData.token) {",
+              "    pm.environment.set(\"authToken\", jsonData.token);",
+              "    pm.collectionVariables.set(\"authToken\", jsonData.token);",
+              "    console.log(\"✅ Auto-captured authToken:\", jsonData.token);",
+              "}",
+              "if (jsonData.technician && jsonData.technician.id) {",
+              "    pm.environment.set(\"technicianId\", jsonData.technician.id);",
+              "    pm.collectionVariables.set(\"technicianId\", jsonData.technician.id);",
+              "    console.log(\"✅ Auto-captured technicianId:\", jsonData.technician.id);",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": \"{{username}}\",\n  \"password\": \"{{password}}\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/auth/login",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "auth",
+            "login"
+          ]
+        },
+        "description": "Authenticates valid Salesforce credentials, queries live Salesforce Technician__c data, and automatically stores {{authToken}} and {{technicianId}}."
+      },
+      "response": []
+    },
+    {
+      "name": "2. Wrong Password Test (Strict 401 Unauthorized Rejection)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status is 401 Unauthorized\", function () {",
+              "    pm.response.to.have.status(401);",
+              "});",
+              "var jsonData = pm.response.json();",
+              "pm.test(\"Returns INVALID_CREDENTIALS code\", function () {",
+              "    pm.expect(jsonData.success).to.be.false;",
+              "    pm.expect(jsonData.code).to.eql(\"INVALID_CREDENTIALS\");",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": \"{{username}}\",\n  \"password\": \"WRONG_PASSWORD_999\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/auth/login",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "auth",
+            "login"
+          ]
+        },
+        "description": "Verifies that incorrect passwords are strictly rejected with 401 Unauthorized."
+      },
+      "response": []
+    },
+    {
+      "name": "3. Unknown Username Test (Strict 401 Unauthorized Rejection)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status is 401 Unauthorized\", function () {",
+              "    pm.response.to.have.status(401);",
+              "});",
+              "var jsonData = pm.response.json();",
+              "pm.test(\"Returns INVALID_CREDENTIALS code\", function () {",
+              "    pm.expect(jsonData.success).to.be.false;",
+              "    pm.expect(jsonData.code).to.eql(\"INVALID_CREDENTIALS\");",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": \"fake.user.not.exist@example.com\",\n  \"password\": \"{{password}}\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/auth/login",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "auth",
+            "login"
+          ]
+        },
+        "description": "Verifies that non-existent users are strictly rejected with 401 Unauthorized."
+      },
+      "response": []
+    },
+    {
+      "name": "4. Get Authenticated Technician Profile (Using Captured Token)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status is 200 OK\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "var jsonData = pm.response.json();",
+              "pm.test(\"Profile data returned\", function () {",
+              "    pm.expect(jsonData.technician).to.be.an('object');",
+              "    pm.expect(jsonData.technician.name).to.be.a('string');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{authToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/technician/profile",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "technician",
+            "profile"
+          ]
+        },
+        "description": "Retrieves the technician profile using the token captured from request #1."
+      },
+      "response": []
+    },
+    {
+      "name": "5. Query Salesforce Work Orders (Using Captured Token)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status is 200 OK\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "var jsonData = pm.response.json();",
+              "pm.test(\"Salesforce Work Order records returned\", function () {",
+              "    pm.expect(jsonData.records).to.be.an('array');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{authToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/data/Work_Order__c?limit=5",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "data",
+            "Work_Order__c"
+          ],
+          "query": [
+            {
+              "key": "limit",
+              "value": "5"
+            }
+          ]
+        },
+        "description": "Queries live Work_Order__c records from your Salesforce Org using the authenticated Bearer token."
+      },
+      "response": []
+    }
+  ]
+}

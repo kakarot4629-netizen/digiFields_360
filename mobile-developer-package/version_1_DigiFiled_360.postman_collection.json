@@ -1,0 +1,880 @@
+{
+  "info": {
+    "_postman_id": "df360-v1-digifield-360",
+    "name": "version 1 DigiFiled 360",
+    "description": "Dynamic Technician Mobile API for digiField 360 with automatic token handling, Work Orders, Service Appointment Status management, Customer Addresses, and FSL-Standard Multi-Technician & Service Crew Assignment.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "instance_url",
+      "value": "https://orgfarm-4036b01401-dev-ed.develop.my.salesforce.com",
+      "type": "string"
+    },
+    {
+      "key": "client_id",
+      "value": "3MVG97L7PWbPq6Uwn6NZQK1wxLkVSvXOdMLVbbhzid3miLmx9zhjZmuly4UrojOanINkPK2o0UPD8oXpw742j",
+      "type": "string"
+    },
+    {
+      "key": "client_secret",
+      "value": "10E1BF442D1A8E91AC52210B41FC292E518A60C322FF72038F460B50EEB5683D",
+      "type": "string"
+    },
+    {
+      "key": "access_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "work_order_id",
+      "value": "a03g500000mKkPdAAK",
+      "type": "string"
+    },
+    {
+      "key": "service_appointment_id",
+      "value": "a0Ig5000002Kfc9EAC",
+      "type": "string"
+    },
+    {
+      "key": "service_appointment_status",
+      "value": "Assigned",
+      "type": "string"
+    },
+    {
+      "key": "service_crew_id",
+      "value": "a0Sg5000002w65VEAQ",
+      "type": "string"
+    },
+    {
+      "key": "technician_id",
+      "value": "a02g500000Bvf9mAAB",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. OAuth 2.0 Token (Auto-Sets Access Token)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "var jsonData = pm.response.json();",
+              "if (jsonData.access_token) {",
+              "    pm.collectionVariables.set('access_token', jsonData.access_token);",
+              "    if (jsonData.instance_url) {",
+              "        pm.collectionVariables.set('instance_url', jsonData.instance_url);",
+              "    }",
+              "    pm.collectionVariables.set('technician_id', 'a02g500000Bvf9mAAB');",
+              "    console.log('✅ Access Token & Default technician_id saved to collection variables!');",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/x-www-form-urlencoded"
+          }
+        ],
+        "body": {
+          "mode": "urlencoded",
+          "urlencoded": [
+            {
+              "key": "grant_type",
+              "value": "client_credentials",
+              "type": "text"
+            },
+            {
+              "key": "client_id",
+              "value": "{{client_id}}",
+              "type": "text"
+            },
+            {
+              "key": "client_secret",
+              "value": "{{client_secret}}",
+              "type": "text"
+            }
+          ]
+        },
+        "url": {
+          "raw": "{{instance_url}}/services/oauth2/token",
+          "host": [
+            "{{instance_url}}"
+          ],
+          "path": [
+            "services",
+            "oauth2",
+            "token"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "2. Get Authenticated Technician Profile (Auto-Sets technician_id)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 200 OK', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "var jsonData = pm.response.json();",
+              "pm.test('Returns authenticated technician', function () {",
+              "    pm.expect(jsonData.success).to.be.true;",
+              "    pm.expect(jsonData.technician).to.be.an('object');",
+              "    pm.expect(jsonData.technician.id).to.be.a('string').and.not.empty;",
+              "});",
+              "",
+              "if (jsonData.technician && jsonData.technician.id) {",
+              "    pm.collectionVariables.set('technician_id', jsonData.technician.id);",
+              "    console.log('✅ Auto-captured technician_id:', jsonData.technician.id, 'for', jsonData.technician.name);",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{access_token}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{instance_url}}/services/apexrest/df360/v1/auth/me",
+          "host": [
+            "{{instance_url}}"
+          ],
+          "path": [
+            "services",
+            "apexrest",
+            "df360",
+            "v1",
+            "auth",
+            "me"
+          ]
+        },
+        "description": "Returns the authenticated user details and their associated active Technician__c record. Automatically saves `{{technician_id}}` for all subsequent requests."
+      },
+      "response": []
+    },
+    {
+      "name": "3. Get Technician Work Orders & Appointments (With Status, Team & Address)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "var jsonData = pm.response.json();",
+              "pm.test('Response contains workOrders array', function () {",
+              "    pm.expect(jsonData.workOrders).to.be.an('array');",
+              "});",
+              "",
+              "if (jsonData.workOrders && jsonData.workOrders.length > 0) {",
+              "    var wo = jsonData.workOrders.find(function(w) { return w.serviceAppointments && w.serviceAppointments.length > 0; }) || jsonData.workOrders[0];",
+              "    if (wo.id) {",
+              "        pm.collectionVariables.set('work_order_id', wo.id);",
+              "        console.log('Saved work_order_id:', wo.id);",
+              "    }",
+              "    if (wo.serviceAppointments && wo.serviceAppointments.length > 0) {",
+              "        var sa = wo.serviceAppointments[0];",
+              "        pm.collectionVariables.set('service_appointment_id', sa.id);",
+              "        pm.collectionVariables.set('service_appointment_status', sa.status);",
+              "        console.log('Saved service_appointment_id:', sa.id, '| Status:', sa.status);",
+              "        ",
+              "        pm.test('Service Appointment contains valid status', function () {",
+              "            pm.expect(sa.status).to.be.a('string').and.not.empty;",
+              "        });",
+              "        ",
+              "        if (sa.assignedTeam && sa.assignedTeam.length > 0) {",
+              "            console.log('Assigned Team Count:', sa.assignedTeam.length);",
+              "            pm.test('Assigned Team roster is populated', function () {",
+              "                pm.expect(sa.assignedTeam.length).to.be.above(0);",
+              "            });",
+              "        }",
+              "    }",
+              "    var addr = wo.serviceAddress || (wo.workOrder && wo.workOrder.serviceAddress) || (wo.case && wo.case.serviceAddress);",
+              "    if (addr) {",
+              "        console.log('Service Address:', addr.name, '| City:', addr.city, '| Lat:', addr.latitude, '| Lon:', addr.longitude);",
+              "        pm.test('Customer Service Address is present', function () {",
+              "            pm.expect(addr.name).to.be.a('string').and.not.empty;",
+              "            pm.expect(addr.city).to.be.a('string').and.not.empty;",
+              "        });",
+              "        pm.test('Service Address contains valid latitude & longitude', function () {",
+              "            pm.expect(addr.latitude).to.be.a('number');",
+              "            pm.expect(addr.longitude).to.be.a('number');",
+              "        });",
+              "    }",
+              "}",
+              "",
+              "pm.test(\"Service Appointment contains Scheduled or Start Time\", function () {",
+              "    if (jsonData.workOrders && jsonData.workOrders.length > 0 && jsonData.workOrders[0].serviceAppointments && jsonData.workOrders[0].serviceAppointments.length > 0) {",
+              "        var sa = jsonData.workOrders[0].serviceAppointments[0];",
+              "        pm.expect(sa.scheduledStartTime).to.be.a(\"string\").and.not.empty;\n        console.log('   📅 Scheduled:', sa.scheduledStartTime, 'to', sa.scheduledEndTime);\n        console.log('   ⏱️ Actual (null if unstarted): Start =', sa.startTime, '| End =', sa.endTime);",
+              "        console.log(\"   ⏰ SA Start Time:\", sa.startTime || sa.scheduledStartTime);",
+              "        console.log(\"   ⏰ SA End Time:\", sa.endTime || sa.scheduledEndTime);",
+              "    }",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{access_token}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{instance_url}}/services/apexrest/df360/v1/work-orders/my?technicianId={{technician_id}}&status=Assigned",
+          "host": [
+            "{{instance_url}}"
+          ],
+          "path": [
+            "services",
+            "apexrest",
+            "df360",
+            "v1",
+            "work-orders",
+            "my"
+          ],
+          "query": [
+            {
+              "key": "technicianId",
+              "value": "{{technician_id}}",
+              "description": "Filters strictly by the authenticated technician ID so only their work orders and appointments are returned."
+            },
+            {
+              "key": "status",
+              "value": "Assigned",
+              "description": "Filters both Work Orders and child Service Appointments by status (e.g. Assigned, In Progress, On Site. Uncheck/remove to retrieve all assigned records)."
+            }
+          ]
+        },
+        "description": "Returns strictly assigned Work Orders and nested Service Appointments for the authenticated technician. Includes assigned multi-technician/crew team roster (`assignedTeam`) and customer service address (`workOrder.case.serviceAddress`). Filter by status using the status query param (default: Assigned)."
+      },
+      "response": []
+    },
+    {
+      "name": "4. Get Service Appointment 360 Details (Multi-Assets, Parts, Crew & Address)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200 OK\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "var jsonData = pm.response.json();",
+              "pm.test(\"Returns valid 360 Service Appointment\", function () {",
+              "    pm.expect(jsonData.success).to.be.true;",
+              "    pm.expect(jsonData.serviceAppointment).to.be.an(\"object\");",
+              "    pm.expect(jsonData.serviceAppointment.id).to.eql(pm.collectionVariables.get(\"service_appointment_id\"));",
+              "});",
+              "",
+              "var sa = jsonData.serviceAppointment;",
+              "console.log(\"\\n--- 📱 SERVICE APPOINTMENT 360 DETAILS ---\");",
+              "console.log(\"Name:\", sa.name, \"| Status:\", sa.status, \"| Priority:\", sa.priority);",
+              "console.log(\"Piyush Channe Match: isAssignedToMe =\", sa.isAssignedToMe, \"| Type =\", sa.assignmentType);",
+              "if (sa.myCrewAssignment) {",
+              "    console.log(\"👥 Tagged Crew:\", sa.myCrewAssignment.crewName, \"| Role:\", sa.myCrewAssignment.role, \"| Leader:\", sa.myCrewAssignment.isLeader);",
+              "}",
+              "if (sa.primaryAsset) {",
+              "    console.log(\"🏭 Primary Asset:\", sa.primaryAsset.name, \"-\", sa.primaryAsset.productName);",
+              "}",
+              "console.log(\"📦 Multi-Asset Line Items Count:\", sa.multiAssetLineItemsCount);",
+              "if (sa.multiAssetLineItems && sa.multiAssetLineItems.length > 0) {",
+              "    sa.multiAssetLineItems.forEach(function(item, idx) {",
+              "        console.log(\"   \" + (idx + 1) + \". [\" + item.name + \"] \" + (item.asset ? item.asset.name : \"Asset\") + \": \" + item.description + \" (Status: \" + item.status + \")\");",
+              "    });",
+              "}",
+              "console.log(\"🔩 Parts Requests Count:\", sa.partsRequestsCount);",
+              "if (sa.partsRequests && sa.partsRequests.length > 0) {",
+              "    sa.partsRequests.forEach(function(pr, idx) {",
+              "        console.log(\"   \" + (idx + 1) + \". [\" + pr.name + \"] \" + pr.partName + \" (Qty: \" + pr.quantity + \", Status: \" + pr.status + \")\");",
+              "    });",
+              "}",
+              "if (sa.serviceAddress) {",
+              "    console.log(\"📍 Site Address:\", sa.serviceAddress.streetAddress + \", \" + sa.serviceAddress.city + \" | Contact:\", sa.serviceAddress.contactPerson, sa.serviceAddress.contactPhone);",
+              "}",
+              "",
+              "pm.test(\"Piyush Channe unique identifier is populated\", function () {",
+              "    pm.expect(sa.isAssignedToMe).to.be.true;",
+              "    pm.expect(sa.assignmentType).to.be.a(\"string\").and.not.empty;",
+              "});",
+              "",
+              "pm.test(\"Multi-Assets and Parts Requests are returned as arrays\", function () {",
+              "    pm.expect(sa.multiAssetLineItems).to.be.an(\"array\");",
+              "    pm.expect(sa.partsRequests).to.be.an(\"array\");",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{access_token}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{instance_url}}/services/apexrest/df360/v1/service-appointments/{{service_appointment_id}}?technicianId={{technician_id}}",
+          "host": [
+            "{{instance_url}}"
+          ],
+          "path": [
+            "services",
+            "apexrest",
+            "df360",
+            "v1",
+            "service-appointments",
+            "{{service_appointment_id}}"
+          ],
+          "query": [
+            {
+              "key": "technicianId",
+              "value": "{{technician_id}}",
+              "description": "Technician ID (e.g. Piyush Channe). Enables unique isAssignedToMe and crew match resolution."
+            }
+          ]
+        },
+        "description": "Returns complete 360-degree operational details for a Service Appointment including multi-asset checklists, requested parts, assigned crew roster, customer address, and Piyush Channe identifier flags."
+      },
+      "response": []
+    },
+    {
+      "name": "5. Service Appointment Check-In (POST with GPS & Timestamp)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 200 OK', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "var jsonData = pm.response.json();",
+              "pm.test('Check-In was successful', function () {",
+              "    pm.expect(jsonData.success).to.be.true;",
+              "    pm.expect(jsonData.appointment).to.be.an('object');",
+              "    pm.expect(jsonData.appointment.checkInTime).to.be.a('string').and.not.empty;",
+              "    pm.expect(jsonData.appointment.status).to.eql('In Progress');",
+              "});",
+              "",
+              "console.log('✅ Technician checked in at site!');",
+              "console.log('   ⏰ Check-In Time:', jsonData.appointment.checkInTime);",
+              "console.log('   📍 Lat:', jsonData.appointment.latitude, '| Lon:', jsonData.appointment.longitude);",
+              "if (jsonData.parentWorkOrder) {",
+              "    console.log('   📋 Parent Work Order:', jsonData.parentWorkOrder.name, '| Status:', jsonData.parentWorkOrder.status);",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{access_token}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"latitude\": 19.119677,\n  \"longitude\": 72.882356,\n  \"status\": \"In Progress\"\n}"
+        },
+        "url": {
+          "raw": "{{instance_url}}/services/apexrest/df360/v1/service-appointments/{{service_appointment_id}}/check-in",
+          "host": [
+            "{{instance_url}}"
+          ],
+          "path": [
+            "services",
+            "apexrest",
+            "df360",
+            "v1",
+            "service-appointments",
+            "{{service_appointment_id}}",
+            "check-in"
+          ]
+        },
+        "description": "Dedicated mobile technician Check-In endpoint. Accepts either Appointment Record ID or Name (e.g. SA-0000024). Automatically stamps check-in timestamp, records GPS coordinates, computes SLA countdown, and updates parent Work Order status to 'In Progress'."
+      },
+      "response": []
+    },
+    {
+      "name": "6. Upload Service Appointment Photo (Before / After Evidence)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200 OK\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "var jsonData = pm.response.json();",
+              "pm.test(\"Photo uploaded successfully\", function () {",
+              "    pm.expect(jsonData.success).to.be.true;",
+              "    pm.expect(jsonData.photo).to.be.an(\"object\");",
+              "    pm.expect(jsonData.photo.photoUrl).to.be.a(\"string\").and.not.empty;",
+              "});",
+              "",
+              "console.log(\"📸 \" + jsonData.photo.photoType + \" Photo Saved:\");",
+              "console.log(\"   🔗 URL:\", jsonData.photo.photoUrl);",
+              "if (jsonData.photo.contentVersionId) {",
+              "    console.log(\"   📁 Salesforce File ID:\", jsonData.photo.contentVersionId);",
+              "}",
+              "if (jsonData.photo.workOrderLineItem) {",
+              "    console.log(\"   🏭 Synced to Multi-Asset:\", jsonData.photo.workOrderLineItem.name);",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{access_token}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"photoType\": \"Before\",\n  \"imageBase64\": \"iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==\",\n  \"fileName\": \"before_inspection.jpg\",\n  \"notes\": \"Pre-service visual inspection: slight oil seepage on bushing seal before overhaul.\"\n}"
+        },
+        "url": {
+          "raw": "{{instance_url}}/services/apexrest/df360/v1/service-appointments/{{service_appointment_id}}/photos",
+          "host": [
+            "{{instance_url}}"
+          ],
+          "path": [
+            "services",
+            "apexrest",
+            "df360",
+            "v1",
+            "service-appointments",
+            "{{service_appointment_id}}",
+            "photos"
+          ]
+        },
+        "description": "Uploads Before or After photo evidence from mobile camera (base64) or hosted URL. Automatically creates Salesforce ContentVersion and stamps Before/After fields on the Service Appointment."
+      },
+      "response": []
+    },
+    {
+      "name": "7. Get Service Appointment Photos & Evidence Gallery",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200 OK\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "var jsonData = pm.response.json();",
+              "pm.test(\"Returns appointment photos\", function () {",
+              "    pm.expect(jsonData.success).to.be.true;",
+              "});",
+              "",
+              "console.log(\"🖼️ Service Appointment Photo Evidence:\");",
+              "if (jsonData.beforePhoto) {",
+              "    console.log(\"   📷 Before Photo:\", jsonData.beforePhoto.url);",
+              "}",
+              "if (jsonData.afterPhoto) {",
+              "    console.log(\"   📸 After Photo:\", jsonData.afterPhoto.url);",
+              "}",
+              "console.log(\"   📂 Attached Gallery Count:\", jsonData.evidenceGalleryCount);"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{access_token}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{instance_url}}/services/apexrest/df360/v1/service-appointments/{{service_appointment_id}}/photos",
+          "host": [
+            "{{instance_url}}"
+          ],
+          "path": [
+            "services",
+            "apexrest",
+            "df360",
+            "v1",
+            "service-appointments",
+            "{{service_appointment_id}}",
+            "photos"
+          ]
+        },
+        "description": "Retrieves all Before and After photos, timestamps, and attached Salesforce files for a Service Appointment."
+      },
+      "response": []
+    },
+    {
+      "name": "7c. Mark Service Appointment Incomplete (with Description & Reason)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200 OK\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "var jsonData = pm.response.json();",
+              "pm.test(\"Appointment marked incomplete successfully\", function () {",
+              "    pm.expect(jsonData.success).to.be.true;",
+              "    pm.expect(jsonData.serviceAppointment.status).to.eql('Incomplete');",
+              "    pm.expect(jsonData.serviceAppointment.description).to.not.be.empty;",
+              "});",
+              "",
+              "console.log('⚠️ Appointment Status:', jsonData.serviceAppointment.status);",
+              "console.log('📝 Description:', jsonData.serviceAppointment.description);",
+              "console.log('🏷️ Reason:', jsonData.serviceAppointment.reason);",
+              "if (jsonData.serviceAppointment.parentWorkOrder) {",
+              "    console.log('⏸️ Parent Work Order Status:', jsonData.serviceAppointment.parentWorkOrder.status);",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{access_token}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"description\": \"Technician could not complete calibration due to unexpected power shutdown by facility management. Requires reschedule.\",\n  \"reason\": \"Customer Unavailable\",\n  \"notes\": \"Spoke with facility manager Mr. Sharma; power will be restored tomorrow morning.\",\n  \"latitude\": 19.1136,\n  \"longitude\": 72.8697\n}"
+        },
+        "url": {
+          "raw": "{{instance_url}}/services/apexrest/df360/v1/service-appointments/{{service_appointment_id}}/incomplete",
+          "host": [
+            "{{instance_url}}"
+          ],
+          "path": [
+            "services",
+            "apexrest",
+            "df360",
+            "v1",
+            "service-appointments",
+            "{{service_appointment_id}}",
+            "incomplete"
+          ]
+        },
+        "description": "Marks a Service Appointment as Incomplete with mandatory description and optional reason picklist. Automatically logs a Job Activity, SLA event, and pauses the parent Work Order."
+      },
+      "response": []
+    },
+    {
+      "name": "8. Get Specific Work Order & Appointments by ID",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "var jsonData = pm.response.json();",
+              "if (jsonData.serviceAppointments && jsonData.serviceAppointments.length > 0) {",
+              "    console.log('Appointments Count:', jsonData.serviceAppointments.length);",
+              "    jsonData.serviceAppointments.forEach(function(sa) {",
+              "        console.log('-> ID:', sa.id, '| Status:', sa.status, '| Priority:', sa.priority);",
+              "        if (sa.assignedTeam && sa.assignedTeam.length > 0) {",
+              "            console.log('   👥 Team members:', sa.assignedTeam.map(function(m){ return (m.technician ? m.technician.name : 'Crew') + ' [' + m.role + ']'; }).join(', '));",
+              "        }",
+              "    });",
+              "}",
+              "",
+              "pm.test(\"Service Appointment contains Scheduled or Start Time\", function () {",
+              "    if (jsonData.serviceAppointments && jsonData.serviceAppointments.length > 0) {",
+              "        var sa = jsonData.serviceAppointments[0];",
+              "        pm.expect(sa.scheduledStartTime).to.be.a(\"string\").and.not.empty;\n        console.log('   📅 Scheduled:', sa.scheduledStartTime, 'to', sa.scheduledEndTime);\n        console.log('   ⏱️ Actual (null if unstarted): Start =', sa.startTime, '| End =', sa.endTime);",
+              "        console.log(\"   ⏰ SA Start Time:\", sa.startTime || sa.scheduledStartTime);",
+              "        console.log(\"   ⏰ SA End Time:\", sa.endTime || sa.scheduledEndTime);",
+              "    }",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{access_token}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{instance_url}}/services/apexrest/df360/v1/work-orders/{{work_order_id}}/service-appointments",
+          "host": [
+            "{{instance_url}}"
+          ],
+          "path": [
+            "services",
+            "apexrest",
+            "df360",
+            "v1",
+            "work-orders",
+            "{{work_order_id}}",
+            "service-appointments"
+          ]
+        },
+        "description": "Fetches a specific Work Order and all of its child Service Appointments with their current statuses, customer service address, and assigned multi-resource team roster."
+      },
+      "response": []
+    },
+    {
+      "name": "9. Get Work Order AI Pre-Job Briefing",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "var jsonData = pm.response.json();",
+              "pm.test('Briefing returned successfully', function () {",
+              "    pm.expect(jsonData.success).to.be.true;",
+              "    pm.expect(jsonData.briefing).to.be.a('string').and.not.empty;",
+              "});",
+              "console.log('📋 AI Pre-Job Briefing for ' + jsonData.workOrderName + ':');",
+              "console.log(jsonData.briefing);"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{access_token}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{instance_url}}/services/apexrest/df360/v1/work-orders/{{work_order_id}}/briefing",
+          "host": [
+            "{{instance_url}}"
+          ],
+          "path": [
+            "services",
+            "apexrest",
+            "df360",
+            "v1",
+            "work-orders",
+            "{{work_order_id}}",
+            "briefing"
+          ]
+        },
+        "description": "Fetches the 5-point AI Pre-Job Briefing (equipment context, fault symptoms, repair history, safety protocols, and required tools/parts) for the active Work Order."
+      },
+      "response": []
+    },
+    {
+      "name": "10. Assign Service Crew to Appointment (Auto-Explosion)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 201 Created', function () {",
+              "    pm.response.to.have.status(201);",
+              "});",
+              "var jsonData = pm.response.json();",
+              "if (jsonData.id) {",
+              "    console.log('Assigned Resource created:', jsonData.id);",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{access_token}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"Service_Job__c\": \"{{service_appointment_id}}\",\n  \"Service_Crew__c\": \"{{service_crew_id}}\",\n  \"Resource_Type__c\": \"Crew\",\n  \"Status__c\": \"Assigned\"\n}"
+        },
+        "url": {
+          "raw": "{{instance_url}}/services/data/v60.0/sobjects/Assigned_Resource__c",
+          "host": [
+            "{{instance_url}}"
+          ],
+          "path": [
+            "services",
+            "data",
+            "v60.0",
+            "sobjects",
+            "Assigned_Resource__c"
+          ]
+        },
+        "description": "Assigns a Service Crew unit to a Service Appointment. Triggers automated crew explosion into individual technician assignments and synchronizes the Lead Technician to parent Service_Job__c."
+      },
+      "response": []
+    },
+    {
+      "name": "11. Query Service Crews & Members",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "var jsonData = pm.response.json();",
+              "console.log('Total Crews:', jsonData.totalSize);",
+              "if (jsonData.records && jsonData.records.length > 0) {",
+              "    jsonData.records.forEach(function(c) {",
+              "        console.log('Crew:', c.Name, '| Size:', c.Crew_Size__c);",
+              "        if (c.Crew_Members__r && c.Crew_Members__r.records) {",
+              "            c.Crew_Members__r.records.forEach(function(m) {",
+              "                console.log('   - Member:', m.Technician__r ? m.Technician__r.Name : m.Technician__c, '| Leader:', m.Is_Leader__c);",
+              "            });",
+              "        }",
+              "    });",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{access_token}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{instance_url}}/services/data/v60.0/query?q=SELECT Id, Name, Crew_Size__c, Is_Active__c, Description__c, (SELECT Id, Technician__c, Technician__r.Name, Is_Leader__c FROM Crew_Members__r) FROM Service_Crew__c",
+          "host": [
+            "{{instance_url}}"
+          ],
+          "path": [
+            "services",
+            "data",
+            "v60.0",
+            "query"
+          ],
+          "query": [
+            {
+              "key": "q",
+              "value": "SELECT Id, Name, Crew_Size__c, Is_Active__c, Description__c, (SELECT Id, Technician__c, Technician__r.Name, Is_Leader__c FROM Crew_Members__r) FROM Service_Crew__c"
+            }
+          ]
+        },
+        "description": "Queries all active Service Crews with their sub-queried member roster and leader flags."
+      },
+      "response": []
+    }
+  ]
+}

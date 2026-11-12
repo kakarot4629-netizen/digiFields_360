@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Job_Type__c</fullName>
+    <label>Job Type</label>
+    <type>Picklist</type>
+    <required>false</required>
+    <trackHistory>true</trackHistory>
+    <valueSet><valueSetDefinition><sorted>false</sorted><value><fullName>Installation</fullName><default>true</default><label>Installation</label></value><value><fullName>Repair</fullName><default>false</default><label>Repair</label></value><value><fullName>Preventive</fullName><default>false</default><label>Preventive</label></value><value><fullName>Warranty</fullName><default>false</default><label>Warranty</label></value><value><fullName>Inspection</fullName><default>false</default><label>Inspection</label></value><value><fullName>Emergency</fullName><default>false</default><label>Emergency</label></value></valueSetDefinition></valueSet>
+</CustomField>

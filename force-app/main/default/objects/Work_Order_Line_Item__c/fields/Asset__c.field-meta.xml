@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Asset__c</fullName>
+    <label>Asset</label>
+    <type>Lookup</type>
+    <referenceTo>Asset__c</referenceTo>
+    <relationshipLabel>Work Order Line Items</relationshipLabel>
+    <relationshipName>Work_Order_Line_Items</relationshipName>
+    <deleteConstraint>SetNull</deleteConstraint>
+    <description>Specific customer asset serviced by this line item.</description>
+</CustomField>

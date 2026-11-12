@@ -447,7 +447,6 @@ public class F360_AI_Tests {
   @isTest
   static void testNLQueryTechnicians() {
     Technician__c tech = new Technician__c(
-      Name = 'Test Technician',
       Skills__c = 'Generator;HVAC',
       Is_Active__c = true,
       Available_For_Assignment__c = true,

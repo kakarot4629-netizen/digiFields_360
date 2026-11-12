@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>SLA_Response_Hrs__c</fullName>
+    <label>Response SLA (hours)</label>
+    <type>Number</type>
+    <required>false</required>
+    <trackHistory>true</trackHistory>
+    <precision>5</precision><scale>1</scale>
+</CustomField>

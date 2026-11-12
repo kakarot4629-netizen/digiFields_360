@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
+    <label>CSAT</label>
+    <pluralLabel>CSAT Records</pluralLabel>
+    <nameField>
+        <label>CSAT Name</label>
+        <type>AutoNumber</type>
+        <displayFormat>CSAT-{0000000}</displayFormat>
+    </nameField>
+    <deploymentStatus>Deployed</deploymentStatus>
+    <sharingModel>ReadWrite</sharingModel>
+    <description>Customer satisfaction response per completed service job.</description>
+    <enableActivities>true</enableActivities>
+    <enableHistory>true</enableHistory>
+    <enableReports>true</enableReports>
+    <enableSearch>true</enableSearch>
+    <enableBulkApi>true</enableBulkApi>
+    <enableStreamingApi>true</enableStreamingApi>
+    <searchLayouts>
+        <customTabListAdditionalFields>Rating__c</customTabListAdditionalFields>
+        <customTabListAdditionalFields>Comment__c</customTabListAdditionalFields>
+        <customTabListAdditionalFields>Customer_Mobile__c</customTabListAdditionalFields>
+        <customTabListAdditionalFields>Service_Job__c</customTabListAdditionalFields>
+        <customTabListAdditionalFields>Is_Responded__c</customTabListAdditionalFields>
+        <customTabListAdditionalFields>Response_Date__c</customTabListAdditionalFields>
+        <searchResultsAdditionalFields>Rating__c</searchResultsAdditionalFields>
+        <searchResultsAdditionalFields>Comment__c</searchResultsAdditionalFields>
+        <searchResultsAdditionalFields>Customer_Mobile__c</searchResultsAdditionalFields>
+        <searchResultsAdditionalFields>Service_Job__c</searchResultsAdditionalFields>
+        <searchResultsAdditionalFields>Is_Responded__c</searchResultsAdditionalFields>
+        <searchResultsAdditionalFields>Response_Date__c</searchResultsAdditionalFields>
+        <lookupDialogsAdditionalFields>Rating__c</lookupDialogsAdditionalFields>
+        <lookupDialogsAdditionalFields>Service_Job__c</lookupDialogsAdditionalFields>
+    </searchLayouts>
+</CustomObject>

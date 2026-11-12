@@ -1,14 +1,44 @@
-<?xml version="1.0" encoding="UTF-8" ?>
+<?xml version="1.0" encoding="UTF-8"?>
 <FlexiPage xmlns="http://soap.sforce.com/2006/04/metadata">
     <flexiPageRegions>
+        <itemInstances>
+            <componentInstance>
+                <componentName>force:highlightsPanel</componentName>
+                <identifier>force_highlightsPanel1</identifier>
+            </componentInstance>
+        </itemInstances>
         <name>header</name>
         <type>Region</type>
     </flexiPageRegions>
     <flexiPageRegions>
         <itemInstances>
             <componentInstance>
+                <componentName>force:relatedListQuickLinksContainer</componentName>
+                <identifier>force_relatedListQuickLinksContainer1</identifier>
+            </componentInstance>
+        </itemInstances>
+        <itemInstances>
+            <componentInstance>
+                <componentName>df360WorkOrderAssetCard</componentName>
+                <identifier>df360WorkOrderAssetCard1</identifier>
+            </componentInstance>
+        </itemInstances>
+        <itemInstances>
+            <componentInstance>
+                <componentName>df360RelevantPartsCatalog</componentName>
+                <identifier>df360RelevantPartsCatalog1</identifier>
+            </componentInstance>
+        </itemInstances>
+        <itemInstances>
+            <componentInstance>
                 <componentName>force:detailPanel</componentName>
                 <identifier>force_detailPanel1</identifier>
+            </componentInstance>
+        </itemInstances>
+        <itemInstances>
+            <componentInstance>
+                <componentName>force:relatedListContainer</componentName>
+                <identifier>force_relatedListContainer1</identifier>
             </componentInstance>
         </itemInstances>
         <name>main</name>
@@ -17,8 +47,26 @@
     <flexiPageRegions>
         <itemInstances>
             <componentInstance>
+                <componentName>df360PauseWorkOrderModal</componentName>
+                <identifier>df360PauseWorkOrderModal1</identifier>
+            </componentInstance>
+        </itemInstances>
+        <itemInstances>
+            <componentInstance>
+                <componentName>df360SLATracker</componentName>
+                <identifier>df360SLATracker1</identifier>
+            </componentInstance>
+        </itemInstances>
+        <itemInstances>
+            <componentInstance>
                 <componentName>field360WorkOrderDetail</componentName>
                 <identifier>field360WorkOrderDetail1</identifier>
+            </componentInstance>
+        </itemInstances>
+        <itemInstances>
+            <componentInstance>
+                <componentName>df360GuruAI</componentName>
+                <identifier>df360GuruAI1</identifier>
             </componentInstance>
         </itemInstances>
         <name>sidebar</name>

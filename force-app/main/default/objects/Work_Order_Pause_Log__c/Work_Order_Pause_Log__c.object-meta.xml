@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
+    <label>Work Order Pause Log</label>
+    <pluralLabel>Work Order Pause Logs</pluralLabel>
+    <nameField>
+        <label>Pause Log Number</label>
+        <type>AutoNumber</type>
+        <displayFormat>PAUSE-{000000}</displayFormat>
+    </nameField>
+    <deploymentStatus>Deployed</deploymentStatus>
+    <sharingModel>ReadWrite</sharingModel>
+    <description>Audit tracking and duration calculation for each time a Work Order is temporarily paused.</description>
+    <enableActivities>true</enableActivities>
+    <enableHistory>true</enableHistory>
+    <enableReports>true</enableReports>
+    <enableSearch>true</enableSearch>
+    <enableBulkApi>true</enableBulkApi>
+    <enableStreamingApi>true</enableStreamingApi>
+    <searchLayouts>
+        <customTabListAdditionalFields>Work_Order__c</customTabListAdditionalFields>
+        <customTabListAdditionalFields>Pause_Reason__c</customTabListAdditionalFields>
+        <customTabListAdditionalFields>Responsible_Team__c</customTabListAdditionalFields>
+        <customTabListAdditionalFields>Paused_At__c</customTabListAdditionalFields>
+        <customTabListAdditionalFields>Resumed_At__c</customTabListAdditionalFields>
+        <customTabListAdditionalFields>Duration_Minutes__c</customTabListAdditionalFields>
+        <searchResultsAdditionalFields>Work_Order__c</searchResultsAdditionalFields>
+        <searchResultsAdditionalFields>Pause_Reason__c</searchResultsAdditionalFields>
+        <searchResultsAdditionalFields>Responsible_Team__c</searchResultsAdditionalFields>
+        <searchResultsAdditionalFields>Paused_At__c</searchResultsAdditionalFields>
+        <searchResultsAdditionalFields>Resumed_At__c</searchResultsAdditionalFields>
+        <searchResultsAdditionalFields>Duration_Minutes__c</searchResultsAdditionalFields>
+        <lookupDialogsAdditionalFields>Work_Order__c</lookupDialogsAdditionalFields>
+        <lookupDialogsAdditionalFields>Pause_Reason__c</lookupDialogsAdditionalFields>
+    </searchLayouts>
+</CustomObject>

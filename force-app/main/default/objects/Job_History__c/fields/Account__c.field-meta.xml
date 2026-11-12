@@ -5,4 +5,5 @@
     <type>Lookup</type>
     <referenceTo>Account</referenceTo><relationshipName
   >Job_Histories</relationshipName>
+    <deleteConstraint>SetNull</deleteConstraint>
 </CustomField>

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Activity_Type__c</fullName>
+    <label>Activity Type</label>
+    <type>Picklist</type>
+    <required>false</required>
+    <trackHistory>true</trackHistory>
+    <valueSet><valueSetDefinition><sorted>false</sorted><value><fullName>Diagnosis</fullName><default>true</default><label>Diagnosis</label></value><value><fullName>Repair</fullName><default>false</default><label>Repair</label></value><value><fullName>Replacement</fullName><default>false</default><label>Replacement</label></value><value><fullName>Test</fullName><default>false</default><label>Test</label></value><value><fullName>Observation</fullName><default>false</default><label>Observation</label></value><value><fullName>Photo</fullName><default>false</default><label>Photo</label></value><value><fullName>Parts Used</fullName><default>false</default><label>Parts Used</label></value></valueSetDefinition></valueSet>
+</CustomField>

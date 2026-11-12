@@ -285,5 +285,58 @@
         </div>
       </template>
     </template>
+
+    <!-- AI Service Report Modal Dialog -->
+    <template if:true={isReportModalOpen}>
+      <section role="dialog" tabindex="-1" aria-modal="true" aria-labelledby="report-modal-title" class="slds-modal slds-fade-in-open slds-modal_medium">
+        <div class="slds-modal__container" style="max-width: 750px; width: 90%;">
+          <!-- Modal Header -->
+          <header class="slds-modal__header" style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: #ffffff; border-top-left-radius: 8px; border-top-right-radius: 8px; padding: 1.25rem 1.5rem; text-align: left; position: relative;">
+            <button class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse" title="Close" onclick={closeReportModal} style="position: absolute; top: 1rem; right: 1rem;">
+              <lightning-icon icon-name="utility:close" alternative-text="close" variant="inverse" size="small"></lightning-icon>
+              <span class="slds-assistive-text">Close</span>
+            </button>
+            <div class="slds-grid slds-grid_vertical-align-center">
+              <lightning-icon icon-name="standard:service_report" size="medium" class="slds-m-right_small"></lightning-icon>
+              <div>
+                <h2 id="report-modal-title" class="slds-text-heading_medium" style="color: #ffffff; font-weight: 700; margin: 0; line-height: 1.2;">
+                  AI Service Report
+                </h2>
+                <p class="slds-m-top_xxx-small" style="color: #94a3b8; font-size: 13px; margin: 0;">
+                  Work Order: <strong>{workOrder.Name}</strong> • {accountName}
+                </p>
+              </div>
+            </div>
+          </header>
+
+          <!-- Modal Content -->
+          <div class="slds-modal__content slds-p-around_medium" style="background: #f8fafc; max-height: 62vh; overflow-y: auto;">
+            <div class="slds-box" style="border-radius: 8px; border: 1px solid #cbd5e1; background: #ffffff; box-shadow: 0 1px 3px rgba(0,0,0,0.05); padding: 1rem;">
+              <pre style="white-space: pre-wrap; word-break: break-word; font-family: 'Consolas', 'Courier New', monospace; font-size: 13px; line-height: 1.65; color: #1e293b; margin: 0;">{workOrder.AI_Service_Report__c}</pre>
+            </div>
+          </div>
+
+          <!-- Modal Footer -->
+          <footer class="slds-modal__footer slds-grid slds-grid_align-spread" style="background: #ffffff; border-bottom-left-radius: 8px; border-bottom-right-radius: 8px; padding: 0.85rem 1.25rem;">
+            <div>
+              <lightning-button
+                label="Copy to Clipboard"
+                icon-name="utility:copy"
+                variant="neutral"
+                onclick={handleCopyReport}>
+              </lightning-button>
+            </div>
+            <div>
+              <lightning-button
+                label="Close"
+                variant="brand"
+                onclick={closeReportModal}>
+              </lightning-button>
+            </div>
+          </footer>
+        </div>
+      </section>
+      <div class="slds-backdrop slds-backdrop_open" style="background: rgba(15, 23, 42, 0.65); backdrop-filter: blur(2px);" onclick={closeReportModal}></div>
+    </template>
   </div>
 </template>

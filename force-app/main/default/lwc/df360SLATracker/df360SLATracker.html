@@ -1,0 +1,21 @@
+<template>
+    <lightning-card title="SLA Countdown & Timeline" icon-name="standard:timesheet">
+        <div class="slds-p-around_medium sla-tracker-box">
+            <template if:true={slaInfo}>
+                <div class="slds-text-align_center slds-m-bottom_medium">
+                    <span class={slaBadgeClass}>{slaInfo.status} — {slaInfo.remainingHrs}h Remaining</span>
+                </div>
+            </template>
+            <h4 class="slds-text-heading_small slds-m-bottom_x-small">Audit Trail</h4>
+            <template for:each={timeline} for:item="evt">
+                <div key={evt.Id} class="slds-box slds-m-bottom_x-small slds-theme_shade">
+                    <div class="slds-grid slds-grid_align-spread">
+                        <strong>{evt.Event_Type__c}</strong>
+                        <span>{evt.SLA_Remaining_Hrs__c}h remaining</span>
+                    </div>
+                    <p class="slds-text-color_weak slds-text-body_small">{evt.Notes__c}</p>
+                </div>
+            </template>
+        </div>
+    </lightning-card>
+</template>

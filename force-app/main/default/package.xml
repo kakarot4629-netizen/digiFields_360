@@ -4,10 +4,18 @@
     <!-- Custom Objects (must be deployed before Apex) -->
     <types>
         <members>Work_Order__c</members>
+        <members>Work_Order_Line_Item__c</members>
+        <members>Work_Order_Pause_Log__c</members>
+        <members>Service_Job__c</members>
         <members>Technician__c</members>
         <members>Job_History__c</members>
         <members>Maintenance_Alert__c</members>
         <members>Equipment__c</members>
+        <members>Asset__c</members>
+        <members>Asset_Feedback__c</members>
+        <members>Part__c</members>
+        <members>Parts_Request__c</members>
+        <members>Parts_Stock__c</members>
         <members>Parts_Inventory__c</members>
         <members>Job_Schedule__c</members>
         <members>Maintenance_Recommendation__c</members>
@@ -17,6 +25,11 @@
 
     <!-- Apex Classes -->
     <types>
+        <members>DF360_WorkOrderAssetController</members>
+        <members>DF360_PartsController</members>
+        <members>DF360_WorkOrderPauseController</members>
+        <members>DF360_GuruAIController</members>
+        <members>DF360_WorkOrderEnhancementsTest</members>
         <members>F360_PreJobBriefingAction</members>
         <members>F360_ServiceReportAction</members>
         <members>F360_TroubleshootingAction</members>
@@ -24,6 +37,9 @@
         <members>F360_PredictiveMaintenanceAction</members>
         <members>F360_BookingAgentAction</members>
         <members>F360_DispatchBoardController</members>
+        <members>DF360_ServiceJobController</members>
+        <members>DF360_AssetFeedbackHandler</members>
+        <members>DF360_AssetFeedbackHandlerTest</members>
         <members>F360_AI_Tests</members>
         <name>ApexClass</name>
     </types>
@@ -34,7 +50,7 @@
         <name>ApexTrigger</name>
     </types>
 
-    <!-- GenAI Prompt Templates -->
+    <!-- GenAI Prompt Templates (commented out until DefaultAnthropic model is enabled in org)
     <types>
         <members>F360_PreJobBriefing</members>
         <members>F360_ServiceReport</members>
@@ -42,9 +58,15 @@
         <members>F360_MaintenanceAlert</members>
         <name>GenAiPromptTemplate</name>
     </types>
+    -->
 
     <!-- Lightning Web Components -->
     <types>
+        <members>df360WorkOrderAssetCard</members>
+        <members>df360RelevantPartsCatalog</members>
+        <members>df360PauseWorkOrderModal</members>
+        <members>df360PausedOrdersDashboard</members>
+        <members>df360GuruAI</members>
         <members>field360WorkOrderDetail</members>
         <members>field360DispatchBoard</members>
         <name>LightningComponentBundle</name>
@@ -70,6 +92,7 @@
     <!-- Custom Applications -->
     <types>
         <members>digifiled_360</members>
+        <members>DigiField_360</members>
         <name>CustomApplication</name>
     </types>
 
@@ -82,14 +105,21 @@
     <!-- Custom Tabs -->
     <types>
         <members>Dispatch_Board</members>
+        <members>DF360_Paused_Work_Orders</members>
         <members>Work_Order__c</members>
+        <members>Service_Job__c</members>
         <members>Technician__c</members>
         <members>Job_Schedule__c</members>
         <members>Equipment__c</members>
+        <members>Asset__c</members>
+        <members>Part__c</members>
+        <members>Parts_Request__c</members>
+        <members>Parts_Stock__c</members>
         <members>Parts_Inventory__c</members>
         <members>Job_History__c</members>
         <members>Maintenance_Alert__c</members>
         <members>Maintenance_Recommendation__c</members>
+        <members>Asset_Feedback__c</members>
         <name>CustomTab</name>
     </types>
 
@@ -97,20 +127,24 @@
     <types>
         <members>Dispatch_Board</members>
         <members>Work_Order_Record_Page</members>
+        <members>DF360_Paused_Work_Orders</members>
         <name>FlexiPage</name>
     </types>
 
     <!-- Layouts -->
     <types>
         <members>Work_Order__c-Work Order Layout</members>
+        <members>Work_Order_Line_Item__c-Work Order Line Item Layout</members>
+        <members>Service_Job__c-Service Job Layout</members>
+        <members>Asset__c-Asset Layout</members>
+        <members>Asset_Feedback__c-Asset Feedback Layout</members>
         <members>Technician__c-Technician Layout</members>
         <members>Job_History__c-Job History Layout</members>
         <members>Maintenance_Alert__c-Maintenance Alert Layout</members>
         <members>Equipment__c-Equipment Layout</members>
         <members>Parts_Inventory__c-Parts Inventory Layout</members>
         <members>Job_Schedule__c-Job Schedule Layout</members>
-        <members
-    >Maintenance_Recommendation__c-Maintenance Recommendation Layout</members>
+        <members>Maintenance_Recommendation__c-Maintenance Recommendation Layout</members>
         <name>Layout</name>
     </types>
 

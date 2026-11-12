@@ -5,4 +5,5 @@
     <type>Lookup</type>
     <referenceTo>Work_Order__c</referenceTo><relationshipName
   >Maintenance_Recommendations</relationshipName>
+    <deleteConstraint>SetNull</deleteConstraint>
 </CustomField>

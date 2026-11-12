@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<PermissionSet xmlns="http://soap.sforce.com/2006/04/metadata">
+    <label>DF360 Parts Admin</label>
+    <description>Depot/parts administrator. Full access to Part, Parts_Stock, Depot, Parts_Request.</description>
+    <hasActivationRequired>false</hasActivationRequired>
+</PermissionSet>

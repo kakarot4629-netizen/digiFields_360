@@ -1,0 +1,656 @@
+digiField360.ai
+Field Service Management — Salesforce Edition
+Business Requirements Document  v1.0
+Attribute
+Detail
+Product
+digiField360.ai — Salesforce Edition
+Namespace
+DF360__
+Document Type
+Business Requirements Document (BRD)
+Version
+1.0
+Status
+Draft for Review
+Date
+August 2026
+Prepared By
+digiCloud Solutions Product Team
+Org Reference
+Salesforce Enterprise + Agentforce
+Target GA
+Private Beta — Q2 2027
+1. Executive Summary
+digiField360.ai is digiCloud Solutions' second AI-native ISV product, targeting companies with field service technician forces in India and South-East Asia. Where digiSFA automates field sales, digiField360 automates field service — job dispatch, technician scheduling, SLA tracking, spare parts, customer communication, and service manager analytics — all on the Salesforce platform with Agentforce as the AI backbone.
+The Salesforce Edition is built entirely within a Salesforce org using native objects, Apex, LWC, Agentforce Agents, and Flows. No external database is required. The package is delivered under the DF360__ managed namespace and co-exists cleanly with digiSFA (dSFA__) in the same org.
+1.1 Problem Statement
+Field service companies in India — telecom OEMs, consumer electronics brands, FMCG service divisions, industrial equipment OEMs — manage 50–5,000 technicians with a combination of spreadsheets, WhatsApp groups, and manual dispatch calls. The result:
+SLA breaches go undetected until customer complaints
+Parts are dispatched to wrong locations; technicians waste hours on parts chase
+Customer communication is inconsistent — no automated updates
+Supervisor visibility is zero — no real-time GPS, no live job status
+CSAT measurement is a monthly survey rather than per-job feedback
+1.2 Solution Vision
+digiField360.ai on Salesforce delivers:
+AI-driven job scheduling and technician dispatch with SLA-awareness
+Offline-capable technician mobile app (Flutter, identical to digiSFA mobile)
+Automated customer WhatsApp updates at every job milestone
+Spare parts request, approval, and tracking within the same platform
+Per-job CSAT collected via WhatsApp, aggregated to technician and region scorecards
+Service manager dashboard with live GPS, SLA RAG status, and Agentforce alerts
+5 Agentforce agents replacing 80% of supervisor manual interventions
+📌  digiField360 shares the same Salesforce org, Named Credentials, WhatsApp service, and Razorpay integration as digiSFA. Companies running both products get a unified platform at marginal additional cost.
+2. Product Scope and Use Cases
+2.1 In-Scope Use Cases
+The following ten use cases are confirmed in scope for the Salesforce Edition v1.0:
+UC#
+Use Case
+Priority
+Module
+UC-01
+AI-Powered Job Scheduling & Dispatch
+P1 — Launch
+Dispatch AI
+UC-02
+Technician Offline Mobile App
+P1 — Launch
+Mobile
+UC-03
+SLA Tracking & Automated Escalation
+P1 — Launch
+SLA Engine
+UC-04
+Spare Parts Request & Inventory Management
+P1 — Launch
+Parts
+UC-05
+Customer CSAT Collection via WhatsApp
+P1 — Launch
+CSAT
+UC-06
+WhatsApp-First Customer Communication
+P1 — Launch
+Comms
+UC-07
+Service Manager Dashboard & Analytics
+P1 — Launch
+Analytics
+UC-08
+Technician Attendance & GPS Verification
+P2 — v1.1
+Workforce
+UC-09
+Warranty & AMC Contract Management
+P2 — v1.1
+Contracts
+UC-10
+Preventive Maintenance Scheduling
+P3 — v1.2
+PM
+UC-01 — AI-Powered Job Scheduling & Dispatch
+When a service request arrives (via WhatsApp, customer portal, email, or manual creation), the Dispatch AI Agent (DF360-001) evaluates all open jobs against technician availability, location, skill set, current workload, and SLA priority. It assigns the optimal technician and sends the job to the mobile app within 60 seconds.
+Business Rules:
+Technician must have the required skill certification for the job type
+Travel time estimated using Google Maps API via Named Credential
+Jobs with SLA < 2 hours are always escalated to the first available tech regardless of workload
+If no technician is available, Service Manager is alerted and a hold queue is maintained
+Manual override by Service Manager always takes precedence over AI assignment
+UC-02 — Technician Offline Mobile App
+The Flutter mobile app allows technicians to receive jobs, update status, capture signatures, upload photos, request parts, record activity, and collect CSAT — all with zero internet. Data syncs automatically when connectivity returns. GPS is logged every 5 minutes.
+Key App Screens:
+Today's Jobs — ordered by SLA urgency; swipe to start, pause, complete
+Job Detail — customer info, equipment, history, parts list, checklist
+Parts Request — search parts catalogue, raise request, confirm delivery
+Activity Log — work done, parts used, observations, photos
+CSAT Capture — WhatsApp-delivered or in-app rating
+GuruAI — AI assistant for technical troubleshooting and escalation guidance
+UC-03 — SLA Tracking & Automated Escalation
+Every service job has a defined SLA based on contract type, product category, and customer tier. The SLA Engine (a combination of Flows and Agentforce Agent DF360-002) monitors job age against SLA milestones in real time.
+SLA Milestone
+Trigger
+Action
+Acknowledgement SLA
+Job not acknowledged in 30 min
+WhatsApp to customer; alert to supervisor
+First Response SLA
+Tech not on-site in X hours per contract
+Alert + auto-reassign attempt
+Resolution SLA (80%)
+80% of SLA time elapsed, job open
+Yellow alert to supervisor; GuruAI intervention
+Resolution SLA (100%)
+SLA breached
+Red alert; escalate to Service Manager; CSAT pre-apology sent
+Repeat Visit
+Same asset, 3rd visit in 30 days
+Escalate to Technical Lead; flag for Root Cause Analysis
+UC-04 — Spare Parts Request & Inventory Management
+Technicians request parts from a parts catalogue on the mobile app. Requests flow through an approval step (for high-value parts) before dispatch from the nearest depot. Part usage is recorded against the job for billing and warranty purposes.
+Parts Workflow:
+Technician raises Part Request from the job → type, part code, quantity
+If part cost ≤ threshold: auto-approved and dispatched from depot stock
+If part cost > threshold: Service Manager approval required within 2 hours
+Parts stock at each depot tracked via DF360__Parts_Stock__c
+Low stock triggers reorder alert to Procurement via Chatter
+UC-05 — Customer CSAT Collection
+Within 15 minutes of job completion, a WhatsApp message is sent to the customer with a rating link (1–5 stars) and an optional comment. Rating is captured in DF360__CSAT__c and rolled up to technician, region, and product category scorecards in real time.
+CSAT Rules:
+Response window: 48 hours. Non-responders are excluded from technician KPI
+CSAT ≤ 2 triggers immediate alert to Service Manager and auto-schedule of follow-up call
+CSAT is displayed on technician profile and weighted in AI job assignment
+UC-06 — WhatsApp-First Customer Communication
+Customers receive automated WhatsApp messages at every job milestone. No customer portal login required. All messages use approved Meta WhatsApp Business templates delivered via the dSFA_WhatsAppService shared infrastructure.
+Trigger
+Template
+Content
+Job created
+job_confirmation
+Job ID, technician name, ETA window
+Tech en route
+tech_enroute
+Tech name, photo, estimated arrival time
+Tech arrived
+tech_arrived
+Check-in confirmation
+Job completed
+job_completed
+Summary of work done; CSAT link
+SLA at risk
+sla_apology
+Delay notification, revised ETA, apology
+Parts required
+parts_delay
+Parts ordered, return visit scheduled
+UC-07 — Service Manager Dashboard & Analytics
+The Service Manager Dashboard (LWC: df360CManagerDashboard) provides a live view of team performance, active jobs, SLA status, GPS positions, parts inventory, and CSAT trends. Agentforce Agent DF360-004 surfaces proactive alerts and recommendations.
+Dashboard KPIs:
+Jobs open / in-progress / completed today
+SLA compliance % — green ≥ 95%, amber 85–95%, red < 85%
+First-Time Fix Rate (FTFR) — target ≥ 80%
+Average resolution time vs SLA
+CSAT average — today, week, month
+Parts requests pending approval
+Technician GPS live map
+3. Stakeholder Requirements
+Stakeholder
+Role
+Key Requirements
+Service Technician
+Field user on mobile app
+Receive jobs instantly; work offline; request parts easily; avoid manual paperwork
+Service Manager
+Dashboard user; job dispatcher
+Live visibility of team; SLA alerts before breach; override AI assignments; CSAT trends
+Customer
+End recipient of service
+WhatsApp updates without app download; transparent ETAs; easy CSAT feedback
+Finance Admin
+Parts and billing
+Parts cost tracking per job; warranty vs billable distinction; export to ERP
+Technical Lead
+Escalation handler
+Repeat visit flags; RCA assignment; Knowledge Base for technicians
+HR / Workforce
+Attendance and payroll
+GPS attendance, shift management, travel expense claims
+4. Functional Requirements by Module
+4.1 Dispatch AI Module
+Req ID
+Requirement
+Priority
+FR-D01
+System shall assign technician to new job within 60 seconds of creation
+Must Have
+FR-D02
+Assignment algorithm shall consider: technician location, skill set, current workload, SLA urgency
+Must Have
+FR-D03
+Service Manager may override any AI assignment without restriction
+Must Have
+FR-D04
+Unassigned jobs older than 15 minutes shall trigger a supervisor alert
+Must Have
+FR-D05
+System shall support bulk job import via CSV (for maintenance campaigns)
+Should Have
+FR-D06
+Dispatch board shall show job status in Kanban view (New / Assigned / In Progress / Completed)
+Must Have
+4.2 SLA Management Module
+Req ID
+Requirement
+Priority
+FR-S01
+Each job shall have a calculated SLA deadline based on: contract type, customer tier, product category
+Must Have
+FR-S02
+SLA countdown timer shall be visible on job detail screen and dashboard
+Must Have
+FR-S03
+Automated escalation shall trigger at 80% and 100% of SLA elapsed time
+Must Have
+FR-S04
+SLA breach shall be logged as an event and reported in Service Manager analytics
+Must Have
+FR-S05
+SLA pausing shall be supported when parts are awaited (with manager confirmation)
+Should Have
+FR-S06
+Repeat visit detection: 3+ visits to same asset within 30 days = automatic RCA flag
+Must Have
+4.3 Mobile App Module
+Req ID
+Requirement
+Priority
+FR-M01
+App shall be fully functional offline; all data syncs when connectivity returns
+Must Have
+FR-M02
+GPS check-in at job site shall be required before job status can be set to In Progress
+Must Have
+FR-M03
+Technician shall be able to upload before/after photos from mobile camera
+Must Have
+FR-M04
+Customer digital signature capture shall be mandatory for job completion
+Must Have
+FR-M05
+Parts request shall be raiseable from within the job screen
+Must Have
+FR-M06
+App shall support Hindi and regional language display for technician UI
+Should Have
+4.4 Parts & Inventory Module
+Req ID
+Requirement
+Priority
+FR-P01
+Parts catalogue shall be searchable by part code, name, or asset model
+Must Have
+FR-P02
+Parts request shall distinguish warranty-covered vs billable parts
+Must Have
+FR-P03
+High-value parts (above configurable threshold) shall require manager approval
+Must Have
+FR-P04
+Stock levels at each depot shall be tracked in real time
+Must Have
+FR-P05
+Low stock alerts shall trigger when stock falls below reorder level
+Must Have
+FR-P06
+Parts returned unused shall be tracked and reconciled to depot inventory
+Should Have
+4.5 CSAT & Customer Communication Module
+Req ID
+Requirement
+Priority
+FR-C01
+CSAT WhatsApp message shall be sent within 15 minutes of job completion
+Must Have
+FR-C02
+CSAT shall capture star rating (1–5) and optional text comment
+Must Have
+FR-C03
+Low CSAT (≤ 2) shall trigger immediate Service Manager alert
+Must Have
+FR-C04
+CSAT responses shall be aggregated to technician and region scorecards
+Must Have
+FR-C05
+Non-responding customers (48 hours) shall be excluded from technician KPI
+Must Have
+FR-C06
+Customer shall receive WhatsApp updates at: job created, tech en route, arrived, completed, SLA at risk
+Must Have
+5. Non-Functional Requirements
+Category
+Requirement
+Performance
+AI dispatch to complete technician assignment within 60 seconds for 95th percentile jobs
+Offline
+Mobile app must function for minimum 8 hours with no connectivity
+Availability
+Salesforce platform SLA: 99.9% uptime (managed by Salesforce)
+Scalability
+Must support up to 5,000 technicians and 50,000 jobs/month in a single org
+Security
+Technician can only see their own jobs. Manager sees only their territory. FLS enforced via Permission Sets
+Data Retention
+Job records retained for 5 years. GPS logs retained for 1 year
+Integration
+WhatsApp API latency < 3 seconds. Google Maps API response < 2 seconds
+Mobile
+App package size < 50MB. Sync time on reconnect < 60 seconds for up to 200 pending records
+Audit
+All job status changes and SLA events must be timestamped and immutable
+6. Data Model — Custom Object Summary
+6.1 Object Count Calculation
+The following analysis derives the required custom object count from each module's data storage needs. Objects are grouped by module. Standard Salesforce objects (Account, Contact, Case, User, Task) are leveraged where applicable to avoid duplication.
+📌  Total confirmed custom objects: 18. This is the object count for the DF360__ namespace Salesforce Edition. Salesforce Enterprise supports up to 800 custom objects per org. digiSFA (dSFA__) has 16 objects; combined DF360 + dSFA = 34 objects, well within platform limits.
+#
+Object API Name
+Module
+Description
+Key Fields
+1
+DF360__Service_Job__c
+Dispatch / Core
+Master job record. One per service request.
+Customer, Asset, Technician, Status, SLA_Deadline, Job_Type
+2
+DF360__Technician__c
+Workforce
+Extended profile for field technicians. Linked to User.
+User, Zone, Skills, CSAT_Avg, Active_Jobs, Availability_Status
+3
+DF360__Service_Zone__c
+Workforce / Dispatch
+Geographic service zone; technicians belong to a zone.
+Zone_Name, Manager, Pin_Codes, Active
+4
+DF360__Skill__c
+Workforce
+Catalogue of technician skills / certifications.
+Skill_Name, Category, Certification_Required
+5
+DF360__Technician_Skill__c
+Workforce
+Junction: Technician ↔ Skill with proficiency level and expiry.
+Technician, Skill, Proficiency, Cert_Expiry
+6
+DF360__Asset__c
+Asset Mgmt
+Customer asset (equipment) installed at a location.
+Account, Serial_No, Product, Install_Date, Warranty_Expiry, Location
+7
+DF360__Service_Contract__c
+Contracts
+AMC / warranty contract defining SLA parameters.
+Account, Start_Date, End_Date, SLA_Hours, Contract_Type, Status
+8
+DF360__SLA_Config__c
+SLA Engine
+SLA templates per product category and customer tier.
+Product_Category, Customer_Tier, Ack_SLA_Mins, Resolution_SLA_Hrs
+9
+DF360__Job_Activity__c
+Mobile / Jobs
+Work log entries: observations, time spent, photos.
+Service_Job, Activity_Type, Description, Duration_Min, Photo_URL
+10
+DF360__Part__c
+Parts Catalogue
+Master parts catalogue. One record per SKU.
+Part_Code, Name, Category, Unit_Cost, Compatible_Products, Is_Warranty
+11
+DF360__Parts_Request__c
+Parts Workflow
+Technician request for parts against a job.
+Service_Job, Part, Quantity, Status, Approved_By, Dispatched_Date
+12
+DF360__Parts_Stock__c
+Inventory
+Current stock of each part at each depot.
+Part, Depot, Quantity_Available, Reorder_Level, Last_Updated
+13
+DF360__Depot__c
+Inventory
+Parts depot / warehouse. Technicians draw parts from nearest depot.
+Depot_Name, Zone, Address, GPS_Location, Manager
+14
+DF360__CSAT__c
+CSAT
+Customer satisfaction response per completed job.
+Service_Job, Rating, Comment, Response_Date, Via_WhatsApp
+15
+DF360__SLA_Event__c
+SLA / Audit
+Immutable SLA milestone log (created, acknowledged, breached, etc.).
+Service_Job, Event_Type, Timestamp, Notes
+16
+DF360__GPS_Log__c
+Mobile / Tracking
+Technician GPS position snapshots (every 5 minutes while on shift).
+Technician, Latitude, Longitude, Accuracy, Timestamp, Job
+17
+DF360__WhatsApp_Message__c
+Comms Log
+Log of all outbound WhatsApp messages sent to customers.
+Service_Job, Customer_Mobile, Template, Status, Sent_At, Delivered_At
+18
+DF360__Attendance__c
+Workforce
+Technician daily attendance with GPS-verified check-in.
+Technician, Date, Check_In_Time, Check_In_GPS, Check_Out_Time, Status
+6.2 Standard Objects Leveraged (No Custom Object Needed)
+Standard Object
+Usage in digiField360
+Account
+Customer company (B2B service recipient)
+Contact
+Customer contact person who receives WhatsApp updates
+Case
+Optionally linked to Service_Job__c for Service Cloud integration
+User
+System record for Technician and Service Manager (linked to Technician__c)
+ContentVersion
+Job activity photos and customer signature files
+Task
+Follow-up actions from SLA breach or low CSAT
+FeedItem (Chatter)
+Internal alerts and escalation notifications
+6.3 Object Count Rationale
+The 18-object count is derived as follows:
+Module
+Objects Required
+Count
+Core Job Management
+Service_Job, Job_Activity
+2
+Workforce & Dispatch
+Technician, Service_Zone, Skill, Technician_Skill, Attendance
+5
+Asset & Contract Management
+Asset, Service_Contract, SLA_Config
+3
+Parts & Inventory
+Part, Parts_Request, Parts_Stock, Depot
+4
+Customer & CSAT
+CSAT, WhatsApp_Message
+2
+Audit & Tracking
+SLA_Event, GPS_Log
+2
+TOTAL
+18
+📌  Each object above maps to at least one confirmed functional requirement in Section 4. No speculative or "nice to have" objects are included. Objects UC-08 (Attendance), UC-09 (Service_Contract), and UC-10 (PM scheduling) are included because they each require data storage not achievable on existing objects.
+7. Agentforce Agents
+digiField360 deploys five Agentforce agents (DF360-001 through DF360-005). Each agent operates autonomously within defined guardrails, with human override always available.
+Agent ID
+Agent Name
+Trigger
+Actions
+Guardrails
+DF360-001
+Dispatch AI
+New Service_Job__c created or unassigned for 15 min
+Query technician availability + location + skills; score and assign; send job to app; notify customer
+Cannot assign to technician with active job at same time slot; Service Manager override always wins
+DF360-002
+SLA Guardian
+Scheduled every 5 min; triggered on job status change
+Calculate SLA remaining; send alerts at 80% and 100%; auto-escalate; generate SLA_Event records
+Cannot close or modify a job; alert only; escalation only
+DF360-003
+Parts Expeditor
+New Parts_Request awaiting approval > 2 hours
+Alert manager; check nearest depot stock; suggest alternate part; auto-approve if below threshold
+Cannot approve > ₹5,000 parts without manager confirmation; cannot dispatch from negative stock
+DF360-004
+Service Analytics Agent
+Daily at 07:00; on-demand query from manager dashboard
+Summarise yesterday's KPIs; flag anomalies; recommend technician scheduling for the day
+Read-only; cannot create or modify records; answers in the manager's language preference
+DF360-005
+Customer Comms Agent
+Job status changes; SLA events; CSAT received ≤ 2
+Send WhatsApp templates; personalise message content; log WhatsApp_Message__c; flag low CSAT
+Only sends approved Meta templates; cannot deviate from template content; rate-limited to Meta API limits
+8. Permission Sets and Roles
+Permission Set
+Target User
+Key Permissions
+DF360_Technician
+Field technician
+Read/Write own Service_Job, Job_Activity, Parts_Request, Attendance, GPS_Log. Read Parts catalogue.
+DF360_ServiceManager
+Service manager / team lead
+Full access to all DF360__ objects for their zone. Can approve Parts_Requests. Cannot delete SLA_Event or GPS_Log.
+DF360_CustomerPortal
+Customer Experience Cloud user
+Read own Service_Job and CSAT. No internal fields visible.
+DF360_PartsAdmin
+Depot / parts administrator
+Full access to Part, Parts_Stock, Depot, Parts_Request. Cannot see CSAT or GPS.
+DF360_Analytics
+Regional director / head of service
+Read all DF360__ objects across zones. No write access.
+DF360_AgentRuntime
+Agentforce system user
+Minimal write: assign technician, update job status, create SLA_Event, create WhatsApp_Message. No delete.
+9. Named Credentials & External Integrations
+digiField360 shares 5 Named Credentials with digiSFA and adds 2 new ones specific to field service:
+Named Credential
+External System
+Usage in DF360
+dSFA_MetaWhatsApp (shared)
+Meta WhatsApp Business API
+Customer communications, CSAT delivery, SLA alerts
+dSFA_GoogleMaps (shared)
+Google Maps Distance Matrix API
+Technician travel time estimation for dispatch scoring
+dSFA_AIService (shared)
+Agentforce / LLM endpoint
+All 5 Agentforce agents; GuruAI for technicians
+dSFA_Razorpay (shared)
+Razorpay Payment Gateway
+Billable job payment collection (UC-09, v1.1)
+dSFA_Firebase (shared)
+Firebase Cloud Messaging
+Push notifications to technician mobile app
+DF360_GoogleVision (new)
+Google Cloud Vision API
+Auto-classify job activity photos; detect part damage
+DF360_ERP (new)
+Customer ERP (SAP / Oracle / Tally)
+Parts cost and billing sync; warranty validation
+10. Salesforce Flows
+Flow Name
+Trigger
+Purpose
+DF360_Job_Created_Dispatch
+After Service_Job insert
+Invoke Dispatch AI Agent (DF360-001); send job creation WhatsApp to customer
+DF360_Job_Status_Changed
+After Service_Job Status update
+Send WhatsApp template; update SLA timeline; log SLA_Event
+DF360_SLA_Monitor_Scheduled
+Scheduled every 5 min
+Check all open jobs against SLA deadlines; trigger escalations via DF360-002
+DF360_Job_Completed_CSAT
+After Service_Job Status = Completed
+Send CSAT WhatsApp via DF360-005 (15 min delay); update technician CSAT rollup
+DF360_Parts_Request_Approval
+After Parts_Request Status = Pending Approval
+Route to manager; auto-approve if below threshold; alert Parts Expeditor agent
+DF360_Low_CSAT_Alert
+After CSAT Rating ≤ 2
+Alert Service Manager; schedule follow-up call task; flag technician profile
+DF360_Low_Stock_Alert
+After Parts_Stock Qty ≤ Reorder_Level
+Chatter post to Depot Manager; create reorder Task
+DF360_Repeat_Visit_Flag
+After Service_Job insert
+Count visits to same asset in last 30 days; flag RCA required if ≥ 3
+11. Implementation Roadmap
+Phase
+Duration
+Deliverables
+Phase 0 — Foundation
+Weeks 1–2
+Org setup, DF360__ namespace, 18 custom objects + fields, Permission Sets, Named Credentials
+Phase 1 — Core Jobs
+Weeks 3–5
+Service_Job CRUD, Dispatch board LWC, SLA configuration, Flows for job status
+Phase 2 — Mobile App
+Weeks 6–9
+Flutter app: job list, offline sync, GPS check-in, photo upload, activity log, signature
+Phase 3 — Agentforce
+Weeks 10–12
+DF360-001 Dispatch AI, DF360-002 SLA Guardian, DF360-005 Customer Comms Agent
+Phase 4 — Parts & CSAT
+Weeks 13–15
+Parts catalogue, stock management, parts request workflow, CSAT collection and analytics
+Phase 5 — Analytics
+Weeks 16–17
+Service Manager dashboard LWC, KPI rollups, DF360-004 Analytics Agent, Tableau integration
+Phase 6 — QA & Beta
+Weeks 18–20
+UAT with 2 pilot customers, bug fixes, performance testing, load testing
+Private Beta GA
+Q2 2027
+Controlled release to early access programme customers
+12. Open Items and Decisions Required
+#
+Open Item
+Owner
+Target Date
+OI-01
+Confirm whether DF360_ERP Named Credential will support SAP BTP or generic REST only for v1.0
+Product
+Sep 2026
+OI-02
+Decide: CSAT via WhatsApp only, or also in-app rating (affects DF360__CSAT__c schema)
+Product
+Sep 2026
+OI-03
+Parts_Stock__c — confirm multi-depot architecture (one record per Part × Depot pair, or nested)
+Architecture
+Sep 2026
+OI-04
+UC-09 Warranty / AMC contracts — confirm whether to use Salesforce Contracts object or custom
+Architecture
+Oct 2026
+OI-05
+Pricing model for v1.0 private beta — per technician/month or per job credit
+Commercial
+Oct 2026
+13. Glossary
+Term
+Definition
+SLA
+Service Level Agreement — the maximum allowable time from job creation to resolution
+FTFR
+First-Time Fix Rate — % of jobs resolved on the first technician visit
+CSAT
+Customer Satisfaction Score — per-job rating collected via WhatsApp
+Dispatch AI
+Agentforce Agent DF360-001 that assigns technicians to jobs automatically
+RCA
+Root Cause Analysis — investigation triggered on repeat visits or chronic failures
+GPS Log
+Periodic technician location snapshot stored in DF360__GPS_Log__c
+Parts Stock
+Inventory record in DF360__Parts_Stock__c tracking qty at each depot
+AMC
+Annual Maintenance Contract — a Service_Contract__c with SLA obligations
+FSM
+Field Service Management — the product category that digiField360 belongs to
+DF360__
+Salesforce managed package namespace for digiField360
+dSFA__
+Salesforce managed package namespace for digiSFA (separate product, same org)

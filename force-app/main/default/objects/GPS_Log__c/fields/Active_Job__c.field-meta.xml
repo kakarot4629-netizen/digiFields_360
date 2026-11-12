@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Active_Job__c</fullName>
+    <label>Active Job</label>
+    <type>Lookup</type>
+    <required>false</required>
+    <trackHistory>true</trackHistory>
+    <referenceTo>Service_Job__c</referenceTo><relationshipName>GPS_Logs</relationshipName><relationshipLabel>Active Jobs</relationshipLabel>
+    <deleteConstraint>SetNull</deleteConstraint>
+</CustomField>

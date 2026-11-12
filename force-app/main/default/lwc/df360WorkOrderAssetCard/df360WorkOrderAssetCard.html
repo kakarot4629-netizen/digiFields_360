@@ -1,0 +1,484 @@
+<template>
+    <lightning-card title="Asset 360 & Equipment Profile" icon-name="standard:asset_object">
+        <div class="slds-p-around_medium">
+            <template if:true={isLoading}>
+                <lightning-spinner alternative-text="Loading asset details..." size="small"></lightning-spinner>
+            </template>
+
+            <!-- Linked Asset View -->
+            <template if:true={hasAsset}>
+                <div class="asset-header slds-grid slds-gutters slds-m-bottom_small">
+                    <div class="slds-col slds-size_8-of-12">
+                        <h2 class="asset-title">
+                            <a href={primaryAssetUrl} data-id={asset.Id} data-object="Asset__c" onclick={handleNavigateToRecord} class="record-link" title="Open Primary Asset Record">
+                                {asset.Name}
+                            </a>
+                        </h2>
+                        <p class="asset-subtitle">Model: <strong>{asset.Model__c}</strong> | Mfg: {asset.Manufacturer__c}</p>
+                        <p class="asset-meta">Serial #: <code>{asset.Serial_Number__c}</code> | Category: {asset.Product_Category__c}</p>
+                    </div>
+                    <div class="slds-col slds-size_4-of-12 slds-text-align_right">
+                        <template if:true={asset.Is_Under_Warranty__c}>
+                            <span class="slds-badge slds-theme_success">Active Warranty</span>
+                        </template>
+                        <template if:false={asset.Is_Under_Warranty__c}>
+                            <span class="slds-badge slds-theme_warning">Warranty Expired</span>
+                        </template>
+                        <p class="slds-m-top_xx-small status-text">Status: <strong>{asset.Status__c}</strong></p>
+                    </div>
+                </div>
+
+                <!-- Stats Grid -->
+                <div class="slds-grid slds-gutters slds-m-bottom_small asset-stats-grid">
+                    <div class="slds-col slds-size_3-of-12">
+                        <div class="stat-box">
+                            <span class="stat-label">Installation</span>
+                            <span class="stat-val">{asset.Install_Date__c}</span>
+                        </div>
+                    </div>
+                    <div class="slds-col slds-size_3-of-12">
+                        <div class="stat-box">
+                            <span class="stat-label">Warranty Expiry</span>
+                            <span class="stat-val">{asset.Warranty_Expiry__c}</span>
+                        </div>
+                    </div>
+                    <div class="slds-col slds-size_3-of-12">
+                        <div class="stat-box">
+                            <span class="stat-label">Last Service</span>
+                            <span class="stat-val">{asset.Last_Service_Date__c}</span>
+                        </div>
+                    </div>
+                    <div class="slds-col slds-size_3-of-12">
+                        <div class="stat-box">
+                            <span class="stat-label">30d Visits</span>
+                            <span class="stat-val">{asset.Visit_Count_30d__c}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Specifications & Location -->
+                <template if:true={asset.Specifications__c}>
+                    <div class="specs-box slds-p-around_x-small slds-m-bottom_small slds-theme_shade slds-border_top slds-border_bottom">
+                        <span class="stat-label">Technical Specifications:</span>
+                        <p class="specs-text slds-m-top_xx-small">{asset.Specifications__c}</p>
+                    </div>
+                </template>
+
+                <div class="slds-m-bottom_small">
+                    <span class="stat-label">Location Address: </span>
+                    <span class="slds-text-body_small">{asset.Location_Address__c}</span>
+                </div>
+
+                <!-- Action Buttons -->
+                <lightning-button-group class="slds-m-top_x-small">
+                    <lightning-button label="Service History (360°)" icon-name="utility:clock" onclick={openHistoryModal}></lightning-button>
+                    <lightning-button label="Manuals & Docs" icon-name="utility:file" onclick={openDocsModal}></lightning-button>
+                    <lightning-button label="Change Primary" variant="neutral" icon-name="utility:change_record_type" onclick={openSearchModal}></lightning-button>
+                    <lightning-button label="Add Case Asset" variant="brand-outline" icon-name="utility:add" onclick={openAddLineItemModal}></lightning-button>
+                </lightning-button-group>
+
+                <!-- Case Assets Section -->
+                <div class="slds-m-top_medium slds-border_top slds-p-top_small">
+                    <div class="slds-grid slds-grid_vertical-align-center slds-m-bottom_x-small">
+                        <div class="slds-col slds-size_8-of-12">
+                            <h3 class="slds-text-heading_small">
+                                <lightning-icon icon-name="standard:asset_relationship" size="x-small" class="slds-m-right_xx-small"></lightning-icon>
+                                Case Assets ({lineItems.length})
+                            </h3>
+                        </div>
+                        <div class="slds-col slds-size_4-of-12 slds-text-align_right">
+                            <lightning-button label="Add Case Asset" size="small" variant="brand-outline" icon-name="utility:add" onclick={openAddLineItemModal}></lightning-button>
+                        </div>
+                    </div>
+
+                    <template if:true={hasLineItems}>
+                        <table class="slds-table slds-table_cell-buffer slds-table_bordered slds-table_compact">
+                            <thead>
+                                <tr class="slds-line-height_reset">
+                                    <th>#</th>
+                                    <th>Asset Name</th>
+                                    <th>Serial #</th>
+                                    <th>Category</th>
+                                    <th>Warranty</th>
+                                    <th>Operational Status</th>
+                                    <th>Assessment & Feedback</th>
+                                    <th>Photos</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <template for:each={formattedLineItems} for:item="item">
+                                    <tr key={item.Id}>
+                                        <td>
+                                            <a href={item.lineItemUrl} data-id={item.Id} data-object="Work_Order_Line_Item__c" onclick={handleNavigateToRecord} class="record-link-subtle" title="View Work Order Line Item">
+                                                {item.Sequence__c}
+                                            </a>
+                                        </td>
+                                        <td>
+                                            <template if:true={item.Asset__c}>
+                                                <a href={item.assetUrl} data-id={item.Asset__c} data-object="Asset__c" onclick={handleNavigateToRecord} class="record-link" title="Open Asset Record">
+                                                    <strong>{item.Asset__r.Name}</strong>
+                                                </a>
+                                            </template>
+                                            <template if:false={item.Asset__c}>
+                                                <strong>{item.Asset__r.Name}</strong>
+                                            </template>
+                                        </td>
+                                        <td><code>{item.Asset__r.Serial_Number__c}</code></td>
+                                        <td>{item.Asset__r.Product_Category__c}</td>
+                                        <td>
+                                            <span class={item.warrantyBadgeClass} title={item.Asset__r.Warranty_Expiry__c}>
+                                                {item.warrantyLabel}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <span class={item.operationalStatusClass}>
+                                                {item.operationalStatusDisplay}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <div class="feedback-cell" title={item.feedbackDisplay}>
+                                                <span class="slds-badge slds-badge_lightest slds-m-right_xx-small">{item.conditionDisplay}</span>
+                                                <span class="feedback-text">{item.feedbackDisplay}</span>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span class={item.photoBadgeClass}>
+                                                <lightning-icon icon-name="utility:photo" size="xx-small" class="slds-m-right_xxx-small"></lightning-icon>
+                                                {item.photoCountLabel}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <lightning-button-icon icon-name="utility:edit_form" size="small" variant="border-filled" alternative-text="Log Asset Feedback" title="Log Asset Feedback" data-id={item.Id} onclick={openAssessmentModal} class="slds-m-right_xx-small"></lightning-button-icon>
+                                            <lightning-button-icon icon-name="utility:photo" size="small" variant="border-filled" alternative-text="Pre & Post Photos" title="Pre & Post Photos" data-id={item.Id} onclick={openPhotosModal}></lightning-button-icon>
+                                        </td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                    </template>
+                    <template if:false={hasLineItems}>
+                        <p class="slds-text-body_small slds-text-color_weak">Only the primary asset is linked. Click "Add Case Asset" to include additional equipment in this work order.</p>
+                    </template>
+                </div>
+            </template>
+
+            <!-- No Asset Linked -->
+            <template if:false={hasAsset}>
+                <div class="empty-state slds-text-align_center slds-p-around_large">
+                    <lightning-icon icon-name="utility:warning" variant="warning" size="medium"></lightning-icon>
+                    <p class="slds-m-top_small slds-text-heading_small">No Asset Associated with this Work Order</p>
+                    <p class="slds-text-color_weak slds-m-bottom_medium">Associate an Asset to unlock filtered parts, 360° service history, manuals, and AI briefing.</p>
+                    <lightning-button label="Associate Asset" variant="brand" icon-name="utility:add" onclick={openSearchModal}></lightning-button>
+                </div>
+            </template>
+        </div>
+    </lightning-card>
+
+    <!-- Assessment & Feedback Modal -->
+    <template if:true={showAssessmentModal}>
+        <section role="dialog" class="slds-modal slds-fade-in-open">
+            <div class="slds-modal__container">
+                <header class="slds-modal__header">
+                    <h2 class="slds-modal__title">Case Asset Assessment & Feedback</h2>
+                    <p class="slds-m-top_x-small slds-text-body_small">
+                        Case Asset: <strong>{selectedLineItem.Name}</strong> &bull; Actual Asset: <strong>{selectedLineItem.Asset__r.Name}</strong> (SN: {selectedLineItem.Asset__r.Serial_Number__c})
+                    </p>
+                </header>
+                <div class="slds-modal__content slds-p-around_medium">
+                    <div class="slds-grid slds-gutters slds-m-bottom_small">
+                        <div class="slds-col slds-size_6-of-12">
+                            <lightning-combobox
+                                label="Operational Status"
+                                value={modalOperationalStatus}
+                                options={operationalStatusOptions}
+                                onchange={handleOperationalStatusChange}
+                                required>
+                            </lightning-combobox>
+                        </div>
+                        <div class="slds-col slds-size_6-of-12">
+                            <lightning-combobox
+                                label="Asset Condition"
+                                value={modalAssetCondition}
+                                options={conditionOptions}
+                                onchange={handleAssetConditionChange}
+                                required>
+                            </lightning-combobox>
+                        </div>
+                    </div>
+                    <lightning-textarea
+                        label="Technician Feedback & Diagnostic Notes"
+                        value={modalTechnicianFeedback}
+                        placeholder="e.g., Fridge is working properly at 4°C, but AC condenser fan is defective and not cooling..."
+                        onchange={handleFeedbackChange}
+                        rows="4">
+                    </lightning-textarea>
+                </div>
+                <footer class="slds-modal__footer">
+                    <lightning-button label="Cancel" onclick={closeAssessmentModal} class="slds-m-right_x-small"></lightning-button>
+                    <lightning-button label="Save Assessment" variant="brand" onclick={handleSaveAssessment}></lightning-button>
+                </footer>
+            </div>
+        </section>
+        <div class="slds-backdrop slds-backdrop_open"></div>
+    </template>
+
+    <!-- Pre & Post Service Photos Modal -->
+    <template if:true={showPhotosModal}>
+        <section role="dialog" class="slds-modal slds-fade-in-open slds-modal_large">
+            <div class="slds-modal__container">
+                <header class="slds-modal__header">
+                    <h2 class="slds-modal__title">Pre & Post Service Photos</h2>
+                    <p class="slds-m-top_x-small slds-text-body_small">
+                        Equipment: <strong>{selectedLineItem.Asset__r.Name}</strong> (SN: {selectedLineItem.Asset__r.Serial_Number__c})
+                    </p>
+                </header>
+                <div class="slds-modal__content slds-p-around_medium">
+                    <div class="slds-grid slds-gutters">
+                        <!-- PRE-SERVICE PHOTO -->
+                        <div class="slds-col slds-size_6-of-12">
+                            <div class="slds-box slds-theme_shade">
+                                <h3 class="slds-text-heading_small slds-m-bottom_x-small">
+                                    <lightning-icon icon-name="utility:photo" size="xx-small" class="slds-m-right_xx-small"></lightning-icon>
+                                    1. Pre-Service Photo (Before Repair)
+                                </h3>
+                                <p class="slds-text-body_small slds-text-color_weak slds-m-bottom_small">Capture initial damage, burn marks, leakage, or original setup.</p>
+                                
+                                <div class="photo-preview-box">
+                                    <template if:true={modalPrePhotoUrl}>
+                                        <img src={modalPrePhotoUrl} alt="Pre-service photo preview" class="photo-preview-img" />
+                                    </template>
+                                    <template if:false={modalPrePhotoUrl}>
+                                        <div class="photo-preview-empty">
+                                            <lightning-icon icon-name="utility:image" size="large" variant="bare"></lightning-icon>
+                                            <p class="slds-m-top_x-small">No Pre-Service Photo Uploaded</p>
+                                        </div>
+                                    </template>
+                                </div>
+
+                                <div class="slds-m-top_small">
+                                    <lightning-file-upload
+                                        label="Upload Pre-Service Photo (Camera / File)"
+                                        name="prePhotoUploader"
+                                        accept={acceptedPhotoFormats}
+                                        record-id={selectedLineItem.Id}
+                                        data-type="PRE"
+                                        onuploadfinished={handlePhotoUploadFinished}>
+                                    </lightning-file-upload>
+                                </div>
+                                <lightning-input
+                                    label="Or Photo URL"
+                                    type="url"
+                                    value={modalPrePhotoUrl}
+                                    placeholder="https://..."
+                                    onchange={handlePrePhotoUrlChange}
+                                    class="slds-m-top_x-small">
+                                </lightning-input>
+                            </div>
+                        </div>
+
+                        <!-- POST-SERVICE PHOTO -->
+                        <div class="slds-col slds-size_6-of-12">
+                            <div class="slds-box slds-theme_shade">
+                                <h3 class="slds-text-heading_small slds-m-bottom_x-small">
+                                    <lightning-icon icon-name="utility:check" size="xx-small" variant="success" class="slds-m-right_xx-small"></lightning-icon>
+                                    2. Post-Service Photo (After Repair)
+                                </h3>
+                                <p class="slds-text-body_small slds-text-color_weak slds-m-bottom_small">Capture working equipment, clean repair, replaced part, or restored state.</p>
+                                
+                                <div class="photo-preview-box">
+                                    <template if:true={modalPostPhotoUrl}>
+                                        <img src={modalPostPhotoUrl} alt="Post-service photo preview" class="photo-preview-img" />
+                                    </template>
+                                    <template if:false={modalPostPhotoUrl}>
+                                        <div class="photo-preview-empty">
+                                            <lightning-icon icon-name="utility:image" size="large" variant="bare"></lightning-icon>
+                                            <p class="slds-m-top_x-small">No Post-Service Photo Uploaded</p>
+                                        </div>
+                                    </template>
+                                </div>
+
+                                <div class="slds-m-top_small">
+                                    <lightning-file-upload
+                                        label="Upload Post-Service Photo (Camera / File)"
+                                        name="postPhotoUploader"
+                                        accept={acceptedPhotoFormats}
+                                        record-id={selectedLineItem.Id}
+                                        data-type="POST"
+                                        onuploadfinished={handlePhotoUploadFinished}>
+                                    </lightning-file-upload>
+                                </div>
+                                <lightning-input
+                                    label="Or Photo URL"
+                                    type="url"
+                                    value={modalPostPhotoUrl}
+                                    placeholder="https://..."
+                                    onchange={handlePostPhotoUrlChange}
+                                    class="slds-m-top_x-small">
+                                </lightning-input>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <footer class="slds-modal__footer">
+                    <lightning-button label="Close" onclick={closePhotosModal} class="slds-m-right_x-small"></lightning-button>
+                    <lightning-button label="Save Photo URLs" variant="brand" onclick={handleSavePhotos}></lightning-button>
+                </footer>
+            </div>
+        </section>
+        <div class="slds-backdrop slds-backdrop_open"></div>
+    </template>
+
+    <!-- Search / Associate Modal -->
+    <template if:true={showSearchModal}>
+        <section role="dialog" class="slds-modal slds-fade-in-open">
+            <div class="slds-modal__container">
+                <header class="slds-modal__header">
+                    <h2 class="slds-modal__title">{searchModalTitle}</h2>
+                </header>
+                <div class="slds-modal__content slds-p-around_medium">
+                    <lightning-input type="search" label="Search Asset" placeholder="Enter Asset Name, Serial Number, or Model..." onchange={handleSearchInput}></lightning-input>
+                    <div class="slds-m-top_medium asset-list">
+                        <template for:each={searchResults} for:item="a">
+                            <div key={a.Id} class="asset-result-item slds-p-around_small slds-m-bottom_x-small" onclick={handleSelectAsset} data-id={a.Id}>
+                                <div class="slds-grid slds-grid_vertical-align-center">
+                                    <div class="slds-col slds-size_9-of-12">
+                                        <strong>{a.Name}</strong> ({a.Model__c})
+                                        <p class="slds-text-body_small slds-text-color_weak">SN: {a.Serial_Number__c} | {a.Product_Category__c} | {a.Account__r.Name}</p>
+                                    </div>
+                                    <div class="slds-col slds-size_3-of-12 slds-text-align_right">
+                                        <lightning-button label="Select" size="small" variant="brand-outline"></lightning-button>
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+                <footer class="slds-modal__footer">
+                    <lightning-button label="Cancel" onclick={closeSearchModal}></lightning-button>
+                </footer>
+            </div>
+        </section>
+        <div class="slds-backdrop slds-backdrop_open"></div>
+    </template>
+
+    <!-- Service History Modal -->
+    <template if:true={showHistoryModal}>
+        <section role="dialog" class="slds-modal slds-fade-in-open slds-modal_large">
+            <div class="slds-modal__container">
+                <header class="slds-modal__header">
+                    <h2 class="slds-modal__title">Asset Service History — {asset.Name}</h2>
+                </header>
+                <div class="slds-modal__content slds-p-around_medium">
+                    <h3 class="slds-text-heading_small slds-m-bottom_small">Historical Work Orders ({pastWorkOrders.length})</h3>
+                    <table class="slds-table slds-table_cell-buffer slds-table_bordered slds-m-bottom_large">
+                        <thead>
+                            <tr>
+                                <th>Work Order</th>
+                                <th>Subject</th>
+                                <th>Technician</th>
+                                <th>Status</th>
+                                <th>Parts Consumed</th>
+                                <th>Completed Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <template for:each={formattedPastWorkOrders} for:item="wo">
+                                <tr key={wo.Id}>
+                                    <td>
+                                        <a href={wo.workOrderUrl} data-id={wo.Id} data-object="Work_Order__c" onclick={handleNavigateToRecord} class="record-link" title="Open Work Order Record">
+                                            <strong>{wo.Name}</strong>
+                                        </a>
+                                    </td>
+                                    <td>{wo.Subject__c}</td>
+                                    <td>{wo.Assigned_Technician__r.Name}</td>
+                                    <td><span class="slds-badge">{wo.Status__c}</span></td>
+                                    <td>{wo.Parts_Used__c}</td>
+                                    <td>{wo.Completed_Date__c}</td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+
+                    <template if:true={hasJobHistories}>
+                        <h3 class="slds-text-heading_small slds-m-bottom_small">Diagnostic & Repair Records</h3>
+                        <table class="slds-table slds-table_cell-buffer slds-table_bordered">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Fault Description</th>
+                                    <th>Resolution</th>
+                                    <th>Parts</th>
+                                    <th>Tech</th>
+                                    <th>FTFR</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <template for:each={jobHistories} for:item="jh">
+                                    <tr key={jh.Id}>
+                                        <td>{jh.Job_Date__c}</td>
+                                        <td>{jh.Fault_Description__c}</td>
+                                        <td>{jh.Resolution__c}</td>
+                                        <td>{jh.Parts_Used__c}</td>
+                                        <td>{jh.Technician__r.Name}</td>
+                                        <td>
+                                            <template if:true={jh.First_Time_Fix__c}>
+                                                <lightning-badge label="FTFR" class="slds-theme_success"></lightning-badge>
+                                            </template>
+                                        </td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                    </template>
+                </div>
+                <footer class="slds-modal__footer">
+                    <lightning-button label="Close" variant="brand" onclick={closeHistoryModal}></lightning-button>
+                </footer>
+            </div>
+        </section>
+        <div class="slds-backdrop slds-backdrop_open"></div>
+    </template>
+
+    <!-- Documents & Manuals Modal -->
+    <template if:true={showDocsModal}>
+        <section role="dialog" class="slds-modal slds-fade-in-open">
+            <div class="slds-modal__container">
+                <header class="slds-modal__header">
+                    <h2 class="slds-modal__title">Related Manuals & Schematics</h2>
+                </header>
+                <div class="slds-modal__content slds-p-around_medium">
+                    <template if:true={hasDocuments}>
+                        <ul class="slds-has-dividers_bottom-space">
+                            <template for:each={formattedDocuments} for:item="doc">
+                                <li key={doc.id} class="slds-item slds-p-around_small">
+                                    <div class="slds-grid slds-grid_vertical-align-center">
+                                        <div class="slds-col slds-no-flex slds-m-right_small">
+                                            <lightning-icon icon-name={doc.iconName} size="small"></lightning-icon>
+                                        </div>
+                                        <div class="slds-col slds-grow">
+                                            <strong>{doc.title}</strong>
+                                            <p class="slds-text-body_small slds-text-color_weak">{doc.extension} • {doc.sizeKb}</p>
+                                        </div>
+                                        <div class="slds-col slds-no-flex">
+                                            <a href={doc.viewUrl} target="_blank" class="slds-button slds-button_neutral slds-button_small">View File</a>
+                                        </div>
+                                    </div>
+                                </li>
+                            </template>
+                        </ul>
+                    </template>
+                    <template if:false={hasDocuments}>
+                        <div class="slds-text-align_center slds-p-around_medium">
+                            <p class="slds-text-color_weak">No manuals or schematics attached to this asset record yet.</p>
+                        </div>
+                    </template>
+                </div>
+                <footer class="slds-modal__footer">
+                    <lightning-button label="Close" onclick={closeDocsModal}></lightning-button>
+                </footer>
+            </div>
+        </section>
+        <div class="slds-backdrop slds-backdrop_open"></div>
+    </template>
+</template>

@@ -184,6 +184,9 @@ public with sharing class F360_BookingAgentAction {
 
     @InvocableVariable(label='Equipment Type')
     public String equipmentType;
+
+    @InvocableVariable(label='Case ID')
+    public Id caseId;
   }
 
   public class ConfirmResult {
@@ -233,6 +236,9 @@ public with sharing class F360_BookingAgentAction {
         wo.Assigned_Technician__c = techId;
         wo.Scheduled_Date__c = slotDate;
         wo.Equipment_Type__c = req.equipmentType;
+        if (req.caseId != null) {
+          wo.Case__c = req.caseId;
+        }
         insert wo;
 
         // Refetch to get auto-number

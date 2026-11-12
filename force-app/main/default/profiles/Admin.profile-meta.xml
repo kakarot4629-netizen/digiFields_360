@@ -1264,4 +1264,12 @@
     >true</readable></fieldPermissions>
     <fieldPermissions><editable>true</editable><field
     >User.Skills__c</field><readable>true</readable></fieldPermissions>
+    <fieldPermissions><editable>true</editable><field>Work_Order_Line_Item__c.Work_Order__c</field><readable>true</readable></fieldPermissions>
+    <fieldPermissions><editable>true</editable><field>Work_Order_Line_Item__c.Asset__c</field><readable>true</readable></fieldPermissions>
+    <fieldPermissions><editable>true</editable><field>Work_Order_Line_Item__c.Sequence__c</field><readable>true</readable></fieldPermissions>
+    <fieldPermissions><editable>true</editable><field>Work_Order_Line_Item__c.Status__c</field><readable>true</readable></fieldPermissions>
+    <fieldPermissions><editable>true</editable><field>Work_Order_Line_Item__c.Description__c</field><readable>true</readable></fieldPermissions>
+    <fieldPermissions><editable>true</editable><field>Work_Order_Line_Item__c.Is_First_Time_Fix__c</field><readable>true</readable></fieldPermissions>
+    <fieldPermissions><editable>true</editable><field>Work_Order_Line_Item__c.Parts_Used__c</field><readable>true</readable></fieldPermissions>
+    <fieldPermissions><editable>true</editable><field>Work_Order_Line_Item__c.Resolution_Notes__c</field><readable>true</readable></fieldPermissions>
 </Profile>

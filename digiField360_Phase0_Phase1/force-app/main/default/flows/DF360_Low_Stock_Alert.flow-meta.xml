@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+    <apiVersion>61.0</apiVersion>
+    <description>When Parts_Stock Quantity_Available drops to or below Reorder_Level, alert depot via Chatter.</description>
+    <label>DF360 - Low Stock Alert</label>
+    <processMetadataValues><name>BuilderType</name><value><stringValue>LightningFlowBuilder</stringValue></value></processMetadataValues>
+    <processType>AutoLaunchedFlow</processType>
+    <status>Active</status>
+    <interviewLabel>DF360 - Low Stock Alert {!$Flow.CurrentDateTime}</interviewLabel>
+    <start>
+        <locationX>182</locationX><locationY>48</locationY>
+        <connector><targetReference>Check_Stock</targetReference></connector>
+        <filterLogic>and</filterLogic>
+        <filters><field>Quantity_Available__c</field><operator>IsChanged</operator><value><booleanValue>true</booleanValue></value></filters>
+        <object>Parts_Stock__c</object>
+        <recordTriggerType>Update</recordTriggerType>
+        <triggerType>RecordAfterSave</triggerType>
+    </start>
+    <decisions>
+        <name>Check_Stock</name><label>At or Below Reorder?</label>
+        <locationX>182</locationX><locationY>158</locationY>
+        <defaultConnectorLabel>Stock OK</defaultConnectorLabel>
+        <rules>
+            <name>Low_Stock</name><conditionLogic>1</conditionLogic>
+            <conditions><leftValueReference>$Record.Quantity_Available__c</leftValueReference><operator>LessThanOrEqualTo</operator><rightValue><elementReference>$Record.Reorder_Level__c</elementReference></rightValue></conditions>
+            <connector><targetReference>Post_Alert</targetReference></connector><label>At or Below Reorder</label>
+        </rules>
+    </decisions>
+    <actionCalls>
+        <name>Post_Alert</name><label>Post Chatter Low Stock Alert</label>
+        <locationX>182</locationX><locationY>278</locationY>
+        <actionName>chatterPost</actionName><actionType>chatterPost</actionType>
+        <inputParameters><name>text</name><value><stringValue>LOW STOCK ALERT: Parts stock has fallen to or below the reorder threshold. Please initiate a purchase order to replenish this part at this depot.</stringValue></value></inputParameters>
+        <inputParameters><name>subjectNameOrId</name><value><elementReference>$Record.Depot__c</elementReference></value></inputParameters>
+    </actionCalls>
+</Flow>

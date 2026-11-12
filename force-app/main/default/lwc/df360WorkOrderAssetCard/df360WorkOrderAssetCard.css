@@ -1,0 +1,123 @@
+.asset-title {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #0f172a;
+}
+.asset-subtitle {
+    font-size: 0.85rem;
+    color: #475569;
+}
+.asset-meta {
+    font-size: 0.8rem;
+    color: #64748b;
+}
+.status-text {
+    font-size: 0.8rem;
+    color: #475569;
+}
+.asset-stats-grid .stat-box {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    padding: 8px 12px;
+}
+.stat-label {
+    display: block;
+    font-size: 0.72rem;
+    color: #64748b;
+    text-transform: uppercase;
+    font-weight: 600;
+}
+.stat-val {
+    display: block;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #1e293b;
+    margin-top: 2px;
+}
+.truncate {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.empty-state {
+    background: #fdfdfe;
+    border: 2px dashed #cbd5e1;
+    border-radius: 8px;
+}
+.asset-result-item {
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    background: #ffffff;
+    cursor: pointer;
+    transition: all 0.15s ease-in-out;
+}
+.asset-result-item:hover {
+    border-color: #0284c7;
+    background: #f0f9ff;
+}
+
+.record-link {
+    color: #0176d3;
+    text-decoration: none;
+    transition: color 0.15s ease-in-out;
+}
+
+.record-link:hover {
+    color: #014486;
+    text-decoration: underline;
+}
+
+.record-link-subtle {
+    color: #475569;
+    text-decoration: none;
+    font-weight: 600;
+    transition: color 0.15s ease-in-out;
+}
+
+.record-link-subtle:hover {
+    color: #0176d3;
+    text-decoration: underline;
+}
+
+/* Feedback & Assessment Cell */
+.feedback-cell {
+    max-width: 220px;
+    display: flex;
+    align-items: center;
+}
+
+.feedback-text {
+    font-size: 0.78rem;
+    color: #334155;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Pre & Post Photo Comparison Preview */
+.photo-preview-box {
+    height: 190px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #ffffff;
+    border: 2px dashed #cbd5e1;
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 12px;
+    position: relative;
+}
+
+.photo-preview-img {
+    max-height: 100%;
+    max-width: 100%;
+    object-fit: contain;
+    border-radius: 4px;
+}
+
+.photo-preview-empty {
+    text-align: center;
+    color: #94a3b8;
+    font-size: 0.8rem;
+}

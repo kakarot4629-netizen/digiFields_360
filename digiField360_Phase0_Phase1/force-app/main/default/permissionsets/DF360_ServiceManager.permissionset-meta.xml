@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<PermissionSet xmlns="http://soap.sforce.com/2006/04/metadata">
+    <label>DF360 Service Manager</label>
+    <description>Service manager. Full access to all objects in their zone. Approve parts. Cannot delete audit objects.</description>
+    <hasActivationRequired>false</hasActivationRequired>
+</PermissionSet>

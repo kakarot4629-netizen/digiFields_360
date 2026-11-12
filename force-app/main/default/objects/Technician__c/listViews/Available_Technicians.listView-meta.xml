@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ListView xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Available_Technicians</fullName>
+    <columns>NAME</columns>
+    <columns>Employee_Code__c</columns>
+    <columns>Zone__c</columns>
+    <columns>Availability_Status__c</columns>
+    <columns>Active_Job_Count__c</columns>
+    <columns>FTFR_Pct__c</columns>
+    <columns>CSAT_Avg_30d__c</columns>
+    <filterScope>Everything</filterScope>
+    <filters>
+        <field>Availability_Status__c</field>
+        <operation>equals</operation>
+        <value>Available</value>
+    </filters>
+    <label>Available Technicians</label>
+</ListView>

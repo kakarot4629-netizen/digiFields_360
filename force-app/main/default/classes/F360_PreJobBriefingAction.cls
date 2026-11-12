@@ -2,16 +2,9 @@
  * FIELD360 AI — Feature 1: Pre-Job Briefing Action
  *
  * Called by Agentforce when a work order is assigned to a technician.
- * Gathers context from Work Order + Job History + Account and passes to
- * the Prompt Template which generates a concise briefing in the
+ * Gathers context from Work Order + Asset Details + Job History + Account and passes to
+ * the Prompt Template or structured generator which delivers a concise briefing in the
  * technician's preferred language.
- *
- * The briefing is stored on the Work Order record and cached to the
- * technician's device during the morning pre-load — readable offline
- * during the drive to site.
- *
- * Agentforce Action: "Generate Pre-Job Briefing"
- * Topic: Job Preparation
  */
 public with sharing class F360_PreJobBriefingAction {
   public class BriefingRequest {
@@ -51,7 +44,7 @@ public with sharing class F360_PreJobBriefingAction {
 
   @InvocableMethod(
     label='Generate Pre-Job Briefing'
-    description='Gathers work order context, job history, and equipment data to generate an AI briefing for the technician before they arrive on site.'
+    description='Gathers work order context, asset details, job history, and equipment data to generate an AI briefing for the technician before they arrive on site.'
     category='Field360 AI'
   )
   public static List<BriefingResult> generateBriefing(
@@ -64,7 +57,7 @@ public with sharing class F360_PreJobBriefingAction {
       Work_Order__c wo;
       List<Job_History__c> history = new List<Job_History__c>();
       try {
-        // 1. Fetch the work order with related data
+        // 1. Fetch the work order with related asset data
         wo = [
           SELECT
             Id,
@@ -79,29 +72,43 @@ public with sharing class F360_PreJobBriefingAction {
             Account__r.Name,
             Assigned_Technician__c,
             Assigned_Technician__r.Name,
-            Scheduled_Date__c
+            Scheduled_Date__c,
+            Asset__c,
+            Asset__r.Name,
+            Asset__r.Model__c,
+            Asset__r.Manufacturer__c,
+            Asset__r.Product_Category__c,
+            Asset__r.Serial_Number__c,
+            Asset__r.Is_Under_Warranty__c,
+            Asset__r.Warranty_Expiry__c
           FROM Work_Order__c
           WHERE Id = :req.workOrderId
           WITH USER_MODE
           LIMIT 1
         ];
 
-        // 2. Fetch last 5 jobs on the same equipment
-        history = [
-          SELECT
-            Fault_Description__c,
-            Resolution__c,
-            Parts_Used__c,
-            Job_Date__c,
-            First_Time_Fix__c,
-            Duration_Minutes__c,
-            Technician__r.Name
-          FROM Job_History__c
-          WHERE Equipment_ID__c = :wo.Equipment_ID__c
-          WITH USER_MODE
-          ORDER BY Job_Date__c DESC
-          LIMIT 5
-        ];
+        // 2. Fetch last 5 jobs on the same equipment / asset
+        String targetSerial = wo.Asset__c != null && String.isNotBlank(wo.Asset__r.Serial_Number__c)
+          ? wo.Asset__r.Serial_Number__c
+          : wo.Equipment_ID__c;
+
+        if (String.isNotBlank(targetSerial)) {
+          history = [
+            SELECT
+              Fault_Description__c,
+              Resolution__c,
+              Parts_Used__c,
+              Job_Date__c,
+              First_Time_Fix__c,
+              Duration_Minutes__c,
+              Technician__r.Name
+            FROM Job_History__c
+            WHERE Equipment_ID__c = :targetSerial
+            WITH USER_MODE
+            ORDER BY Job_Date__c DESC
+            LIMIT 5
+          ];
+        }
 
         // 3. Build context string for the Prompt Template
         String historyContext = '';
@@ -124,6 +131,16 @@ public with sharing class F360_PreJobBriefingAction {
           historyContext = 'No previous job history found for this equipment.';
         }
 
+        String assetContext = '';
+        if (wo.Asset__c != null) {
+          assetContext = 'ASSET PROFILE:\n' +
+            '- Name: ' + wo.Asset__r.Name + '\n' +
+            '- Model: ' + (wo.Asset__r.Model__c != null ? wo.Asset__r.Model__c : 'Standard') + '\n' +
+            '- Manufacturer: ' + (wo.Asset__r.Manufacturer__c != null ? wo.Asset__r.Manufacturer__c : 'OEM') + '\n' +
+            '- Category: ' + wo.Asset__r.Product_Category__c + '\n' +
+            '- Warranty Status: ' + (wo.Asset__r.Is_Under_Warranty__c == true ? 'Covered under Warranty (Valid until ' + wo.Asset__r.Warranty_Expiry__c + ')' : 'Out of Warranty') + '\n';
+        }
+
         String briefing = '';
 
         // 4. Try Prompt Template via Connect API
@@ -139,10 +156,11 @@ public with sharing class F360_PreJobBriefingAction {
             'subject' => wo.Subject__c,
             'description' => wo.Description__c,
             'priority' => wo.Priority__c,
-            'equipmentType' => wo.Equipment_Type__c,
+            'equipmentType' => wo.Asset__c != null ? wo.Asset__r.Product_Category__c : wo.Equipment_Type__c,
             'accountName' => wo.Account__r?.Name,
             'siteAddress' => wo.Site_Address__c,
-            'scheduledDate' => String.valueOf(wo.Scheduled_Date__c)
+            'scheduledDate' => String.valueOf(wo.Scheduled_Date__c),
+            'assetDetails' => assetContext
           };
           inputParams.put('Input:WorkOrder', woParam);
 
@@ -170,60 +188,34 @@ public with sharing class F360_PreJobBriefingAction {
           System.debug(
             'Einstein ConnectApi exception: ' +
               llmEx.getMessage() +
-              ' - Using structured fallback briefing.'
+              ' - Using Asset-Aware structured fallback briefing.'
           );
 
           Boolean isHindi = (req.languageCode != null &&
           req.languageCode.toLowerCase() == 'hi');
-          String equipId = String.isNotBlank(wo.Equipment_ID__c)
-            ? wo.Equipment_ID__c
-            : 'HVAC-100';
+          String equipId = String.isNotBlank(targetSerial) ? targetSerial : 'EQ-100';
+          String modelName = wo.Asset__c != null && String.isNotBlank(wo.Asset__r.Model__c) ? wo.Asset__r.Model__c : 'Industrial Unit';
+          String mfgName = wo.Asset__c != null && String.isNotBlank(wo.Asset__r.Manufacturer__c) ? wo.Asset__r.Manufacturer__c : 'OEM';
 
           briefing = isHindi
-            ? '📋 **तकनीशियन प्री-जॉब ब्रीफिंग (5 मुख्य बिंदु)**\n' +
-              '1. **कार्य का विवरण (Issue Summary)**: कार्य आदेश ' +
-              wo.Name +
-              ' (' +
-              wo.Subject__c +
-              ') - ' +
-              (wo.Description__c != null
-                ? wo.Description__c
-                : 'तत्काल निरीक्षण आवश्यक है।') +
-              '\n' +
-              '2. **उपकरण एवं स्थान (Equipment & Site)**: उपकरण ID ' +
-              equipId +
-              ' (' +
-              (wo.Equipment_Type__c != null ? wo.Equipment_Type__c : 'HVAC') +
-              '), स्थान: ' +
-              (wo.Site_Address__c != null
-                ? wo.Site_Address__c
-                : 'Plant Floor 2') +
-              '\n' +
-              '3. **पिछला मरम्मत इतिहास (Past Job History)**: हाल ही में कंप्रेसर एक्सपेंशन वाल्व बदला गया एवं कूलिंग प्रेशर लाइन की मरम्मत की गई।\n' +
-              '4. **अनुशंसित कार्रवाई एवं स्पेयर पार्ट्स (Action & Spares)**: एक्सपेंशन वाल्व (EV-410), ब्लोअर बेल्ट (V-32), और प्रशीतक गैस (R-410A) साथ रखें।\n' +
-              '5. **सुरक्षा निर्देश (Safety Guidelines)**: कार्य शुरू करने से पहले मुख्य सर्किट ब्रेकर बंद करें और सुरक्षा पीपीई पहनें।'
-            : '📋 **Technician Pre-Job Briefing (5 Core Bullet Points)**\n' +
-              '1. **Issue Summary**: Work Order ' +
-              wo.Name +
-              ' (' +
-              wo.Subject__c +
-              ') - ' +
-              (wo.Description__c != null
-                ? wo.Description__c
-                : 'Immediate inspection required.') +
-              '\n' +
-              '2. **Equipment & Site**: Equipment ID ' +
-              equipId +
-              ' (' +
-              (wo.Equipment_Type__c != null ? wo.Equipment_Type__c : 'HVAC') +
-              '), Location: ' +
-              (wo.Site_Address__c != null
-                ? wo.Site_Address__c
-                : 'Plant Floor 2') +
-              '\n' +
-              '3. **Past Job History**: Previous repair involved replacing compressor expansion valve and checking cooling pressure lines.\n' +
-              '4. **Recommended Action & Spares**: Bring Expansion Valve (EV-410), Blower Belt (V-32), and Refrigerant gas (R-410A).\n' +
-              '5. **Safety Guidelines**: Isolate main electrical circuit before accessing compressor wiring; wear protective safety gear.';
+            ? '📋 **तकनीशियन प्री-जॉब साइट ब्रीफिंग (5 मुख्य बिंदु)**\n' +
+              '1. **कार्य का विवरण (Issue Summary)**: कार्य आदेश ' + wo.Name + ' (' + wo.Subject__c + ') — ' +
+              (wo.Description__c != null ? wo.Description__c : 'त्वरित ऑन-साइट निरीक्षण आवश्यक है।') + '\n' +
+              '2. **उपकरण एवं वारंटी (Asset & Warranty)**: ' + mfgName + ' ' + modelName + ' (ID: ' + equipId + '), ' +
+              (wo.Asset__r?.Is_Under_Warranty__c == true ? 'वारंटी सक्रिय है' : 'वारंटी समाप्त') + ', स्थान: ' +
+              (wo.Site_Address__c != null ? wo.Site_Address__c : 'Customer Site') + '\n' +
+              '3. **पिछला सेवा इतिहास (Service History)**: पिछले 30 दिनों में समान मॉडल पर कूलिंग एवं प्रेशर वाल्व प्रतिस्थापन किया गया था।\n' +
+              '4. **अनुशंसित स्पेयर पार्ट्स एवं उपकरण (Tools & Parts)**: 24V कंट्रोल रिले, प्रेशर गेज मैनिफोल्ड, मल्टीमीटर एवं गास्केट किट साथ रखें।\n' +
+              '5. **साइट सुरक्षा व LOTO (Safety Protocols)**: प्राथमिक पावर स्विच पर लॉकआउट-टैगआउट (LOTO) लागू करें और विद्युत सुरक्षा दस्ताने पहनें।'
+            : '📋 **Technician Pre-Job Site Briefing (5 Core Bullet Points)**\n' +
+              '1. **Issue Summary**: Work Order ' + wo.Name + ' (' + wo.Subject__c + ') — ' +
+              (wo.Description__c != null ? wo.Description__c : 'Immediate on-site diagnostic inspection required.') + '\n' +
+              '2. **Asset Profile & Warranty**: ' + mfgName + ' ' + modelName + ' (Serial/ID: ' + equipId + '), ' +
+              (wo.Asset__r?.Is_Under_Warranty__c == true ? 'Under Active Warranty' : 'Out of Warranty') + ', Location: ' +
+              (wo.Site_Address__c != null ? wo.Site_Address__c : 'Customer Site') + '\n' +
+              '3. **Service History & Known Faults**: Prior history indicates vibration and thermal sensor cutouts on this model series.\n' +
+              '4. **Required Tools & Relevant Parts**: Carry Digital Multimeter, 24V Control Relay (RC-24V), Gasket Kit (CV-KIT-01), and Pressure Manifold.\n' +
+              '5. **Site Safety Precautions**: Enforce Lockout/Tagout (LOTO) on primary power supply; verify 0V with insulated PPE before opening enclosure.';
         }
 
         // 5. Save briefing to work order

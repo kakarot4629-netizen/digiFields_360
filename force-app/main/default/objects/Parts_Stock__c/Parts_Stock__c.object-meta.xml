@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
+    <label>Parts Stock</label>
+    <pluralLabel>Parts Stock</pluralLabel>
+    <nameField>
+        <label>Parts Stock Name</label>
+        <type>AutoNumber</type>
+        <displayFormat>PST-{00000}</displayFormat>
+    </nameField>
+    <deploymentStatus>Deployed</deploymentStatus>
+    <sharingModel>ReadWrite</sharingModel>
+    <description>Current inventory of each part at each depot.</description>
+    <enableActivities>true</enableActivities>
+    <enableHistory>true</enableHistory>
+    <enableReports>true</enableReports>
+    <enableSearch>true</enableSearch>
+    <enableBulkApi>true</enableBulkApi>
+    <enableStreamingApi>true</enableStreamingApi>
+    <searchLayouts>
+        <customTabListAdditionalFields>Depot__c</customTabListAdditionalFields>
+        <customTabListAdditionalFields>Part__c</customTabListAdditionalFields>
+        <customTabListAdditionalFields>Quantity_Available__c</customTabListAdditionalFields>
+        <customTabListAdditionalFields>Quantity_Reserved__c</customTabListAdditionalFields>
+        <customTabListAdditionalFields>Reorder_Level__c</customTabListAdditionalFields>
+        <customTabListAdditionalFields>Last_Updated__c</customTabListAdditionalFields>
+        <searchResultsAdditionalFields>Depot__c</searchResultsAdditionalFields>
+        <searchResultsAdditionalFields>Part__c</searchResultsAdditionalFields>
+        <searchResultsAdditionalFields>Quantity_Available__c</searchResultsAdditionalFields>
+        <searchResultsAdditionalFields>Quantity_Reserved__c</searchResultsAdditionalFields>
+        <searchResultsAdditionalFields>Reorder_Level__c</searchResultsAdditionalFields>
+        <lookupDialogsAdditionalFields>Depot__c</lookupDialogsAdditionalFields>
+        <lookupDialogsAdditionalFields>Part__c</lookupDialogsAdditionalFields>
+    </searchLayouts>
+</CustomObject>

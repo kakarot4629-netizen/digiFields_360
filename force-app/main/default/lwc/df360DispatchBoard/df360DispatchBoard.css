@@ -1,0 +1,8 @@
+.dispatch-container { background: #f8fafc; border-radius: 8px; }
+.job-list-scroll { max-height: 600px; overflow-y: auto; }
+.job-card { cursor: pointer; transition: all 0.2s ease; border-left: 4px solid #0176d3; }
+.job-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+.matching-panel { border-radius: 8px; }
+.match-score { display: block; font-weight: 700; color: #2e844a; margin-bottom: 4px; }
+.tech-card { transition: all 0.2s ease; }
+.tech-card:hover { border-color: #0176d3; }

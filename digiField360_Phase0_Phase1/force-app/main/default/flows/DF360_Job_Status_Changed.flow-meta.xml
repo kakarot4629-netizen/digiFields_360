@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+    <apiVersion>61.0</apiVersion>
+    <description>Fires WhatsApp templates on En Route and On Site status transitions.</description>
+    <label>DF360 - Job Status Changed</label>
+    <processMetadataValues><name>BuilderType</name><value><stringValue>LightningFlowBuilder</stringValue></value></processMetadataValues>
+    <processType>AutoLaunchedFlow</processType>
+    <status>Active</status>
+    <interviewLabel>DF360 - Job Status Changed {!$Flow.CurrentDateTime}</interviewLabel>
+    <start>
+        <locationX>182</locationX><locationY>48</locationY>
+        <connector><targetReference>Which_Status</targetReference></connector>
+        <filterLogic>and</filterLogic>
+        <filters><field>Status__c</field><operator>IsChanged</operator><value><booleanValue>true</booleanValue></value></filters>
+        <object>Service_Job__c</object>
+        <recordTriggerType>Update</recordTriggerType>
+        <triggerType>RecordAfterSave</triggerType>
+    </start>
+    <decisions>
+        <name>Which_Status</name><label>Which Status?</label>
+        <locationX>182</locationX><locationY>158</locationY>
+        <defaultConnectorLabel>Other</defaultConnectorLabel>
+        <rules>
+            <name>Is_En_Route</name><conditionLogic>1</conditionLogic>
+            <conditions><leftValueReference>$Record.Status__c</leftValueReference><operator>EqualTo</operator><rightValue><stringValue>En Route</stringValue></rightValue></conditions>
+            <connector><targetReference>Send_EnRoute</targetReference></connector><label>En Route</label>
+        </rules>
+        <rules>
+            <name>Is_On_Site</name><conditionLogic>1</conditionLogic>
+            <conditions><leftValueReference>$Record.Status__c</leftValueReference><operator>EqualTo</operator><rightValue><stringValue>On Site</stringValue></rightValue></conditions>
+            <connector><targetReference>Send_Arrived</targetReference></connector><label>On Site</label>
+        </rules>
+    </decisions>
+    <actionCalls>
+        <name>Send_EnRoute</name><label>Send Tech En Route</label>
+        <locationX>50</locationX><locationY>278</locationY>
+        <actionName>DF360_WhatsAppService</actionName><actionType>apex</actionType>
+        <inputParameters><name>toMobile</name><value><elementReference>$Record.Account__r.Phone</elementReference></value></inputParameters>
+        <inputParameters><name>templateName</name><value><stringValue>tech_enroute</stringValue></value></inputParameters>
+        <inputParameters><name>paramsJson</name><value><elementReference>EnRouteParams</elementReference></value></inputParameters>
+        <inputParameters><name>languageCode</name><value><stringValue>en</stringValue></value></inputParameters>
+    </actionCalls>
+    <actionCalls>
+        <name>Send_Arrived</name><label>Send Tech Arrived</label>
+        <locationX>314</locationX><locationY>278</locationY>
+        <actionName>DF360_WhatsAppService</actionName><actionType>apex</actionType>
+        <inputParameters><name>toMobile</name><value><elementReference>$Record.Account__r.Phone</elementReference></value></inputParameters>
+        <inputParameters><name>templateName</name><value><stringValue>tech_arrived</stringValue></value></inputParameters>
+        <inputParameters><name>paramsJson</name><value><elementReference>ArrivedParams</elementReference></value></inputParameters>
+        <inputParameters><name>languageCode</name><value><stringValue>en</stringValue></value></inputParameters>
+    </actionCalls>
+    <formulas>
+        <name>EnRouteParams</name><dataType>String</dataType>
+        <expression>"[\"" &amp; {!$Record.Name} &amp; "\",\"" &amp; {!$Record.Technician__r.Name} &amp; "\"]"</expression>
+    </formulas>
+    <formulas>
+        <name>ArrivedParams</name><dataType>String</dataType>
+        <expression>"[\"" &amp; {!$Record.Name} &amp; "\",\"" &amp; {!$Record.Technician__r.Name} &amp; "\"]"</expression>
+    </formulas>
+</Flow>

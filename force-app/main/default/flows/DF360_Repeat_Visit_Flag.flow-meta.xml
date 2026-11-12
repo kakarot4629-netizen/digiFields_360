@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+    <apiVersion>61.0</apiVersion>
+    <decisions>
+        <name>Check_Asset</name>
+        <label>Has Asset?</label>
+        <locationX>182</locationX>
+        <locationY>158</locationY>
+        <defaultConnectorLabel>No Asset</defaultConnectorLabel>
+        <rules>
+            <name>Has_Asset</name>
+            <conditionLogic>1</conditionLogic>
+            <conditions>
+                <leftValueReference>$Record.Asset__c</leftValueReference>
+                <operator>IsNull</operator>
+                <rightValue>
+                    <booleanValue>false</booleanValue>
+                </rightValue>
+            </conditions>
+            <connector>
+                <targetReference>Get_Recent_Visits</targetReference>
+            </connector>
+            <label>Has Asset</label>
+        </rules>
+    </decisions>
+    <decisions>
+        <name>Check_Threshold</name>
+        <label>Has Previous Visits?</label>
+        <locationX>182</locationX>
+        <locationY>398</locationY>
+        <defaultConnectorLabel>Under Threshold</defaultConnectorLabel>
+        <rules>
+            <name>Repeat_Detected</name>
+            <conditionLogic>1</conditionLogic>
+            <conditions>
+                <leftValueReference>Get_Recent_Visits</leftValueReference>
+                <operator>IsNull</operator>
+                <rightValue>
+                    <booleanValue>false</booleanValue>
+                </rightValue>
+            </conditions>
+            <connector>
+                <targetReference>Create_RCA_Event</targetReference>
+            </connector>
+            <label>Visits Found</label>
+        </rules>
+    </decisions>
+    <description>After Service_Job insert: if same asset has recent jobs in 30 days, create SLA event for RCA audit.</description>
+    <formulas>
+        <name>ThirtyDaysAgo</name>
+        <dataType>DateTime</dataType>
+        <expression>NOW() - 30</expression>
+    </formulas>
+    <interviewLabel>DF360 - Repeat Visit Flag {!$Flow.CurrentDateTime}</interviewLabel>
+    <label>DF360 - Repeat Visit Flag</label>
+    <processMetadataValues>
+        <name>BuilderType</name>
+        <value>
+            <stringValue>LightningFlowBuilder</stringValue>
+        </value>
+    </processMetadataValues>
+    <processType>AutoLaunchedFlow</processType>
+    <recordCreates>
+        <name>Create_RCA_Event</name>
+        <label>Create RCA SLA Event</label>
+        <locationX>182</locationX>
+        <locationY>518</locationY>
+        <inputAssignments>
+            <field>Event_Timestamp__c</field>
+            <value>
+                <elementReference>$Flow.CurrentDateTime</elementReference>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <field>Event_Type__c</field>
+            <value>
+                <stringValue>Repeat Visit Alert</stringValue>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <field>Notes__c</field>
+            <value>
+                <stringValue>REPEAT VISIT ALERT: This asset has received previous service visits in the last 30 days. Root cause verification is recommended.</stringValue>
+            </value>
+        </inputAssignments>
+        <inputAssignments>
+            <field>Service_Job__c</field>
+            <value>
+                <elementReference>$Record.Id</elementReference>
+            </value>
+        </inputAssignments>
+        <object>SLA_Event__c</object>
+    </recordCreates>
+    <recordLookups>
+        <name>Get_Recent_Visits</name>
+        <label>Get Asset Visits Last 30 Days</label>
+        <locationX>182</locationX>
+        <locationY>278</locationY>
+        <assignNullValuesIfNoRecordsFound>false</assignNullValuesIfNoRecordsFound>
+        <connector>
+            <targetReference>Check_Threshold</targetReference>
+        </connector>
+        <filterLogic>1 AND 2 AND 3</filterLogic>
+        <filters>
+            <field>Asset__c</field>
+            <operator>EqualTo</operator>
+            <value>
+                <elementReference>$Record.Asset__c</elementReference>
+            </value>
+        </filters>
+        <filters>
+            <field>CreatedDate</field>
+            <operator>GreaterThanOrEqualTo</operator>
+            <value>
+                <elementReference>ThirtyDaysAgo</elementReference>
+            </value>
+        </filters>
+        <filters>
+            <field>Id</field>
+            <operator>NotEqualTo</operator>
+            <value>
+                <elementReference>$Record.Id</elementReference>
+            </value>
+        </filters>
+        <getFirstRecordOnly>false</getFirstRecordOnly>
+        <object>Service_Job__c</object>
+        <storeOutputAutomatically>true</storeOutputAutomatically>
+    </recordLookups>
+    <start>
+        <locationX>182</locationX>
+        <locationY>48</locationY>
+        <connector>
+            <targetReference>Check_Asset</targetReference>
+        </connector>
+        <object>Service_Job__c</object>
+        <recordTriggerType>Create</recordTriggerType>
+        <triggerType>RecordAfterSave</triggerType>
+    </start>
+    <status>Active</status>
+</Flow>

@@ -6,4 +6,5 @@
     <type>Lookup</type>
     <referenceTo>Account</referenceTo><relationshipName
   >Maintenance_Alerts</relationshipName>
+    <deleteConstraint>SetNull</deleteConstraint>
 </CustomField>

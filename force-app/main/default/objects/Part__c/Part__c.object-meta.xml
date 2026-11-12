@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
+    <label>Part</label>
+    <pluralLabel>Parts</pluralLabel>
+    <nameField>
+        <label>Part Name</label>
+        <type>AutoNumber</type>
+        <displayFormat>PRT-{00000}</displayFormat>
+    </nameField>
+    <deploymentStatus>Deployed</deploymentStatus>
+    <sharingModel>ReadWrite</sharingModel>
+    <description>Master SKU catalogue for spare parts.</description>
+    <enableActivities>true</enableActivities>
+    <enableHistory>true</enableHistory>
+    <enableReports>true</enableReports>
+    <enableSearch>true</enableSearch>
+    <enableBulkApi>true</enableBulkApi>
+    <enableStreamingApi>true</enableStreamingApi>
+    <searchLayouts>
+        <customTabListAdditionalFields>Part_Code__c</customTabListAdditionalFields>
+        <customTabListAdditionalFields>Category__c</customTabListAdditionalFields>
+        <customTabListAdditionalFields>ERP_SKU__c</customTabListAdditionalFields>
+        <customTabListAdditionalFields>Unit_Cost__c</customTabListAdditionalFields>
+        <customTabListAdditionalFields>Is_Warranty_Item__c</customTabListAdditionalFields>
+        <customTabListAdditionalFields>Is_Active__c</customTabListAdditionalFields>
+        <searchResultsAdditionalFields>Part_Code__c</searchResultsAdditionalFields>
+        <searchResultsAdditionalFields>Category__c</searchResultsAdditionalFields>
+        <searchResultsAdditionalFields>ERP_SKU__c</searchResultsAdditionalFields>
+        <searchResultsAdditionalFields>Unit_Cost__c</searchResultsAdditionalFields>
+        <searchResultsAdditionalFields>Is_Warranty_Item__c</searchResultsAdditionalFields>
+        <searchResultsAdditionalFields>Is_Active__c</searchResultsAdditionalFields>
+        <lookupDialogsAdditionalFields>Part_Code__c</lookupDialogsAdditionalFields>
+        <lookupDialogsAdditionalFields>Category__c</lookupDialogsAdditionalFields>
+    </searchLayouts>
+</CustomObject>

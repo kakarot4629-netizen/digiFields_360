@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Asset__c</fullName>
+    <label>Actual Asset</label>
+    <type>Lookup</type>
+    <referenceTo>Asset__c</referenceTo>
+    <relationshipLabel>Asset Feedbacks</relationshipLabel>
+    <relationshipName>Asset_Feedbacks</relationshipName>
+    <deleteConstraint>SetNull</deleteConstraint>
+    <description>The physical equipment / actual asset master record.</description>
+</CustomField>

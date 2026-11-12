@@ -1,0 +1,30 @@
+<template>
+    <lightning-card title="Spare Parts Catalog" icon-name="standard:product">
+        <div class="slds-p-around_medium catalog-box">
+            <div class="slds-grid slds-gutters slds-m-bottom_medium">
+                <div class="slds-col slds-size_8-of-12">
+                    <lightning-input type="search" placeholder="Search part by name or code..." onchange={handleSearch}></lightning-input>
+                </div>
+                <div class="slds-col slds-size_4-of-12 slds-m-top_large">
+                    <lightning-button label="Search Parts" variant="brand" onclick={doSearch}></lightning-button>
+                </div>
+            </div>
+            <table class="slds-table slds-table_cell-buffer slds-table_bordered">
+                <thead>
+                    <tr class="slds-line-height_reset">
+                        <th>Part Name</th><th>Code</th><th>Cost (₹)</th><th>Warranty</th><th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <template for:each={parts} for:item="p">
+                        <tr key={p.id}>
+                            <td>{p.name}</td><td>{p.code}</td><td>₹{p.cost}</td>
+                            <td><lightning-input type="checkbox" checked={p.isWarranty} disabled></lightning-input></td>
+                            <td><lightning-button label="Request" variant="brand-outline" size="small" data-id={p.id} onclick={handleRequestPart}></lightning-button></td>
+                        </tr>
+                    </template>
+                </tbody>
+            </table>
+        </div>
+    </lightning-card>
+</template>
