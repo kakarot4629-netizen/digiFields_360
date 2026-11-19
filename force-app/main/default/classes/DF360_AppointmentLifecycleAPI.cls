@@ -3,9 +3,15 @@ global with sharing class DF360_AppointmentLifecycleAPI {
 
     /**
      * POST  /services/apexrest/df360/v1/service-appointments/{id}/check-in
-     * POST  /services/apexrest/df360/v1/service-appointments/{id}/photos
+     * POST  /services/apexrest/df360/v1/service-appointments/{id}/status
+     * POST  /services/apexrest/df360/v1/service-appointments/{id}/complete
      * POST  /services/apexrest/df360/v1/service-appointments/{id}/incomplete
-     * PATCH /services/apexrest/df360/v1/service-appointments/{id}/incomplete
+     * POST  /services/apexrest/df360/v1/service-appointments/{id}/photos
+     * PATCH works the same as POST on every route.
+     *
+     * {id} is the Service_Job__c Id or its Name (e.g. SA-0000029).
+     * An unknown route returns 404. (Before, anything that did not match fell
+     * through to check-in, so a call to /complete or /status checked the job in.)
      */
     @HttpPost
     global static void doPost() {
@@ -21,99 +27,52 @@ global with sharing class DF360_AppointmentLifecycleAPI {
             if (req != null && req.requestBody != null && req.requestBody.size() > 0) {
                 String bodyStr = req.requestBody.toString().trim();
                 if (String.isNotBlank(bodyStr)) {
-                    body = (Map<String, Object>) JSON.deserializeUntyped(bodyStr);
-                }
-            }
-
-            // Extract Appointment identifier from URI
-            // e.g. /df360/v1/service-appointments/{identifier}/check-in
-            // or   /df360/v1/service-appointments/{identifier}/photos
-            // or   /df360/v1/service-appointments/{identifier}/incomplete
-            String appointmentId = null;
-            Boolean isPhotosRoute = false;
-            Boolean isIncompleteRoute = false;
-            if (String.isNotBlank(uri)) {
-                String sub = uri.substringAfter('/df360/v1/service-appointments/');
-                if (String.isNotBlank(sub)) {
-                    if (sub.endsWithIgnoreCase('/photos') || sub.endsWithIgnoreCase('/photo')) {
-                        isPhotosRoute = true;
-                        appointmentId = sub.substringBefore('/');
-                    } else if (sub.endsWithIgnoreCase('/incomplete')) {
-                        isIncompleteRoute = true;
-                        appointmentId = sub.substringBefore('/');
-                    } else if (sub.contains('/')) {
-                        appointmentId = sub.substringBefore('/');
-                    } else if (!sub.equalsIgnoreCase('check-in')) {
-                        appointmentId = sub;
+                    try {
+                        body = (Map<String, Object>) JSON.deserializeUntyped(bodyStr);
+                    } catch (Exception jsonEx) {
+                        respond(res, 400, failure('BAD_REQUEST', 'Request body is not valid JSON.'));
+                        return;
                     }
                 }
             }
 
-            // Fallback to body param if not in URI
-            if (String.isBlank(appointmentId)) {
-                if (body.containsKey('appointmentId')) {
-                    appointmentId = String.valueOf(body.get('appointmentId'));
-                } else if (body.containsKey('id')) {
-                    appointmentId = String.valueOf(body.get('id'));
-                } else if (body.containsKey('serviceAppointmentId')) {
-                    appointmentId = String.valueOf(body.get('serviceAppointmentId'));
-                }
-            }
+            // /df360/v1/service-appointments/{identifier}/{action}
+            String sub = String.isBlank(uri) ? '' : uri.substringAfter('/df360/v1/service-appointments/').removeEnd('/');
+            String appointmentId = sub.contains('/') ? sub.substringBefore('/') : sub;
+            String action = sub.contains('/') ? sub.substringAfter('/').toLowerCase() : '';
 
             if (String.isBlank(appointmentId)) {
-                if (res != null) res.statusCode = 400;
-                writeResponse(res, new Map<String, Object>{
-                    'success' => false,
-                    'error' => 'Missing service appointment identifier in URL or request body.'
-                });
+                appointmentId = firstNonBlank(body, new List<String>{ 'appointmentId', 'serviceAppointmentId', 'id' });
+            }
+            if (String.isBlank(appointmentId)) {
+                respond(res, 400, failure('BAD_REQUEST', 'Missing service appointment identifier in URL or request body.'));
                 return;
             }
+            appointmentId = appointmentId.trim();
 
-            // Route 1: Photo Evidence Upload
-            if (isPhotosRoute || body.containsKey('photoType') || body.containsKey('imageBase64') || body.containsKey('photoUrl')) {
-                Map<String, Object> photoResult = executePhotoUpload(appointmentId.trim(), body);
-                if (photoResult.get('success') == true) {
-                    if (res != null) res.statusCode = 200;
-                } else {
-                    if (res != null) res.statusCode = 400;
-                }
-                writeResponse(res, photoResult);
-                return;
-            }
-
-            // Route 2: Mark Incomplete Execution
-            if (isIncompleteRoute ||
-                (body.containsKey('status') && String.valueOf(body.get('status')).equalsIgnoreCase('Incomplete')) ||
-                (body.containsKey('action') && String.valueOf(body.get('action')).equalsIgnoreCase('incomplete'))) {
-                Map<String, Object> incompleteResult = executeMarkIncomplete(appointmentId.trim(), body);
-                if (incompleteResult.get('success') == true) {
-                    if (res != null) res.statusCode = 200;
-                } else {
-                    String errMsg = String.valueOf(incompleteResult.get('error'));
-                    if (res != null) {
-                        res.statusCode = (errMsg != null && errMsg.contains('not found')) ? 404 : 400;
-                    }
-                }
-                writeResponse(res, incompleteResult);
-                return;
-            }
-
-            // Route 3: Check-In Execution
-            Map<String, Object> checkInResult = executeCheckIn(appointmentId.trim(), body);
-            if (checkInResult.get('success') == true) {
-                if (res != null) res.statusCode = 200;
+            Map<String, Object> result;
+            if (action == 'photos' || action == 'photo') {
+                result = executePhotoUpload(appointmentId, body);
+            } else if (action == 'check-in') {
+                result = executeCheckIn(appointmentId, body);
+            } else if (action == 'status' || action == '') {
+                result = executeStatusUpdate(appointmentId, body);
+            } else if (action == 'complete') {
+                result = executeComplete(appointmentId, body);
+            } else if (action == 'incomplete') {
+                result = executeMarkIncomplete(appointmentId, body);
             } else {
-                if (res != null) res.statusCode = 404;
+                respond(res, 404, failure('UNKNOWN_ROUTE',
+                    'Unknown action "' + action + '". Use check-in, status, complete, incomplete or photos.'));
+                return;
             }
-            writeResponse(res, checkInResult);
+            respond(res, statusFor(result), result);
 
+        } catch (InputException e) {
+            respond(res, 400, failure('BAD_REQUEST', e.getMessage()));
         } catch (Exception e) {
-            if (res != null) res.statusCode = 500;
-            writeResponse(res, new Map<String, Object>{
-                'success' => false,
-                'error' => e.getMessage(),
-                'stackTrace' => e.getStackTraceString()
-            });
+            System.debug(LoggingLevel.ERROR, 'DF360_AppointmentLifecycleAPI: ' + e.getMessage() + '\n' + e.getStackTraceString());
+            respond(res, 500, failure('SERVER_ERROR', e.getMessage()));
         }
     }
 
@@ -188,8 +147,7 @@ global with sharing class DF360_AppointmentLifecycleAPI {
             if (res != null) res.statusCode = 500;
             writeResponse(res, new Map<String, Object>{
                 'success' => false,
-                'error' => e.getMessage(),
-                'stackTrace' => e.getStackTraceString()
+                'error' => e.getMessage()
             });
         }
     }
@@ -207,6 +165,7 @@ global with sharing class DF360_AppointmentLifecycleAPI {
         }
 
         String cleanedId = appointmentIdentifier.trim();
+        Id cleanedIdAsId = asIdOrNull(cleanedId); // Id = :<non-Id text> throws "invalid ID field", so names are matched separately
 
         // 1. Identify Caller Technician
         Id targetUserId = UserInfo.getUserId();
@@ -216,10 +175,11 @@ global with sharing class DF360_AppointmentLifecycleAPI {
 
         if (String.isNotBlank(technicianIdParam)) {
             String cleanTech = technicianIdParam.trim();
+            Id cleanTechAsId = asIdOrNull(cleanTech);
             List<Technician__c> searchedTechs = [
                 SELECT Id, Name, User__c, User__r.Name, User__r.Email
                 FROM Technician__c
-                WHERE Id = :cleanTech OR Name = :cleanTech OR Employee_Code__c = :cleanTech OR User__c = :cleanTech
+                WHERE Id = :cleanTechAsId OR Name = :cleanTech OR Employee_Code__c = :cleanTech OR User__c = :cleanTechAsId
                 LIMIT 1
             ];
             if (!searchedTechs.isEmpty()) {
@@ -289,7 +249,7 @@ global with sharing class DF360_AppointmentLifecycleAPI {
                            Part__c, Part__r.Name, Quantity_Used__c
                     FROM Job_Activities__r)
             FROM Service_Job__c
-            WHERE Id = :cleanedId OR Name = :cleanedId
+            WHERE Id = :cleanedIdAsId OR Name = :cleanedId
             LIMIT 1
         ];
 
@@ -597,10 +557,11 @@ global with sharing class DF360_AppointmentLifecycleAPI {
      */
     public static Map<String, Object> executePhotoUpload(String appointmentIdentifier, Map<String, Object> payload) {
         String cleanId = appointmentIdentifier.trim();
+        Id cleanIdAsId = asIdOrNull(cleanId); // Id = :<non-Id text> throws "invalid ID field", so names are matched separately
         List<Service_Job__c> jobs = [
             SELECT Id, Name, Status__c, Before_Photo_URL__c, After_Photo_URL__c
             FROM Service_Job__c
-            WHERE Id = :cleanId OR Name = :cleanId
+            WHERE Id = :cleanIdAsId OR Name = :cleanId
             LIMIT 1
         ];
 
@@ -739,12 +700,13 @@ global with sharing class DF360_AppointmentLifecycleAPI {
      */
     public static Map<String, Object> getServiceAppointmentPhotos(String appointmentIdentifier) {
         String cleanId = appointmentIdentifier.trim();
+        Id cleanIdAsId = asIdOrNull(cleanId); // Id = :<non-Id text> throws "invalid ID field", so names are matched separately
         List<Service_Job__c> jobs = [
             SELECT Id, Name,
                    Before_Photo_URL__c, Before_Photo_Id__c, Before_Photo_Timestamp__c,
                    After_Photo_URL__c, After_Photo_Id__c, After_Photo_Timestamp__c
             FROM Service_Job__c
-            WHERE Id = :cleanId OR Name = :cleanId
+            WHERE Id = :cleanIdAsId OR Name = :cleanId
             LIMIT 1
         ];
 
@@ -795,316 +757,471 @@ global with sharing class DF360_AppointmentLifecycleAPI {
         };
     }
 
+    // =====================================================================
+    // Service appointment updates from the mobile app
+    // =====================================================================
+
+    public class InputException extends Exception {}
+
+    private static final Set<String> ALLOWED_STATUSES = new Set<String>{
+        'New', 'Assigned', 'En Route', 'On Site', 'In Progress',
+        'Parts Awaited', 'Completed', 'Cancelled', 'In Complete'
+    };
+    // Once a job is Completed or Cancelled, the app cannot change it any more.
+    private static final Set<String> CLOSED_STATUSES = new Set<String>{ 'Completed', 'Cancelled' };
+    private static final Integer MAX_CLOCK_SKEW_MINUTES = 5;
+
     /**
-     * Core Check-In logic
+     * Status change: { "status", "notes", "customerNotes", plus the fields of
+     * check-in / complete / incomplete when the status is one of those }.
+     * Sends On Site / In Progress (first time), Completed and In Complete to
+     * their own handlers, so every way of setting a status follows the same rules.
      */
-    public static Map<String, Object> executeCheckIn(String appointmentIdentifier, Map<String, Object> payload) {
-        String cleanId = appointmentIdentifier.trim();
-        List<Service_Job__c> jobs = [
-            SELECT Id, Name, Status__c, Priority__c, Job_Type__c,
-                   Scheduled_Start_Time__c, Scheduled_End_Time__c,
-                   Check_In_Time__c, SLA_Deadline__c, SLA_Status__c,
-                   Work_Order__c, Work_Order__r.Name, Work_Order__r.Status__c,
-                   Technician__c, Technician__r.Name
-            FROM Service_Job__c
-            WHERE Id = :cleanId OR Name = :cleanId
-            LIMIT 1
-        ];
+    public static Map<String, Object> executeStatusUpdate(String appointmentIdentifier, Map<String, Object> payload) {
+        payload = payload == null ? new Map<String, Object>() : payload;
+        String rawStatus = str(payload.get('status'));
+        if (String.isBlank(rawStatus)) {
+            return failure('BAD_REQUEST', 'status is required.');
+        }
+        String status = normalizeStatus(rawStatus);
+        if (status == null) {
+            return failure('BAD_REQUEST', 'Unknown status "' + rawStatus + '". Allowed: '
+                + String.join(new List<String>(ALLOWED_STATUSES), ', ') + '.');
+        }
+        if (status == 'In Complete') return executeMarkIncomplete(appointmentIdentifier, payload);
+        if (status == 'Completed') return executeComplete(appointmentIdentifier, payload);
 
-        if (jobs.isEmpty()) {
-            return new Map<String, Object>{
-                'success' => false,
-                'error' => 'Service Appointment not found for identifier: ' + appointmentIdentifier
-            };
+        Service_Job__c job = findJob(appointmentIdentifier);
+        if (job == null) return notFound(appointmentIdentifier);
+
+        if ((status == 'On Site' || status == 'In Progress') && job.Check_In_Time__c == null
+                && !CLOSED_STATUSES.contains(job.Status__c)) {
+            return executeCheckIn(appointmentIdentifier, payload);
+        }
+        if (job.Status__c == status) {
+            // Same status sent again (e.g. offline replay): nothing to change.
+            return success('Status is already ' + status + '.', job, job.Status__c);
+        }
+        if (CLOSED_STATUSES.contains(job.Status__c)) {
+            return failure('INVALID_STATUS', 'Appointment is already ' + job.Status__c
+                + ' and cannot be changed to ' + status + '.');
         }
 
-        Service_Job__c job = jobs[0];
+        Service_Job__c upd = new Service_Job__c(Id = job.Id, Status__c = status);
+        String notes = str(payload.get('notes'));
+        if (String.isNotBlank(notes)) upd.Notes__c = appendNote(job.Notes__c, status, notes, 5000);
+        String customerNotes = str(payload.get('customerNotes'));
+        if (String.isNotBlank(customerNotes)) upd.Customer_Notes__c = appendNote(job.Customer_Notes__c, status, customerNotes, 2000);
+        update upd;
 
-        // Determine target status (defaults to 'In Progress')
-        String targetStatus = 'In Progress';
-        if (payload != null && payload.containsKey('status') && String.isNotBlank(String.valueOf(payload.get('status')))) {
-            targetStatus = String.valueOf(payload.get('status'));
+        if (status == 'Parts Awaited') {
+            logSlaEvent(job, 'Parts Awaited', DateTime.now(), 'Technician is waiting for parts');
         }
-
-        // Determine effective check-in time
-        DateTime effectiveCheckInTime = DateTime.now();
-        if (payload != null && payload.containsKey('checkInTime') && String.isNotBlank(String.valueOf(payload.get('checkInTime')))) {
-            try {
-                effectiveCheckInTime = (DateTime) JSON.deserialize('"' + String.valueOf(payload.get('checkInTime')) + '"', DateTime.class);
-            } catch (Exception ex) {
-                effectiveCheckInTime = DateTime.now();
-            }
-        }
-
-        // Extract optional GPS coordinates
-        Decimal lat = null;
-        Decimal lng = null;
-        if (payload != null) {
-            if (payload.containsKey('latitude') && payload.get('latitude') != null) {
-                lat = Decimal.valueOf(String.valueOf(payload.get('latitude')));
-            } else if (payload.containsKey('checkInLatitude') && payload.get('checkInLatitude') != null) {
-                lat = Decimal.valueOf(String.valueOf(payload.get('checkInLatitude')));
-            }
-            if (payload.containsKey('longitude') && payload.get('longitude') != null) {
-                lng = Decimal.valueOf(String.valueOf(payload.get('longitude')));
-            } else if (payload.containsKey('checkInLongitude') && payload.get('checkInLongitude') != null) {
-                lng = Decimal.valueOf(String.valueOf(payload.get('checkInLongitude')));
-            }
-        }
-
-        // Update Service Job
-        Service_Job__c toUpdate = new Service_Job__c(
-            Id = job.Id,
-            Status__c = targetStatus,
-            Check_In_Time__c = effectiveCheckInTime
-        );
-        if (lat != null && lng != null) {
-            toUpdate.Check_In_GPS__Latitude__s = lat;
-            toUpdate.Check_In_GPS__Longitude__s = lng;
-        }
-        update toUpdate;
-
-        // SLA remaining calculation
-        Decimal remHrs = null;
-        if (job.SLA_Deadline__c != null) {
-            Long diffMs = job.SLA_Deadline__c.getTime() - effectiveCheckInTime.getTime();
-            remHrs = (Decimal.valueOf(diffMs) / 3600000).setScale(2);
-        }
-
-        // SLA event creation (graceful failure)
-        try {
-            DF360_SLAController.createSLAEvent(job.Id, targetStatus, remHrs, 'Technician checked in via Mobile Check-In API');
-        } catch (Exception ex) {
-            System.debug('Warning: SLA event logging skipped: ' + ex.getMessage());
-        }
-
-        // Parent Work Order synchronization
-        String parentWorkOrderStatus = null;
-        if (job.Work_Order__c != null) {
-            parentWorkOrderStatus = job.Work_Order__r.Status__c;
-            if (job.Work_Order__r.Status__c == 'Assigned' || job.Work_Order__r.Status__c == 'New') {
-                try {
-                    update new Work_Order__c(
-                        Id = job.Work_Order__c,
-                        Status__c = 'In Progress'
-                    );
-                    parentWorkOrderStatus = 'In Progress';
-                } catch (Exception ex) {
-                    System.debug('Warning: Could not update parent Work Order: ' + ex.getMessage());
-                }
-            }
-        }
-
-        return new Map<String, Object>{
-            'success' => true,
-            'message' => 'Technician checked in successfully.',
-            'appointment' => new Map<String, Object>{
-                'id' => job.Id,
-                'name' => job.Name,
-                'status' => targetStatus,
-                'checkInTime' => effectiveCheckInTime,
-                'startTime' => effectiveCheckInTime,
-                'endTime' => null,
-                'scheduledStartTime' => job.Scheduled_Start_Time__c,
-                'scheduledEndTime' => job.Scheduled_End_Time__c,
-                'latitude' => lat,
-                'longitude' => lng,
-                'gpsRecorded' => (lat != null && lng != null),
-                'slaRemainingHours' => remHrs
-            },
-            'parentWorkOrder' => job.Work_Order__c != null ? new Map<String, Object>{
-                'id' => job.Work_Order__c,
-                'name' => job.Work_Order__r.Name,
-                'status' => parentWorkOrderStatus
-            } : null
-        };
+        return success('Status updated to ' + status + '.', job, job.Status__c);
     }
 
     /**
-     * Mark Service Appointment Incomplete with Description and Reason
+     * Check-in: { "latitude", "longitude", "checkInTime" (ISO, from the phone), "status", "notes" }.
+     * Keeps the first arrival time and GPS: a repeat or offline replay does not move them.
+     */
+    public static Map<String, Object> executeCheckIn(String appointmentIdentifier, Map<String, Object> payload) {
+        payload = payload == null ? new Map<String, Object>() : payload;
+        Service_Job__c job = findJob(appointmentIdentifier);
+        if (job == null) return notFound(appointmentIdentifier);
+        if (CLOSED_STATUSES.contains(job.Status__c)) {
+            return failure('INVALID_STATUS', 'Cannot check in: appointment is already ' + job.Status__c + '.');
+        }
+
+        String targetStatus = 'On Site';
+        String requested = str(payload.get('status'));
+        if (String.isNotBlank(requested)) {
+            String normalized = normalizeStatus(requested);
+            if (normalized != 'On Site' && normalized != 'In Progress') {
+                return failure('BAD_REQUEST', 'Check-in status must be On Site or In Progress.');
+            }
+            targetStatus = normalized;
+        }
+
+        DateTime checkInTime = readTime(payload, new List<String>{ 'checkInTime', 'timestamp' });
+        Decimal lat = readDecimal(payload, new List<String>{ 'latitude', 'checkInLatitude' });
+        Decimal lng = readDecimal(payload, new List<String>{ 'longitude', 'checkInLongitude' });
+
+        Boolean firstCheckIn = (job.Check_In_Time__c == null);
+        Service_Job__c upd = new Service_Job__c(Id = job.Id, Status__c = targetStatus);
+        if (firstCheckIn) {
+            upd.Check_In_Time__c = checkInTime;
+            if (lat != null && lng != null) {
+                upd.Check_In_GPS__Latitude__s = lat;
+                upd.Check_In_GPS__Longitude__s = lng;
+            }
+        }
+        String notes = str(payload.get('notes'));
+        if (String.isNotBlank(notes)) upd.Notes__c = appendNote(job.Notes__c, 'Check-in', notes, 5000);
+        update upd;
+
+        if (firstCheckIn) {
+            logSlaEvent(job, 'On Site', checkInTime, 'Technician checked in from the mobile app');
+            moveWorkOrderTo(job, new Set<String>{ 'New', 'Assigned' }, 'In Progress');
+        }
+        Map<String, Object> result = success(
+            firstCheckIn ? 'Technician checked in.' : 'Technician was already checked in; status updated.',
+            job, job.Status__c);
+        result.put('gpsRecorded', firstCheckIn && lat != null && lng != null);
+        return result;
+    }
+
+    /**
+     * Complete: { "completedTime", "resolutionNotes", "resolutionTimeMinutes", "isFirstTimeFix",
+     *             "customerNotes", "customerSignerName", "customerSignatureUrl",
+     *             "customerRating", "customerFeedbackTags" }
+     * (older names "technicianNotes" and "resolutionTimeMin" are still accepted).
+     * Then completes the parent work order if no other job on it is still open.
+     */
+    public static Map<String, Object> executeComplete(String appointmentIdentifier, Map<String, Object> payload) {
+        payload = payload == null ? new Map<String, Object>() : payload;
+        Service_Job__c job = findJob(appointmentIdentifier);
+        if (job == null) return notFound(appointmentIdentifier);
+        if (job.Status__c == 'Completed') {
+            Map<String, Object> already = success('Appointment was already completed.', job, job.Status__c);
+            already.put('alreadyCompleted', true);
+            return already;
+        }
+        if (job.Status__c == 'Cancelled') {
+            return failure('INVALID_STATUS', 'A cancelled appointment cannot be completed.');
+        }
+
+        DateTime completedTime = readTime(payload, new List<String>{ 'completedTime', 'timestamp' });
+        if (job.Check_In_Time__c != null && completedTime < job.Check_In_Time__c) {
+            return failure('INVALID_TIMESTAMP', 'Completion time is earlier than the check-in time.');
+        }
+
+        Service_Job__c upd = new Service_Job__c(Id = job.Id, Status__c = 'Completed', Completed_Time__c = completedTime);
+
+        if (payload.get('isFirstTimeFix') != null) {
+            upd.Is_First_Time_Fix__c = toBoolean(payload.get('isFirstTimeFix'));
+        }
+        // Left empty, the Service Job trigger works the minutes out from check-in and completion time.
+        Decimal minutes = readDecimal(payload, new List<String>{ 'resolutionTimeMinutes', 'resolutionTimeMin' });
+        if (minutes != null) {
+            if (minutes < 0) return failure('BAD_REQUEST', 'resolutionTimeMinutes cannot be negative.');
+            upd.Resolution_Time_Min__c = minutes.round(System.RoundingMode.HALF_UP);
+        }
+        String signatureUrl = str(payload.get('customerSignatureUrl'));
+        if (String.isNotBlank(signatureUrl)) {
+            if (!signatureUrl.startsWithIgnoreCase('http')) {
+                return failure('BAD_REQUEST', 'customerSignatureUrl must be a link (http/https).');
+            }
+            upd.Customer_Signature_URL__c = signatureUrl;
+        }
+        String resolution = firstNonBlank(payload, new List<String>{ 'resolutionNotes', 'technicianNotes', 'notes' });
+        if (String.isNotBlank(resolution)) {
+            upd.Notes__c = appendNote(job.Notes__c, 'Resolution', resolution, 5000);
+        }
+        String customerNotes = str(payload.get('customerNotes'));
+        String signer = str(payload.get('customerSignerName'));
+        String signOff = (String.isNotBlank(customerNotes) ? customerNotes : '')
+            + (String.isNotBlank(signer) ? (String.isNotBlank(customerNotes) ? ' ' : '') + '(Signed by ' + signer + ')' : '');
+        if (String.isNotBlank(signOff)) {
+            upd.Customer_Notes__c = appendNote(job.Customer_Notes__c, 'Sign-off', signOff, 2000);
+        }
+
+        // A rating given on the phone at sign-off is saved as the CSAT response.
+        // CSAT_Sent__c stops the trigger and the flow from also sending a WhatsApp CSAT request.
+        Decimal rating = readDecimal(payload, new List<String>{ 'customerRating', 'rating' });
+        if (rating != null) {
+            if (rating < 1 || rating > 5) return failure('BAD_REQUEST', 'customerRating must be between 1 and 5.');
+            upd.CSAT_Sent__c = true;
+        }
+
+        update upd;
+
+        if (rating != null) {
+            String tags = str(payload.get('customerFeedbackTags'));
+            insert new CSAT__c(
+                Service_Job__c = job.Id,
+                Rating__c = rating.round(System.RoundingMode.HALF_UP),
+                Comment__c = String.isNotBlank(tags) ? tags.abbreviate(2000) : null,
+                Is_Responded__c = true,
+                Response_Date__c = completedTime,
+                Via_WhatsApp__c = false
+            );
+        }
+
+        logSlaEvent(job, 'Resolved', completedTime, 'Job completed from the mobile app');
+        rollupWorkOrder(job.Work_Order__c);
+        return success('Appointment completed.', job, job.Status__c);
+    }
+
+    /**
+     * Incomplete: { "reason", "description", "notes", "latitude", "longitude" }.
+     * Writes the picklist value 'In Complete' (the old code wrote 'Incomplete', which is
+     * not a value of the picklist). Does not overwrite the check-in GPS.
      */
     public static Map<String, Object> executeMarkIncomplete(String appointmentIdentifier, Map<String, Object> payload) {
-        if (String.isBlank(appointmentIdentifier)) {
-            return new Map<String, Object>{
-                'success' => false,
-                'error' => 'Service appointment identifier is required.'
-            };
+        payload = payload == null ? new Map<String, Object>() : payload;
+        Service_Job__c job = findJob(appointmentIdentifier);
+        if (job == null) return notFound(appointmentIdentifier);
+        if (job.Status__c == 'In Complete') {
+            return success('Appointment is already marked In Complete.', job, job.Status__c);
+        }
+        if (CLOSED_STATUSES.contains(job.Status__c)) {
+            return failure('INVALID_STATUS', 'Appointment is already ' + job.Status__c + ' and cannot be marked In Complete.');
         }
 
-        String cleanId = appointmentIdentifier.trim();
-        List<Service_Job__c> jobs = [
-            SELECT Id, Name, Status__c, Priority__c, Job_Type__c,
-                   Scheduled_Start_Time__c, Scheduled_End_Time__c,
-                   Description__c, Notes__c, Reason__c, SLA_Deadline__c,
-                   Work_Order__c, Work_Order__r.Name, Work_Order__r.Status__c,
-                   Technician__c, Technician__r.Name
-            FROM Service_Job__c
-            WHERE Id = :cleanId OR Name = :cleanId
-            LIMIT 1
-        ];
-
-        if (jobs.isEmpty()) {
-            return new Map<String, Object>{
-                'success' => false,
-                'error' => 'Service Appointment not found for identifier: ' + appointmentIdentifier
-            };
-        }
-
-        Service_Job__c job = jobs[0];
-
-        // Extract and validate description
-        String description = null;
-        if (payload != null) {
-            if (payload.containsKey('description') && payload.get('description') != null) {
-                description = String.valueOf(payload.get('description')).trim();
-            } else if (payload.containsKey('incompleteDescription') && payload.get('incompleteDescription') != null) {
-                description = String.valueOf(payload.get('incompleteDescription')).trim();
-            } else if (payload.containsKey('reasonNotes') && payload.get('reasonNotes') != null) {
-                description = String.valueOf(payload.get('reasonNotes')).trim();
-            }
-        }
-
-        if (String.isBlank(description)) {
-            return new Map<String, Object>{
-                'success' => false,
-                'error' => 'Missing required parameter: description explaining why the appointment is incomplete.'
-            };
-        }
-
-        // Extract and validate reason picklist
         String reason = 'Other';
+        String inputReason = str(payload.get('reason'));
         Set<String> validReasons = new Set<String>{
-            'Customer Request',
-            'Duplicate Work Order',
-            'Issue Resolved',
-            'Customer Unavailable',
-            'Required Parts Unavailable',
-            'Other'
+            'Customer Request', 'Duplicate Work Order', 'Issue Resolved',
+            'Customer Unavailable', 'Required Parts Unavailable', 'Other'
         };
-        if (payload != null && payload.containsKey('reason') && payload.get('reason') != null) {
-            String inputReason = String.valueOf(payload.get('reason')).trim();
+        if (String.isNotBlank(inputReason)) {
             for (String r : validReasons) {
-                if (r.equalsIgnoreCase(inputReason)) {
-                    reason = r;
-                    break;
-                }
+                if (r.equalsIgnoreCase(inputReason)) reason = r;
             }
         }
 
-        // Extract optional notes
-        String notes = null;
-        if (payload != null && payload.containsKey('notes') && payload.get('notes') != null) {
-            notes = String.valueOf(payload.get('notes')).trim();
+        String description = firstNonBlank(payload, new List<String>{ 'description', 'incompleteDescription', 'reasonNotes' });
+        String notes = str(payload.get('notes'));
+        if (String.isBlank(description)) description = String.isNotBlank(notes) ? notes : null;
+        if (String.isBlank(description)) {
+            return failure('BAD_REQUEST', 'description is required: explain why the appointment could not be completed.');
         }
 
-        // Extract optional GPS coordinates
-        Decimal lat = null;
-        Decimal lng = null;
-        if (payload != null) {
-            if (payload.containsKey('latitude') && payload.get('latitude') != null) {
-                lat = Decimal.valueOf(String.valueOf(payload.get('latitude')));
-            } else if (payload.containsKey('checkInLatitude') && payload.get('checkInLatitude') != null) {
-                lat = Decimal.valueOf(String.valueOf(payload.get('checkInLatitude')));
-            }
-            if (payload.containsKey('longitude') && payload.get('longitude') != null) {
-                lng = Decimal.valueOf(String.valueOf(payload.get('longitude')));
-            } else if (payload.containsKey('checkInLongitude') && payload.get('checkInLongitude') != null) {
-                lng = Decimal.valueOf(String.valueOf(payload.get('checkInLongitude')));
-            }
-        }
-
+        Decimal lat = readDecimal(payload, new List<String>{ 'latitude', 'checkInLatitude' });
+        Decimal lng = readDecimal(payload, new List<String>{ 'longitude', 'checkInLongitude' });
         DateTime nowTime = DateTime.now();
 
-        // Format Description (rich text)
-        String formattedDesc = '<p><strong>[Incomplete at ' + nowTime.format('yyyy-MM-dd HH:mm:ss') + ']</strong>: ' + description.escapeHtml4() + '</p>';
-        if (String.isNotBlank(job.Description__c)) {
-            formattedDesc = job.Description__c + formattedDesc;
-        }
+        String formattedDesc = '<p><strong>[In Complete ' + nowTime.format('yyyy-MM-dd HH:mm') + '] '
+            + reason.escapeHtml4() + ':</strong> ' + description.escapeHtml4() + '</p>';
+        if (String.isNotBlank(job.Description__c)) formattedDesc = job.Description__c + formattedDesc;
 
-        // Format Notes
-        String updatedNotes = job.Notes__c;
-        if (String.isNotBlank(notes)) {
-            String appendNotes = '[' + nowTime.format('yyyy-MM-dd HH:mm') + ' Incomplete Note]: ' + notes;
-            updatedNotes = String.isNotBlank(updatedNotes) ? (updatedNotes + '\n' + appendNotes) : appendNotes;
-        }
-
-        // Update Service Job
-        Service_Job__c sjUpdate = new Service_Job__c(
+        Service_Job__c upd = new Service_Job__c(
             Id = job.Id,
-            Status__c = 'Incomplete',
+            Status__c = 'In Complete',
             Reason__c = reason,
-            Description__c = formattedDesc,
-            Notes__c = updatedNotes
+            Description__c = formattedDesc
         );
-        if (lat != null && lng != null) {
-            sjUpdate.Check_In_GPS__Latitude__s = lat;
-            sjUpdate.Check_In_GPS__Longitude__s = lng;
-        }
-        update sjUpdate;
+        if (String.isNotBlank(notes)) upd.Notes__c = appendNote(job.Notes__c, 'In Complete', notes, 5000);
+        update upd;
 
-        // SLA remaining calculation & SLA event
-        Decimal remHrs = null;
-        if (job.SLA_Deadline__c != null) {
-            Long diffMs = job.SLA_Deadline__c.getTime() - nowTime.getTime();
-            remHrs = (Decimal.valueOf(diffMs) / 3600000).setScale(2);
-        }
+        logSlaEvent(job, 'Incomplete', nowTime, 'Marked In Complete. Reason: ' + reason + ' - ' + description);
+        moveWorkOrderTo(job, new Set<String>{ 'New', 'Assigned', 'In Progress' }, 'Temporarily Paused');
+
         try {
-            DF360_SLAController.createSLAEvent(job.Id, 'Incomplete', remHrs, 'Technician marked appointment Incomplete. Reason: ' + reason + ' - ' + description);
-        } catch (Exception ex) {
-            System.debug('Warning: SLA event logging skipped: ' + ex.getMessage());
-        }
-
-        // Sync Parent Work Order
-        String parentWoStatus = null;
-        if (job.Work_Order__c != null) {
-            parentWoStatus = job.Work_Order__r.Status__c;
-            if (parentWoStatus == 'In Progress' || parentWoStatus == 'Assigned' || parentWoStatus == 'New') {
-                try {
-                    update new Work_Order__c(
-                        Id = job.Work_Order__c,
-                        Status__c = 'Temporarily Paused'
-                    );
-                    parentWoStatus = 'Temporarily Paused';
-                } catch (Exception ex) {
-                    System.debug('Warning: Could not update parent Work Order to Temporarily Paused: ' + ex.getMessage());
-                }
-            }
-        }
-
-        // Create Job_Activity__c record for audit trail
-        try {
-            String actDesc = 'Marked Incomplete. Reason: ' + reason + '. ' + description;
+            String actDesc = 'Marked In Complete. Reason: ' + reason + '. ' + description;
             if (String.isNotBlank(notes)) actDesc += ' | Notes: ' + notes;
+            if (lat != null && lng != null) actDesc += ' | Location: ' + lat + ', ' + lng;
             insert new Job_Activity__c(
                 Service_Job__c = job.Id,
                 Activity_Type__c = 'Observation',
-                Description__c = actDesc
+                Description__c = actDesc.abbreviate(32000)
             );
         } catch (Exception ex) {
-            System.debug('Warning: Job_Activity__c creation failed: ' + ex.getMessage());
+            System.debug(LoggingLevel.WARN, 'Job_Activity__c not created: ' + ex.getMessage());
         }
+        return success('Appointment marked In Complete.', job, job.Status__c);
+    }
 
+    /**
+     * Completes the work order once every job on it is Completed or Cancelled
+     * (and at least one is Completed). Time logged = total resolution minutes.
+     * Returns the work order's status. Also used by DF360_ServiceJobController.
+     */
+    public static String rollupWorkOrder(Id workOrderId) {
+        if (workOrderId == null) return null;
+        Work_Order__c wo = [SELECT Id, Status__c FROM Work_Order__c WHERE Id = :workOrderId];
+        if (CLOSED_STATUSES.contains(wo.Status__c)) return wo.Status__c;
+
+        Integer openJobs = [
+            SELECT COUNT() FROM Service_Job__c
+            WHERE Work_Order__c = :workOrderId AND Status__c NOT IN :CLOSED_STATUSES
+        ];
+        if (openJobs > 0) return wo.Status__c;
+
+        AggregateResult agg = [
+            SELECT COUNT(Id) completedJobs, SUM(Resolution_Time_Min__c) totalMinutes
+            FROM Service_Job__c
+            WHERE Work_Order__c = :workOrderId AND Status__c = 'Completed'
+        ];
+        if ((Integer) agg.get('completedJobs') == 0) return wo.Status__c; // all cancelled: leave it to the dispatcher
+
+        Work_Order__c upd = new Work_Order__c(Id = workOrderId, Status__c = 'Completed', Completed_Date__c = DateTime.now());
+        Decimal total = (Decimal) agg.get('totalMinutes');
+        if (total != null) upd.Time_Logged_Minutes__c = total;
+        update upd;
+        return 'Completed';
+    }
+
+    // ----------------------------------------------------------------- helpers
+
+    public static String normalizeStatus(String raw) {
+        if (String.isBlank(raw)) return null;
+        String key = raw.trim().toUpperCase().replace('_', ' ').replace('-', ' ').normalizeSpace();
+        Map<String, String> aliases = new Map<String, String>{
+            'NEW' => 'New', 'ASSIGNED' => 'Assigned',
+            'EN ROUTE' => 'En Route', 'ENROUTE' => 'En Route', 'TRAVELLING' => 'En Route', 'TRAVELING' => 'En Route',
+            'ON SITE' => 'On Site', 'ONSITE' => 'On Site', 'ARRIVED' => 'On Site',
+            'IN PROGRESS' => 'In Progress', 'INPROGRESS' => 'In Progress', 'STARTED' => 'In Progress',
+            'PARTS AWAITED' => 'Parts Awaited', 'WAITING FOR PARTS' => 'Parts Awaited',
+            'COMPLETED' => 'Completed', 'COMPLETE' => 'Completed', 'DONE' => 'Completed',
+            'CANCELLED' => 'Cancelled', 'CANCELED' => 'Cancelled',
+            'IN COMPLETE' => 'In Complete', 'INCOMPLETE' => 'In Complete'
+        };
+        return aliases.get(key);
+    }
+
+    private static Service_Job__c findJob(String identifier) {
+        if (String.isBlank(identifier)) return null;
+        String clean = identifier.trim();
+        Id cleanAsId = asIdOrNull(clean);
+        List<Service_Job__c> jobs = [
+            SELECT Id, Name, Status__c, Check_In_Time__c, Completed_Time__c, Notes__c, Customer_Notes__c,
+                   Description__c, Reason__c, SLA_Deadline__c, CSAT_Sent__c,
+                   Work_Order__c, Work_Order__r.Name, Work_Order__r.Status__c
+            FROM Service_Job__c
+            WHERE Id = :cleanAsId OR Name = :clean
+            LIMIT 1
+        ];
+        return jobs.isEmpty() ? null : jobs[0];
+    }
+
+    private static Id asIdOrNull(String value) {
+        if (String.isBlank(value)) return null;
+        try {
+            return Id.valueOf(value.trim());
+        } catch (Exception ex) {
+            return null;
+        }
+    }
+
+    private static void moveWorkOrderTo(Service_Job__c job, Set<String> fromStatuses, String toStatus) {
+        if (job.Work_Order__c == null || !fromStatuses.contains(job.Work_Order__r.Status__c)) return;
+        update new Work_Order__c(Id = job.Work_Order__c, Status__c = toStatus);
+    }
+
+    private static void logSlaEvent(Service_Job__c job, String eventType, DateTime at, String note) {
+        Decimal remaining = null;
+        if (job.SLA_Deadline__c != null && at != null) {
+            remaining = (Decimal.valueOf(job.SLA_Deadline__c.getTime() - at.getTime()) / 3600000).setScale(2);
+        }
+        try {
+            DF360_SLAController.createSLAEvent(job.Id, eventType, remaining, note);
+        } catch (Exception ex) {
+            System.debug(LoggingLevel.WARN, 'SLA event not created: ' + ex.getMessage());
+        }
+    }
+
+    private static String appendNote(String existing, String label, String text, Integer maxLength) {
+        String line = '[' + DateTime.now().format('yyyy-MM-dd HH:mm') + ' ' + label + '] ' + text.trim();
+        String combined = String.isBlank(existing) ? line : existing + '\n' + line;
+        return combined.length() > maxLength ? combined.right(maxLength) : combined; // keep the newest notes
+    }
+
+    private static DateTime readTime(Map<String, Object> payload, List<String> keys) {
+        DateTime nowTime = DateTime.now();
+        for (String k : keys) {
+            String v = str(payload.get(k));
+            if (String.isBlank(v)) continue;
+            DateTime parsed;
+            try {
+                parsed = (DateTime) JSON.deserialize('"' + v + '"', DateTime.class);
+            } catch (Exception ex) {
+                throw new InputException('Invalid ISO date-time for ' + k + ': ' + v);
+            }
+            if (parsed > nowTime.addMinutes(MAX_CLOCK_SKEW_MINUTES)) {
+                throw new InputException(k + ' is in the future. Check the phone clock.');
+            }
+            return parsed;
+        }
+        return nowTime;
+    }
+
+    private static Decimal readDecimal(Map<String, Object> payload, List<String> keys) {
+        for (String k : keys) {
+            String v = str(payload.get(k));
+            if (String.isBlank(v)) continue;
+            try {
+                return Decimal.valueOf(v);
+            } catch (Exception ex) {
+                throw new InputException('Invalid number for ' + k + ': ' + v);
+            }
+        }
+        return null;
+    }
+
+    private static Boolean toBoolean(Object v) {
+        if (v instanceof Boolean) return (Boolean) v;
+        return v != null && String.valueOf(v).trim().equalsIgnoreCase('true');
+    }
+
+    private static String str(Object v) {
+        return v == null ? null : String.valueOf(v).trim();
+    }
+
+    private static String firstNonBlank(Map<String, Object> payload, List<String> keys) {
+        for (String k : keys) {
+            String v = str(payload.get(k));
+            if (String.isNotBlank(v)) return v;
+        }
+        return null;
+    }
+
+    /** Re-reads the job after the update, so the app gets what Salesforce actually saved. */
+    private static Map<String, Object> success(String message, Service_Job__c before, String previousStatus) {
+        Service_Job__c j = [
+            SELECT Id, Name, Status__c, Reason__c, Check_In_Time__c, Completed_Time__c,
+                   Is_First_Time_Fix__c, Resolution_Time_Min__c, Customer_Signature_URL__c,
+                   Work_Order__c, Work_Order__r.Name, Work_Order__r.Status__c
+            FROM Service_Job__c WHERE Id = :before.Id
+        ];
+        Map<String, Object> appointment = new Map<String, Object>{
+            'id' => j.Id,
+            'name' => j.Name,
+            'previousStatus' => previousStatus,
+            'status' => j.Status__c,
+            'reason' => j.Reason__c,
+            'checkInTime' => j.Check_In_Time__c,
+            'completedTime' => j.Completed_Time__c,
+            'isFirstTimeFix' => j.Is_First_Time_Fix__c,
+            'resolutionTimeMinutes' => j.Resolution_Time_Min__c,
+            'customerSignatureUrl' => j.Customer_Signature_URL__c
+        };
+        Map<String, Object> workOrder = j.Work_Order__c == null ? null : new Map<String, Object>{
+            'id' => j.Work_Order__c,
+            'name' => j.Work_Order__r.Name,
+            'status' => j.Work_Order__r.Status__c
+        };
         return new Map<String, Object>{
             'success' => true,
-            'message' => 'Service Appointment marked as Incomplete successfully.',
-            'serviceAppointment' => new Map<String, Object>{
-                'id' => job.Id,
-                'name' => job.Name,
-                'previousStatus' => job.Status__c,
-                'status' => 'Incomplete',
-                'reason' => reason,
-                'description' => description,
-                'internalNotes' => notes,
-                'updatedAt' => nowTime,
-                'parentWorkOrder' => (job.Work_Order__c != null ? new Map<String, Object>{
-                    'id' => job.Work_Order__c,
-                    'name' => job.Work_Order__r.Name,
-                    'status' => parentWoStatus
-                } : null),
-                'latitude' => lat,
-                'longitude' => lng
-            }
+            'message' => message,
+            'serviceAppointment' => appointment,
+            'appointment' => appointment,       // older key, kept for existing callers
+            'parentWorkOrder' => workOrder
         };
+    }
+
+    private static Map<String, Object> failure(String code, String message) {
+        return new Map<String, Object>{ 'success' => false, 'errorCode' => code, 'error' => message };
+    }
+
+    private static Map<String, Object> notFound(String identifier) {
+        return failure('NOT_FOUND', 'Service appointment not found: ' + identifier);
+    }
+
+    private static Integer statusFor(Map<String, Object> result) {
+        if (result.get('success') == true) return 200;
+        String code = String.valueOf(result.get('errorCode'));
+        if (code == 'NOT_FOUND') return 404;
+        if (code == 'INVALID_STATUS') return 409;
+        String err = String.valueOf(result.get('error'));
+        if (code == 'null' && err != null && err.containsIgnoreCase('not found')) return 404;
+        return 400;
+    }
+
+    private static void respond(RestResponse res, Integer statusCode, Map<String, Object> payload) {
+        if (res == null) return;
+        res.statusCode = statusCode;
+        res.responseBody = Blob.valueOf(JSON.serialize(payload));
     }
 
     private static void writeResponse(RestResponse res, Object payload) {

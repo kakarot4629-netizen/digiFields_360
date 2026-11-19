@@ -3,9 +3,18 @@ global with sharing class DF360_WorkOrderAppointmentsAPI {
 
     /**
      * GET /services/apexrest/df360/v1/work-orders/my
-     *   -> Returns Work Orders and Service Appointments assigned to the logged-in technician.
+     *   -> Returns every Service Appointment where the logged-in technician is an assigned
+     *      resource (directly, through a crew, or as the job's lead technician), grouped
+     *      under its Work Order. Work orders with no such appointment are not returned.
      *   -> Includes full Assigned Resources team roster (multi-technician / crew).
-     *   -> Supports optional query parameter: ?status=Assigned (or In Progress, On Site, etc.)
+     *   -> Optional query parameters:
+     *        ?status=Assigned             only appointments in that status
+     *        ?technicianId=<Id>           act for this technician instead of the logged-in user
+     *        ?includeAllAppointments=true also list the work order's other appointments
+     *                                     (flagged isMyAppointment = false)
+     *        ?format=flat                 serviceAppointments, workOrders, cases and
+     *                                     serviceAddresses as separate lists at the same level
+     *                                     as technician, joined by Ids (see FlatResult)
      *
      * GET /services/apexrest/df360/v1/work-orders/assigned
      *   -> Convenient shortcut that returns only assigned records (Status = 'Assigned').
@@ -26,6 +35,10 @@ global with sharing class DF360_WorkOrderAppointmentsAPI {
             String workOrderId = (req != null && req.params != null) ? req.params.get('workOrderId') : null;
             String statusParam = (req != null && req.params != null) ? req.params.get('status') : null;
             String techParam = (req != null && req.params != null) ? req.params.get('technicianId') : null;
+            Boolean includeAll = (req != null && req.params != null
+                && 'true'.equalsIgnoreCase(req.params.get('includeAllAppointments')));
+            Boolean flatFormat = (req != null && req.params != null
+                && 'flat'.equalsIgnoreCase(req.params.get('format')));
 
             if (String.isBlank(workOrderId) && String.isNotBlank(uri)) {
                 String sub = uri.substringAfter('/df360/v1/work-orders/');
@@ -43,7 +56,7 @@ global with sharing class DF360_WorkOrderAppointmentsAPI {
                 if (String.isBlank(statusParam) && String.isNotBlank(workOrderId) && workOrderId.equalsIgnoreCase('assigned')) {
                     statusParam = 'Assigned';
                 }
-                Map<String, Object> myResults = getMyWorkOrdersWithAppointments(statusParam, techParam);
+                Map<String, Object> myResults = getMyWorkOrdersWithAppointments(statusParam, techParam, includeAll, flatFormat);
                 if (res != null) res.statusCode = 200;
                 writeResponse(res, myResults);
                 return;
@@ -71,8 +84,7 @@ global with sharing class DF360_WorkOrderAppointmentsAPI {
             if (res != null) res.statusCode = 500;
             writeResponse(res, new Map<String, Object>{
                 'success' => false,
-                'error' => e.getMessage(),
-                'stackTrace' => e.getStackTraceString()
+                'error' => e.getMessage()
             });
         }
     }
@@ -94,58 +106,46 @@ global with sharing class DF360_WorkOrderAppointmentsAPI {
     }
 
     public static Map<String, Object> getMyWorkOrdersWithAppointments(String statusFilter, String technicianIdParam) {
+        return getMyWorkOrdersWithAppointments(statusFilter, technicianIdParam, false);
+    }
+
+    /**
+     * Service appointments where the technician is an assigned resource, grouped under
+     * their work orders. The technician counts as assigned when any of these is true:
+     *   1. an Assigned_Resource__c record names the technician;
+     *   2. an Assigned_Resource__c record names a crew the technician is a member of;
+     *   3. the technician is the job's lead technician (Service_Job__c.Technician__c).
+     *      The Assigned Resource trigger keeps this in step with the lead resource, and
+     *      jobs created without Assigned_Resource__c records only have this.
+     *
+     * Each work order lists only those appointments. With includeAllAppointments = true it
+     * also lists the work order's other appointments, flagged isMyAppointment = false.
+     * Work orders where the technician has no appointment are not returned (before, every
+     * work order whose Assigned_Technician__c was the user came back, often with no
+     * appointments at all).
+     */
+    public static Map<String, Object> getMyWorkOrdersWithAppointments(String statusFilter, String technicianIdParam, Boolean includeAllAppointments) {
+        return getMyWorkOrdersWithAppointments(statusFilter, technicianIdParam, includeAllAppointments, false);
+    }
+
+    public static Map<String, Object> getMyWorkOrdersWithAppointments(String statusFilter, String technicianIdParam, Boolean includeAllAppointments, Boolean flatFormat) {
         Id targetUserId = UserInfo.getUserId();
         String targetUserName = UserInfo.getName();
         String targetUserEmail = UserInfo.getUserEmail();
-        Id myTechId = null;
 
-        if (String.isNotBlank(technicianIdParam)) {
-            String cleanTech = technicianIdParam.trim();
-            List<Technician__c> searchedTechs = [
-                SELECT Id, Name, User__c, User__r.Name, User__r.Email
-                FROM Technician__c
-                WHERE Id = :cleanTech OR Name = :cleanTech OR Employee_Code__c = :cleanTech OR User__c = :cleanTech
-                LIMIT 1
-            ];
-            if (!searchedTechs.isEmpty()) {
-                myTechId = searchedTechs[0].Id;
-                if (searchedTechs[0].User__c != null) {
-                    targetUserId = searchedTechs[0].User__c;
-                }
-                if (searchedTechs[0].User__r != null && String.isNotBlank(searchedTechs[0].User__r.Name)) {
-                    targetUserName = searchedTechs[0].User__r.Name;
-                    targetUserEmail = searchedTechs[0].User__r.Email;
-                }
+        Technician__c tech = resolveTechnician(technicianIdParam);
+        Id myTechId = tech != null ? tech.Id : null;
+        if (tech != null && tech.User__c != null) {
+            targetUserId = tech.User__c;
+            if (tech.User__r != null && String.isNotBlank(tech.User__r.Name)) {
+                targetUserName = tech.User__r.Name;
+                targetUserEmail = tech.User__r.Email;
             }
         }
 
-        if (myTechId == null) {
-            List<Technician__c> myTechs = [SELECT Id, Name, User__c FROM Technician__c WHERE User__c = :targetUserId LIMIT 1];
-            if (!myTechs.isEmpty()) {
-                myTechId = myTechs[0].Id;
-            }
-        }
-
-        Set<Id> woIds = new Set<Id>();
-        if (myTechId != null) {
-            // Check direct Service_Job__c assignment
-            List<Service_Job__c> techJobs;
-            if (String.isNotBlank(statusFilter)) {
-                techJobs = [SELECT Work_Order__c FROM Service_Job__c WHERE Technician__c = :myTechId AND Work_Order__c != null AND Status__c = :statusFilter LIMIT 200];
-            } else {
-                techJobs = [SELECT Work_Order__c FROM Service_Job__c WHERE Technician__c = :myTechId AND Work_Order__c != null LIMIT 200];
-            }
-            for (Service_Job__c j : techJobs) {
-                woIds.add(j.Work_Order__c);
-            }
-
-            // Check multi-resource Assigned_Resource__c assignment
-            for (Assigned_Resource__c ar : [SELECT Service_Job__r.Work_Order__c FROM Assigned_Resource__c WHERE Technician__c = :myTechId AND Service_Job__r.Work_Order__c != null LIMIT 200]) {
-                woIds.add(ar.Service_Job__r.Work_Order__c);
-            }
-        }
-
+        // ---- 1. Appointments where the technician is an assigned resource
         Map<Id, Service_Crew_Member__c> myCrewMap = new Map<Id, Service_Crew_Member__c>();
+        Set<Id> myJobIds = new Set<Id>();
         if (myTechId != null) {
             for (Service_Crew_Member__c m : [
                 SELECT Id, Service_Crew__c, Service_Crew__r.Name, Is_Leader__c
@@ -154,117 +154,284 @@ global with sharing class DF360_WorkOrderAppointmentsAPI {
             ]) {
                 myCrewMap.put(m.Service_Crew__c, m);
             }
+
+            for (Assigned_Resource__c ar : [
+                SELECT Service_Job__c FROM Assigned_Resource__c
+                WHERE Technician__c = :myTechId AND Service_Job__c != null
+                LIMIT 2000
+            ]) {
+                myJobIds.add(ar.Service_Job__c);
+            }
+
             if (!myCrewMap.isEmpty()) {
                 for (Assigned_Resource__c ar : [
-                    SELECT Service_Job__r.Work_Order__c
-                    FROM Assigned_Resource__c
-                    WHERE Service_Crew__c IN :myCrewMap.keySet() AND Service_Job__r.Work_Order__c != null LIMIT 200
+                    SELECT Service_Job__c FROM Assigned_Resource__c
+                    WHERE Service_Crew__c IN :myCrewMap.keySet() AND Service_Job__c != null
+                    LIMIT 2000
                 ]) {
-                    woIds.add(ar.Service_Job__r.Work_Order__c);
+                    myJobIds.add(ar.Service_Job__c);
+                }
+            }
+
+            for (Service_Job__c j : [
+                SELECT Id FROM Service_Job__c WHERE Technician__c = :myTechId LIMIT 2000
+            ]) {
+                myJobIds.add(j.Id);
+            }
+        }
+
+        // ---- 2. Keep those on a work order (and in the requested status)
+        Set<Id> matchingJobIds = new Set<Id>();
+        Set<Id> woIds = new Set<Id>();
+        if (!myJobIds.isEmpty()) {
+            List<Service_Job__c> myJobs = String.isNotBlank(statusFilter)
+                ? [SELECT Id, Work_Order__c FROM Service_Job__c
+                   WHERE Id IN :myJobIds AND Work_Order__c != null AND Status__c = :statusFilter]
+                : [SELECT Id, Work_Order__c FROM Service_Job__c
+                   WHERE Id IN :myJobIds AND Work_Order__c != null];
+            for (Service_Job__c j : myJobs) {
+                matchingJobIds.add(j.Id);
+                woIds.add(j.Work_Order__c);
+            }
+        }
+
+        // ---- 3. Work orders with their appointments
+        List<Map<String, Object>> woList = new List<Map<String, Object>>();
+        FlatResult flat = new FlatResult();
+        Integer appointmentTotal = 0;
+        if (!woIds.isEmpty()) {
+            for (Work_Order__c wo : queryWorkOrdersWithAllJobs(woIds)) {
+                Map<String, Object> formatted = formatWorkOrderRecord(wo, myTechId, myCrewMap);
+                List<Map<String, Object>> appts = (List<Map<String, Object>>) formatted.get('serviceAppointments');
+
+                List<Map<String, Object>> kept = new List<Map<String, Object>>();
+                for (Map<String, Object> appt : appts) {
+                    Boolean mine = matchingJobIds.contains((Id) appt.get('id'));
+                    // Assigned only as lead technician: the roster check in formatWorkOrderRecord
+                    // already marks it as "Direct"; make sure every kept appointment says it is mine.
+                    if (mine) {
+                        appt.put('isMyAppointment', true);
+                        appt.put('isAssignedToMe', true);
+                    }
+                    if (mine || includeAllAppointments == true) {
+                        kept.add(appt);
+                    }
+                }
+                appointmentTotal += kept.size();
+
+                if (flatFormat == true) {
+                    flat.add(wo, formatted, kept);
+                } else {
+                    formatted.put('serviceAppointments', kept);
+                    formatted.put('serviceAppointmentsCount', kept.size());
+                    woList.add(formatted);
                 }
             }
         }
 
-        List<Work_Order__c> wos;
-        if (String.isNotBlank(statusFilter)) {
-            wos = [
-                SELECT Id, Name, Subject__c, Status__c, Priority__c, Scheduled_Date__c, Completed_Date__c,
-                       Description__c, Site_Address__c, Equipment_ID__c, Equipment_Type__c,
-                       Time_Logged_Minutes__c, Technician_Notes__c, Parts_Used__c, AI_Pre_Job_Briefing__c, Briefing_Generated__c,
-                       Account__c, Account__r.Name,
-                       Asset__c, Asset__r.Name, Asset__r.Serial_Number__c, Asset__r.Product_Name__c, Asset__r.Product_Category__c,
-                       Case__c, Case__r.CaseNumber, Case__r.Subject, Case__r.Status, Case__r.Priority,
-                       Case__r.Customer_Address__c, Case__r.Customer_Address__r.Name,
-                       Case__r.Customer_Address__r.Address_Type__c, Case__r.Customer_Address__r.Street_Address__c,
-                       Case__r.Customer_Address__r.City__c, Case__r.Customer_Address__r.State__c,
-                       Case__r.Customer_Address__r.Postal_Code__c, Case__r.Customer_Address__r.Country__c,
-                       Case__r.Customer_Address__r.Landmark__c,
-                       Case__r.Customer_Address__r.Latitude__c, Case__r.Customer_Address__r.Longitude__c,
-                       Case__r.Customer_Address__r.Contact_Person_Name__c,
-                       Case__r.Customer_Address__r.Contact_Phone__c,
-                       Assigned_Technician__c, Assigned_Technician__r.Name,
-                       (
-                           SELECT Id, Name, Status__c, Priority__c, Job_Type__c, SLA_Deadline__c, SLA_Status__c,
-                                  Scheduled_Start_Time__c, Scheduled_End_Time__c,
-                                  Check_In_Time__c, Completed_Time__c, Resolution_Time_Min__c,
-                                  Notes__c, Customer_Notes__c, Customer_Signature_URL__c, Is_First_Time_Fix__c,
-                                  Technician__c, Technician__r.Name, Zone__c, Zone__r.Name,
-                                  (
-                                      SELECT Id, Name, Technician__c, Technician__r.Name,
-                                             Service_Crew__c, Service_Crew__r.Name,
-                                             Resource_Type__c, Role__c, Is_Leader__c,
-                                             Status__c, Check_In_Time__c, Actual_Hours__c
-                                      FROM Assigned_Resources__r
-                                  )
-                           FROM Service_Jobs__r
-                           WHERE Status__c = :statusFilter
-                           ORDER BY SLA_Deadline__c ASC NULLS LAST, CreatedDate DESC
-                       )
-                FROM Work_Order__c
-                WHERE (Assigned_Technician__c = :targetUserId OR Id IN :woIds)
-                  AND Status__c = :statusFilter
-                ORDER BY CreatedDate DESC
-                LIMIT 50
-            ];
-        } else {
-            wos = [
-                SELECT Id, Name, Subject__c, Status__c, Priority__c, Scheduled_Date__c, Completed_Date__c,
-                       Description__c, Site_Address__c, Equipment_ID__c, Equipment_Type__c,
-                       Time_Logged_Minutes__c, Technician_Notes__c, Parts_Used__c, AI_Pre_Job_Briefing__c, Briefing_Generated__c,
-                       Account__c, Account__r.Name,
-                       Asset__c, Asset__r.Name, Asset__r.Serial_Number__c, Asset__r.Product_Name__c, Asset__r.Product_Category__c,
-                       Case__c, Case__r.CaseNumber, Case__r.Subject, Case__r.Status, Case__r.Priority,
-                       Case__r.Customer_Address__c, Case__r.Customer_Address__r.Name,
-                       Case__r.Customer_Address__r.Address_Type__c, Case__r.Customer_Address__r.Street_Address__c,
-                       Case__r.Customer_Address__r.City__c, Case__r.Customer_Address__r.State__c,
-                       Case__r.Customer_Address__r.Postal_Code__c, Case__r.Customer_Address__r.Country__c,
-                       Case__r.Customer_Address__r.Landmark__c,
-                       Case__r.Customer_Address__r.Latitude__c, Case__r.Customer_Address__r.Longitude__c,
-                       Case__r.Customer_Address__r.Contact_Person_Name__c,
-                       Case__r.Customer_Address__r.Contact_Phone__c,
-                       Assigned_Technician__c, Assigned_Technician__r.Name,
-                       (
-                           SELECT Id, Name, Status__c, Priority__c, Job_Type__c, SLA_Deadline__c, SLA_Status__c,
-                                  Scheduled_Start_Time__c, Scheduled_End_Time__c,
-                                  Check_In_Time__c, Completed_Time__c, Resolution_Time_Min__c,
-                                  Notes__c, Customer_Notes__c, Customer_Signature_URL__c, Is_First_Time_Fix__c,
-                                  Technician__c, Technician__r.Name, Zone__c, Zone__r.Name,
-                                  (
-                                      SELECT Id, Name, Technician__c, Technician__r.Name,
-                                             Service_Crew__c, Service_Crew__r.Name,
-                                             Resource_Type__c, Role__c, Is_Leader__c,
-                                             Status__c, Check_In_Time__c, Actual_Hours__c
-                                      FROM Assigned_Resources__r
-                                  )
-                           FROM Service_Jobs__r
-                           ORDER BY SLA_Deadline__c ASC NULLS LAST, CreatedDate DESC
-                       )
-                FROM Work_Order__c
-                WHERE (Assigned_Technician__c = :targetUserId OR Id IN :woIds)
-                ORDER BY CreatedDate DESC
-                LIMIT 50
-            ];
-        }
+        Map<String, Object> technicianInfo = new Map<String, Object>{
+            'userId' => targetUserId,
+            'name' => targetUserName,
+            'email' => targetUserEmail,
+            'technicianId' => myTechId
+        };
 
-        List<Map<String, Object>> woList = new List<Map<String, Object>>();
-        for (Work_Order__c wo : wos) {
-            woList.add(formatWorkOrderRecord(wo, myTechId, myCrewMap));
+        if (flatFormat == true) {
+            List<Map<String, Object>> sortedAppointments = flat.sortedAppointments();
+            return new Map<String, Object>{
+                'success' => true,
+                'format' => 'flat',
+                'technician' => technicianInfo,
+                'statusFilter' => statusFilter,
+                'technicianFilter' => technicianIdParam,
+                'includeAllAppointments' => (includeAllAppointments == true),
+                'totalServiceAppointments' => sortedAppointments.size(),
+                'totalWorkOrders' => flat.workOrders.size(),
+                'totalCases' => flat.cases.size(),
+                'totalServiceAddresses' => flat.addresses.size(),
+                'serviceAppointments' => sortedAppointments,
+                'workOrders' => flat.workOrders,
+                'cases' => flat.cases.values(),
+                'serviceAddresses' => flat.addresses.values()
+            };
         }
 
         return new Map<String, Object>{
             'success' => true,
-            'technician' => new Map<String, Object>{
-                'userId' => targetUserId,
-                'name' => targetUserName,
-                'email' => targetUserEmail,
-                'technicianId' => myTechId
-            },
+            'technician' => technicianInfo,
             'statusFilter' => statusFilter,
             'technicianFilter' => technicianIdParam,
+            'includeAllAppointments' => (includeAllAppointments == true),
             'totalWorkOrders' => woList.size(),
             'count' => woList.size(),
+            'totalServiceAppointments' => appointmentTotal,
             'workOrders' => woList
         };
+    }
+
+    /**
+     * Builds the flat response: appointments, work orders, cases and service addresses
+     * as four lists at the same level, joined by Ids (appointment.workOrderId ->
+     * workOrder.id, workOrder.caseId -> case.id, serviceAddressId -> serviceAddress.id).
+     * Each case and address appears once, however many appointments point to it.
+     */
+    private class FlatResult {
+        public List<Map<String, Object>> appointments = new List<Map<String, Object>>();
+        public List<Map<String, Object>> workOrders = new List<Map<String, Object>>();
+        public Map<Id, Map<String, Object>> cases = new Map<Id, Map<String, Object>>();
+        public Map<Id, Map<String, Object>> addresses = new Map<Id, Map<String, Object>>();
+
+        public void add(Work_Order__c wo, Map<String, Object> formatted, List<Map<String, Object>> kept) {
+            Id caseId = wo.Case__c;
+            Id addressId = (caseId != null) ? wo.Case__r.Customer_Address__c : null;
+
+            Map<String, Object> address = (Map<String, Object>) formatted.get('serviceAddress');
+            if (addressId != null && address != null && !addresses.containsKey(addressId)) {
+                addresses.put(addressId, address.clone());
+            }
+
+            Map<String, Object> caseInfo = (Map<String, Object>) formatted.get('case');
+            if (caseId != null && caseInfo != null && !cases.containsKey(caseId)) {
+                Map<String, Object> c = caseInfo.clone();
+                c.remove('serviceAddress');
+                c.put('serviceAddressId', addressId);
+                cases.put(caseId, c);
+            }
+
+            List<Id> appointmentIds = new List<Id>();
+            for (Map<String, Object> appt : kept) {
+                Map<String, Object> a = appt.clone();
+                a.remove('serviceAddress');
+                // Same values as checkInTime / completedTime: left out of the flat format
+                a.remove('startTime');
+                a.remove('endTime');
+                a.remove('actualStartTime');
+                a.remove('actualEndTime');
+                a.put('workOrderId', wo.Id);
+                a.put('workOrderName', wo.Name);
+                a.put('caseId', caseId);
+                a.put('serviceAddressId', addressId);
+                appointments.add(a);
+                appointmentIds.add((Id) appt.get('id'));
+            }
+
+            Map<String, Object> w = ((Map<String, Object>) formatted.get('workOrder')).clone();
+            w.remove('serviceAddress');
+            w.remove('case');
+            w.put('caseId', caseId);
+            w.put('serviceAddressId', addressId);
+            w.put('serviceAppointmentIds', appointmentIds);
+            w.put('serviceAppointmentsCount', appointmentIds.size());
+            workOrders.add(w);
+        }
+
+        /** All appointments, closest SLA deadline first (no deadline last). */
+        public List<Map<String, Object>> sortedAppointments() {
+            List<AppointmentSort> wrappers = new List<AppointmentSort>();
+            for (Integer i = 0; i < appointments.size(); i++) {
+                wrappers.add(new AppointmentSort(appointments[i], i));
+            }
+            wrappers.sort();
+            List<Map<String, Object>> result = new List<Map<String, Object>>();
+            for (AppointmentSort w : wrappers) {
+                result.add(w.appointment);
+            }
+            return result;
+        }
+    }
+
+    private class AppointmentSort implements Comparable {
+        public Map<String, Object> appointment;
+        public Integer originalIndex;
+        public AppointmentSort(Map<String, Object> appointment, Integer originalIndex) {
+            this.appointment = appointment;
+            this.originalIndex = originalIndex;
+        }
+        public Integer compareTo(Object other) {
+            AppointmentSort o = (AppointmentSort) other;
+            DateTime mine = (DateTime) appointment.get('slaDeadline');
+            DateTime theirs = (DateTime) o.appointment.get('slaDeadline');
+            if (mine != null && theirs != null && mine != theirs) return mine < theirs ? -1 : 1;
+            if (mine != null && theirs == null) return -1;
+            if (mine == null && theirs != null) return 1;
+            return originalIndex - o.originalIndex; // keep the original order for ties
+        }
+    }
+
+    /** Work orders by Id, each with all its appointments and their assigned resources. */
+    private static List<Work_Order__c> queryWorkOrdersWithAllJobs(Set<Id> woIds) {
+        return [
+            SELECT Id, Name, Subject__c, Status__c, Priority__c, Scheduled_Date__c, Completed_Date__c,
+                   Description__c, Site_Address__c, Equipment_ID__c, Equipment_Type__c,
+                   Time_Logged_Minutes__c, Technician_Notes__c, Parts_Used__c, AI_Pre_Job_Briefing__c, Briefing_Generated__c,
+                   Account__c, Account__r.Name,
+                   Asset__c, Asset__r.Name, Asset__r.Serial_Number__c, Asset__r.Product_Name__c, Asset__r.Product_Category__c,
+                   Case__c, Case__r.CaseNumber, Case__r.Subject, Case__r.Status, Case__r.Priority,
+                   Case__r.Customer_Address__c, Case__r.Customer_Address__r.Name,
+                   Case__r.Customer_Address__r.Address_Type__c, Case__r.Customer_Address__r.Street_Address__c,
+                   Case__r.Customer_Address__r.City__c, Case__r.Customer_Address__r.State__c,
+                   Case__r.Customer_Address__r.Postal_Code__c, Case__r.Customer_Address__r.Country__c,
+                   Case__r.Customer_Address__r.Landmark__c,
+                   Case__r.Customer_Address__r.Latitude__c, Case__r.Customer_Address__r.Longitude__c,
+                   Case__r.Customer_Address__r.Contact_Person_Name__c,
+                   Case__r.Customer_Address__r.Contact_Phone__c,
+                   Assigned_Technician__c, Assigned_Technician__r.Name,
+                   (
+                       SELECT Id, Name, Status__c, Priority__c, Job_Type__c, SLA_Deadline__c, SLA_Status__c,
+                              Scheduled_Start_Time__c, Scheduled_End_Time__c,
+                              Check_In_Time__c, Completed_Time__c, Resolution_Time_Min__c,
+                              Notes__c, Customer_Notes__c, Customer_Signature_URL__c, Is_First_Time_Fix__c,
+                              Technician__c, Technician__r.Name, Zone__c, Zone__r.Name,
+                              (
+                                  SELECT Id, Name, Technician__c, Technician__r.Name,
+                                         Service_Crew__c, Service_Crew__r.Name,
+                                         Resource_Type__c, Role__c, Is_Leader__c,
+                                         Status__c, Check_In_Time__c, Actual_Hours__c
+                                  FROM Assigned_Resources__r
+                              )
+                       FROM Service_Jobs__r
+                       ORDER BY SLA_Deadline__c ASC NULLS LAST, CreatedDate DESC
+                   )
+            FROM Work_Order__c
+            WHERE Id IN :woIds
+            ORDER BY CreatedDate DESC
+            LIMIT 200
+        ];
+    }
+
+    /**
+     * The technician given by Id, user Id, name or employee code; or, when none is given,
+     * the technician linked to the logged-in user. Returns null if none is found.
+     */
+    private static Technician__c resolveTechnician(String technicianIdParam) {
+        List<Technician__c> techs;
+        if (String.isNotBlank(technicianIdParam)) {
+            String clean = technicianIdParam.trim();
+            Id cleanAsId = asIdOrNull(clean); // Id = :<text> fails for names / employee codes
+            techs = [
+                SELECT Id, Name, User__c, User__r.Name, User__r.Email
+                FROM Technician__c
+                WHERE Id = :cleanAsId OR User__c = :cleanAsId OR Name = :clean OR Employee_Code__c = :clean
+                LIMIT 1
+            ];
+        } else {
+            techs = [
+                SELECT Id, Name, User__c, User__r.Name, User__r.Email
+                FROM Technician__c
+                WHERE User__c = :UserInfo.getUserId()
+                LIMIT 1
+            ];
+        }
+        return techs.isEmpty() ? null : techs[0];
+    }
+
+    private static Id asIdOrNull(String value) {
+        if (String.isBlank(value)) return null;
+        try {
+            return Id.valueOf(value.trim());
+        } catch (Exception ex) {
+            return null;
+        }
     }
 
     /**
@@ -284,6 +451,7 @@ global with sharing class DF360_WorkOrderAppointmentsAPI {
         }
 
         String cleanedId = workOrderIdentifier.trim();
+        Id cleanedIdAsId = asIdOrNull(cleanedId); // Id = :<text> fails for numbers like WO-0001014
 
         List<Work_Order__c> wos;
         if (String.isNotBlank(statusFilter)) {
@@ -321,7 +489,7 @@ global with sharing class DF360_WorkOrderAppointmentsAPI {
                            ORDER BY SLA_Deadline__c ASC NULLS LAST, CreatedDate DESC
                        )
                 FROM Work_Order__c
-                WHERE Id = :cleanedId OR Name = :cleanedId
+                WHERE Id = :cleanedIdAsId OR Name = :cleanedId
                 LIMIT 1
             ];
         } else {
@@ -358,7 +526,7 @@ global with sharing class DF360_WorkOrderAppointmentsAPI {
                            ORDER BY SLA_Deadline__c ASC NULLS LAST, CreatedDate DESC
                        )
                 FROM Work_Order__c
-                WHERE Id = :cleanedId OR Name = :cleanedId
+                WHERE Id = :cleanedIdAsId OR Name = :cleanedId
                 LIMIT 1
             ];
         }
@@ -370,15 +538,8 @@ global with sharing class DF360_WorkOrderAppointmentsAPI {
             };
         }
 
-        Id myTechId = null;
-        if (String.isNotBlank(technicianIdParam)) {
-            List<Technician__c> techs = [SELECT Id FROM Technician__c WHERE Id = :technicianIdParam.trim() OR Name = :technicianIdParam.trim() LIMIT 1];
-            if (!techs.isEmpty()) myTechId = techs[0].Id;
-        }
-        if (myTechId == null) {
-            List<Technician__c> techs = [SELECT Id FROM Technician__c WHERE User__c = :UserInfo.getUserId() LIMIT 1];
-            if (!techs.isEmpty()) myTechId = techs[0].Id;
-        }
+        Technician__c tech = resolveTechnician(technicianIdParam);
+        Id myTechId = tech != null ? tech.Id : null;
         Map<Id, Service_Crew_Member__c> myCrewMap = new Map<Id, Service_Crew_Member__c>();
         if (myTechId != null) {
             for (Service_Crew_Member__c m : [SELECT Id, Service_Crew__c, Service_Crew__r.Name, Is_Leader__c FROM Service_Crew_Member__c WHERE Technician__c = :myTechId]) {
@@ -598,11 +759,12 @@ global with sharing class DF360_WorkOrderAppointmentsAPI {
             return new Map<String, Object>{ 'success' => false, 'error' => 'Work Order Identifier required' };
         }
         String cleanedId = workOrderIdentifier.trim();
+        Id cleanedIdAsId = asIdOrNull(cleanedId); // Id = :<text> fails for numbers like WO-0001014
         List<Work_Order__c> wos = [
             SELECT Id, Name, Subject__c, Equipment_ID__c, Equipment_Type__c, Site_Address__c,
                    AI_Pre_Job_Briefing__c, Briefing_Generated__c
             FROM Work_Order__c
-            WHERE Id = :cleanedId OR Name = :cleanedId
+            WHERE Id = :cleanedIdAsId OR Name = :cleanedId
             LIMIT 1
         ];
         if (wos.isEmpty()) {

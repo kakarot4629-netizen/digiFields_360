@@ -217,8 +217,8 @@ const MOCK_TECHNICIANS = [
       "piyush.channe.3868c7575da5@agentforce.com",
       "piyush.channe"
     ],
-    password: "YOUR_PASSWORD_HERE",
-    passwords: ["YOUR_PASSWORD_HERE"],
+    password: "Dhanashree@123",
+    passwords: ["Dhanashree@123", "Password123", "YOUR_PASSWORD_HERE"],
     skills: ["Generator", "HVAC", "Compressor", "Electrical"],
     firstTimeFixRate: 95.0,
     isActive: true,
@@ -2054,7 +2054,7 @@ const server = http.createServer(async (req, res) => {
 
             // Check technician password validation
             const activeTech = authenticateTechnician(targetUser, email, password);
-            if (!activeTech && password !== "YOUR_PASSWORD_HERE" && password !== "Password123") {
+            if (!activeTech && password !== "Dhanashree@123" && password !== "YOUR_PASSWORD_HERE" && password !== "Password123") {
               return sendJSON(res, 401, {
                 success: false,
                 error: "Invalid username or password",

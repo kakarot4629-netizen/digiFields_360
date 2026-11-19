@@ -49,7 +49,7 @@ async function main() {
   // 1. Valid Live Salesforce Login
   await testLogin(
     "piyush.channe.3868c7575da5@agentforce.com",
-    "YOUR_PASSWORD_HERE",
+    "Dhanashree@123",
     "1. VALID LIVE SALESFORCE CREDENTIALS"
   );
 
